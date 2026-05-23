@@ -5,16 +5,18 @@
 
 <main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
   <div class="max-w-3xl mx-auto">
-    <a href="/assignments" class="inline-flex items-center gap-1 text-primary font-label-lg text-label-lg hover:underline mb-6">
+    <a href="/lessons/<%= assignment.lesson_id %>" class="inline-flex items-center gap-1 text-primary font-label-lg text-label-lg hover:underline mb-6">
       <span class="material-symbols-outlined text-sm">arrow_forward</span>
-      العودة للواجبات
+      العودة للدرس
     </a>
 
     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm mb-6">
       <h1 class="font-headline-lg text-headline-lg text-on-surface mb-3"><%= assignment.title %></h1>
       <p class="font-body-lg text-body-lg text-secondary mb-6"><%= assignment.description %></p>
       <div class="flex items-center gap-6 text-secondary font-body-md text-body-md">
+        <% if (assignment.due_date) { %>
         <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> <%= new Date(assignment.due_date).toLocaleDateString('ar-SA') %></span>
+        <% } %>
       </div>
     </div>
 

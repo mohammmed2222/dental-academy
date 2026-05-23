@@ -16,9 +16,10 @@ router.post('/request/:courseId', isAuthenticated, (req, res) => {
     return res.redirect('/courses/' + course.slug);
   }
 
-  const { method } = req.body;
+  const allowedMethods = ['cash', 'bank'];
+  var method = allowedMethods.indexOf(req.body.method) !== -1 ? req.body.method : 'cash';
   db.prepare('INSERT INTO payments (user_id, course_id, amount, method, status) VALUES (?, ?, ?, ?, \'pending\')')
-    .run(req.session.userId, course.id, course.price, method || 'cash');
+    .run(req.session.userId, course.id, course.price, method);
 
   req.session.flash = { type: 'success', message: 'تم إرسال طلب الدفع. سيقوم الإدارة بمراجعته قريباً.' };
   res.redirect('/courses/' + course.slug);
@@ -48,6 +49,10 @@ router.post('/admin/:id/confirm', isAdmin, (req, res) => {
     if (!existing) {
       db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)').run(payment.user_id, payment.course_id);
     }
+    // Notify user
+    const { createNotification } = require('../config/notifications');
+    const course = db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
+    createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعة مادة ' + (course ? course.title : '') + ' بنجاح. تم تفعيل التسجيل.');
     req.session.flash = { type: 'success', message: 'تم تأكيد الدفع' };
   }
   res.redirect('/payments/admin');

@@ -1,12 +1,17 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { getDb } = require('../config/database');
 const { sendMail } = require('../config/mail');
 const { createNotification } = require('../config/notifications');
 const { isAuthenticated } = require('../middleware/auth');
 
 const router = express.Router();
+
+var loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'محاولات كثيرة جداً' } });
+var registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'محاولات تسجيل كثيرة' } });
+var forgotLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, message: { error: 'طلبات كثيرة' } });
 
 router.get('/login', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
@@ -18,7 +23,7 @@ router.get('/register', (req, res) => {
   res.render('auth/register', { title: 'إنشاء حساب جديد', error: null, success: null });
 });
 
-router.post('/register', (req, res) => {
+router.post('/register', registerLimiter, (req, res) => {
   const db = getDb();
   const { email, password, confirmPassword, role } = req.body;
   var name = String(req.body.name || '').trim();
@@ -59,7 +64,7 @@ router.post('/register', (req, res) => {
   res.redirect('/dashboard');
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
   const db = getDb();
   const { email, password } = req.body;
 
@@ -89,7 +94,7 @@ router.get('/forgot-password', (req, res) => {
   res.render('auth/forgot-password', { title: 'نسيت كلمة المرور', error: null, success: null });
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', forgotLimiter, async (req, res) => {
   const db = getDb();
   const { email } = req.body;
   if (!email) {
@@ -98,7 +103,7 @@ router.post('/forgot-password', async (req, res) => {
   const user = db.prepare('SELECT id, name FROM users WHERE email = ?').get(email);
   if (user) {
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
 
     db.prepare('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expiresAt);
 

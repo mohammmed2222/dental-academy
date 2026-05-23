@@ -193,7 +193,8 @@ router.get('/:id', isAuthenticated, (req, res) => {
     quiz,
     totalLessons: allLessons.length,
     isOwner,
-    comments
+    comments,
+    currentUserId: req.session.userId
   });
 });
 

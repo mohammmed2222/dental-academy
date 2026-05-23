@@ -262,6 +262,7 @@ router.post('/:slug/exams/:id/submit', isAuthenticated, (req, res) => {
   db.prepare('UPDATE exam_attempts SET score = ?, passed = ? WHERE id = ?')
     .run(percentage, passed, attemptId);
 
+  delete req.session['examStart_' + exam.id];
   res.redirect('/courses/' + req.params.slug + '/exams/result/' + attemptId);
 });
 

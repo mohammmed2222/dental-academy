@@ -100,6 +100,7 @@ router.post('/create/:lessonId', isInstructor, (req, res) => {
     INSERT INTO assignments (lesson_id, title, description, due_date, max_points, file_allowed)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(lesson.id, title, description || '', due_date || null, parseInt(max_points) || 100, file_allowed ? 1 : 0);
+
   res.redirect('/lessons/' + lesson.id);
 });
 

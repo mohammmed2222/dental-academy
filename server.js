@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const { initializeDatabase, saveDatabase } = require('./config/database');
 const { initializeMail } = require('./config/mail');
+const { startScheduler } = require('./config/scheduler');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { csrfProtection, generateCsrfToken } = require('./config/security');
@@ -53,16 +54,12 @@ var generalLimiter = rateLimit({
   max: 200,
   message: { error: 'طلبات كثيرة جداً، حاول بعد 15 دقيقة' }
 });
-app.use('/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'محاولات كثيرة جداً' } }));
-app.use('/auth/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'محاولات تسجيل كثيرة' } }));
-app.use('/auth/forgot-password', rateLimit({ windowMs: 60 * 60 * 1000, max: 3, message: { error: 'طلبات كثيرة' } }));
-
 app.use(generalLimiter);
 app.use(setUser);
 
 app.use((req, res, next) => {
   res.locals.currentPath = req.path;
-  res.locals.unreadNotifications = req.session.userId ? getUnreadCount(req.session.userId) : 0;
+  try { res.locals.unreadNotifications = req.session.userId ? getUnreadCount(req.session.userId) : 0; } catch (e) { res.locals.unreadNotifications = 0; }
   res.locals.csrfToken = generateCsrfToken(req.session);
   next();
 });
@@ -189,12 +186,13 @@ app.use((err, req, res, next) => {
 // Ensure upload directories exist
 ['uploads', 'uploads/videos', 'uploads/avatars', 'uploads/assignments'].forEach(function(dir) {
   var fullPath = path.join(__dirname, 'public', dir);
-  try { fs.mkdirSync(fullPath, { recursive: true }); } catch (e) {}
+  try { fs.mkdirSync(fullPath, { recursive: true }); } catch (e) { console.error('خطأ في إنشاء مجلد ' + dir + ':', e.message); }
 });
 
 Promise.all([initializeDatabase(), initializeMail()]).then(() => {
   console.log('✓ قاعدة البيانات جاهزة');
   console.log('✓ البريد الإلكتروني جاهز');
+  startScheduler();
   app.listen(PORT, () => {
     console.log('🚀 المنصة التعليمية تعمل على: http://localhost:' + PORT);
   });

@@ -110,7 +110,7 @@
               <td class="px-4 py-3 font-body-md text-body-md"><%= g.assignment_title %></td>
               <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= g.course_title %></td>
               <td class="px-4 py-3 font-body-md text-body-md"><%= g.score %></td>
-              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= new Date(g.graded_at).toLocaleDateString('ar-SA') %></td>
+              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= g.graded_at ? new Date(g.graded_at).toLocaleDateString('ar-SA') : 'لم يصحح بعد' %></td>
             </tr>
             <% }) %>
           </tbody>

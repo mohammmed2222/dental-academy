@@ -194,6 +194,7 @@ router.post('/:id/submit', isAuthenticated, (req, res) => {
   db.prepare('UPDATE quiz_attempts SET score = ?, passed = ? WHERE id = ?')
     .run(percentage, passed, attemptId);
 
+  delete req.session['quizStart_' + quiz.id];
   res.redirect('/quizzes/result/' + attemptId);
 });
 

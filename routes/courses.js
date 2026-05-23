@@ -79,7 +79,7 @@ router.post('/create', isInstructor, (req, res) => {
     return res.render('courses/create', { title: 'إنشاء كورس جديد', categories, error: 'عنوان الكورس مطلوب' });
   }
 
-  let slug = slugify(title, { lower: true, replacement: '-' });
+  let slug = slugify(title, { lower: true, replacement: '-' }) || 'course-' + Date.now();
   const existing = db.prepare('SELECT id FROM courses WHERE slug = ?').get(slug);
   if (existing) {
     slug = slug + '-' + Date.now();

@@ -65,8 +65,10 @@ router.post('/users/:id/role', isAdmin, (req, res) => {
   const db = getDb();
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
   if (user && user.role !== 'admin') {
+    var allowedRoles = ['student', 'instructor', 'admin'];
+    var newRole = allowedRoles.indexOf(req.body.role) !== -1 ? req.body.role : user.role;
     db.prepare('UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run(req.body.role, user.id);
+      .run(newRole, user.id);
   }
   res.redirect('/admin/users');
 });

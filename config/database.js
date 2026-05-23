@@ -343,11 +343,14 @@ async function initializeDatabase() {
 
   db = wrap(dbRaw);
 
-  const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@manassa.com');
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@manassa.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const adminName = process.env.ADMIN_NAME || 'المشرف العام';
+  const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
   if (!adminExists) {
-    const hashedPassword = bcrypt.hashSync('admin123', 10);
+    const hashedPassword = bcrypt.hashSync(adminPassword, 10);
     db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
-      'المشرف العام', 'admin@manassa.com', hashedPassword, 'admin'
+      adminName, adminEmail, hashedPassword, 'admin'
     );
   }
 
