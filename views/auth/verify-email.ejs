@@ -1,0 +1,60 @@
+<%- include('../partials/header', { minimalHeader: true }) %>
+
+<style>
+  .clinical-card {
+    border: 1px solid #e0ddd5;
+    box-shadow: 2px 2px 0px rgba(26, 28, 30, 0.05);
+  }
+</style>
+
+<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile py-12 relative z-10">
+<div class="w-full max-w-md relative">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-8 md:p-12 text-center flex flex-col items-center shadow-sm">
+<div class="w-20 h-20 bg-primary-fixed rounded-full flex items-center justify-center mb-8 animate-pulse">
+<span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">mark_email_unread</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">تحقق من بريدك الإلكتروني</h2>
+<div class="space-y-4 mb-10">
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">لقد قمنا بإرسال رابط التحقق إلى عنوان بريدك الإلكتروني. يرجى الضغط على الرابط المرفق لتفعيل حسابك والبدء في رحلتك التعليمية.</p>
+<div class="inline-flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full text-secondary font-label-lg text-label-lg">
+<span class="material-symbols-outlined text-sm">info</span>
+<span>تأكد من مراجعة مجلد الرسائل غير المرغوب فيها (Spam)</span>
+</div>
+</div>
+<div class="w-full space-y-4">
+<button class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-all flex items-center justify-center gap-3" id="resendBtn">
+<span class="material-symbols-outlined">forward_to_inbox</span>إعادة إرسال الرابط
+</button>
+<a class="inline-block text-secondary font-label-lg text-label-lg hover:text-primary transition-colors border-b border-transparent hover:border-primary pb-0.5" href="/auth/register">تغيير البريد الإلكتروني</a>
+</div>
+</div>
+<div class="mt-8 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant">تواجه مشكلة؟ <a class="text-primary font-bold" href="/contact">اتصل بالدعم الفني</a></p>
+</div>
+</div>
+</main>
+
+<%- include('../partials/footer') %>
+
+<script>
+  const resendBtn = document.getElementById('resendBtn');
+  if (resendBtn) {
+    resendBtn.addEventListener('click', function() {
+      const originalText = this.innerHTML;
+      this.disabled = true;
+      this.classList.add('opacity-70', 'cursor-not-allowed');
+      this.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الإرسال...';
+      setTimeout(() => {
+        this.innerHTML = '<span class="material-symbols-outlined">check_circle</span> تم الإرسال بنجاح';
+        this.classList.remove('bg-primary-container');
+        this.classList.add('bg-secondary');
+        setTimeout(() => {
+          this.innerHTML = originalText;
+          this.disabled = false;
+          this.classList.remove('opacity-70', 'cursor-not-allowed', 'bg-secondary');
+          this.classList.add('bg-primary-container');
+        }, 3000);
+      }, 1500);
+    });
+  }
+</script>

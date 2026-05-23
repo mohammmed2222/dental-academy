@@ -1,0 +1,37 @@
+<%- include('../partials/header', { minimalHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-grow flex items-center justify-center p-margin-mobile md:p-margin-desktop">
+  <div class="certificate-border rounded-xl p-8 md:p-12 max-w-3xl w-full text-center">
+    <span class="material-symbols-outlined text-6xl text-primary mb-4" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+    <h1 class="font-display-lg text-display-lg text-primary mb-2">شهادة إتمام</h1>
+    <p class="font-body-lg text-body-lg text-secondary mb-6">أكاديمية طب الأسنان</p>
+
+    <div class="border-t border-b border-outline-variant py-6 my-6">
+      <p class="font-body-lg text-body-lg text-secondary mb-2">تشهد المنصة بأن</p>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface mb-2"><%= user.name %></h2>
+      <p class="font-body-lg text-body-lg text-secondary">قد أتم بنجاح دورة</p>
+      <h3 class="font-headline-md text-headline-md text-primary mt-2"><%= enrollment.course_title %></h3>
+    </div>
+
+    <div class="flex justify-center gap-6 text-secondary font-body-md text-body-md mt-6">
+      <span>تاريخ الإصدار: <%= new Date(enrollment.completed_at).toLocaleDateString('ar-SA') %></span>
+    </div>
+
+    <div class="mt-8 flex justify-center gap-4">
+      <button onclick="window.print()" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">print</span>
+        طباعة
+      </button>
+      <a href="/dashboard/certificate/<%= enrollment.course_id %>?format=pdf" class="bg-primary text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">download</span>
+        تحميل PDF
+      </a>
+      <a href="/dashboard" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-3 px-8 rounded hover:bg-surface-container-low transition-colors">العودة</a>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

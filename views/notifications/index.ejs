@@ -1,0 +1,52 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface">الإشعارات</h1>
+        <p class="font-body-lg text-body-lg text-secondary"><%= unreadCount %> إشعار غير مقروء</p>
+      </div>
+      <% if (unreadCount > 0) { %>
+      <form action="/notifications/read-all" method="POST">
+        <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">تحديد الكل كمقروء</button>
+      </form>
+      <% } %>
+    </div>
+
+    <div class="space-y-3">
+      <% if (notifications.length > 0) { %>
+      <% notifications.forEach(function(n) { %>
+      <div class="<%= n.is_read ? 'bg-surface-container-lowest' : 'bg-primary-fixed/10 border-primary/30' %> border border-outline-variant rounded-xl p-4 transition-colors">
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-primary-container <%= n.is_read ? 'text-secondary' : '' %>" style="font-variation-settings: 'FILL' 1;">
+            <% if (n.type === 'enrollment') { %>person_add<% } else if (n.type === 'grade') { %>grading<% } else if (n.type === 'comment') { %>chat<% } else if (n.type === 'course') { %>school<% } else { %>notifications<% } %>
+          </span>
+          <div class="flex-grow">
+            <div class="flex items-center justify-between">
+              <h3 class="font-label-lg text-label-lg text-on-surface"><%= n.title %></h3>
+              <span class="font-body-md text-body-md text-secondary text-sm"><%= new Date(n.created_at).toLocaleDateString('ar-SA') %></span>
+            </div>
+            <% if (n.message) { %>
+            <p class="font-body-md text-body-md text-secondary mt-1"><%= n.message %></p>
+            <% } %>
+          </div>
+          <% if (!n.is_read) { %>
+          <span class="w-2 h-2 rounded-full bg-primary-container mt-2 flex-shrink-0"></span>
+          <% } %>
+        </div>
+      </div>
+      <% }) %>
+      <% } else { %>
+      <div class="text-center py-12">
+        <span class="material-symbols-outlined text-5xl text-secondary mb-4" style="font-variation-settings: 'FILL' 1;">notifications_off</span>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">لا توجد إشعارات</h3>
+        <p class="font-body-md text-body-md text-secondary">ستظهر الإشعارات هنا عندما يكون لديك نشاط جديد</p>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

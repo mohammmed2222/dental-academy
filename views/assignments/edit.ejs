@@ -1,0 +1,36 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">تعديل الواجب</h1>
+      <p class="font-body-lg text-body-lg text-secondary">تحديث معلومات الواجب</p>
+    </div>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
+      <form action="/assignments/<%= assignment.id %>/edit" method="POST" class="space-y-5">
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="title">عنوان الواجب</label>
+          <input type="text" id="title" name="title" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors" value="<%= assignment.title %>" required/>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="description">وصف الواجب</label>
+          <textarea id="description" name="description" rows="4" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors" required><%= assignment.description %></textarea>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="due_date">تاريخ التسليم</label>
+          <input type="date" id="due_date" name="due_date" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors" value="<%= assignment.due_date %>" required/>
+        </div>
+        <div class="flex items-center gap-4 pt-4">
+          <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">حفظ التغييرات</button>
+          <a href="/assignments" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-3 px-8 rounded hover:bg-surface-container-low transition-colors">إلغاء</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,149 @@
+<%- include('../partials/header') %>
+
+<style>
+  .sadu-pattern { background-color: #fbf9f4; background-image: linear-gradient(30deg, #e4e2dd 12%, transparent 12.5%, transparent 87%, #e4e2dd 87.5%, #e4e2dd), linear-gradient(150deg, #e4e2dd 12%, transparent 12.5%, transparent 87%, #e4e2dd 87.5%, #e4e2dd), linear-gradient(30deg, #e4e2dd 12%, transparent 12.5%, transparent 87%, #e4e2dd 87.5%, #e4e2dd), linear-gradient(150deg, #e4e2dd 12%, transparent 12.5%, transparent 87%, #e4e2dd 87.5%, #e4e2dd), linear-gradient(60deg, #e4e2dd 25%, transparent 25.5%, transparent 75%, #e4e2dd 75%, #e4e2dd), linear-gradient(60deg, #e4e2dd 25%, transparent 25.5%, transparent 75%, #e4e2dd 75%, #e4e2dd); background-size: 80px 140px; background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px; opacity: 0.04; position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+</style>
+
+<main class="relative min-h-screen">
+<div class="sadu-pattern"></div>
+<section class="relative py-16 md:py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto text-center z-10">
+<h1 class="font-display-lg text-display-lg text-on-surface mb-6">تواصل معنا</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">نحن هنا للإجابة على استفساراتكم الأكاديمية والمهنية. فريقنا المختص مستعد لتقديم الدعم لضمان تميزكم في مسيرتكم في طب الأسنان.</p>
+</section>
+
+<section class="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto pb-24">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<div class="lg:col-span-5 space-y-8 order-2 lg:order-1">
+<div class="grid grid-cols-1 gap-4">
+<div class="bg-surface-container-lowest p-6 border border-outline-variant shadow-sm flex flex-row-reverse items-start gap-4 transition-all hover:bg-surface-container-low">
+<div class="bg-primary-container p-3 rounded-lg text-on-primary"><span class="material-symbols-outlined">mail</span></div>
+<div class="text-right">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">البريد الإلكتروني</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">info@dental-platform.com</p>
+<p class="font-body-md text-body-md text-on-surface-variant">support@dental-platform.com</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 border border-outline-variant shadow-sm flex flex-row-reverse items-start gap-4 transition-all hover:bg-surface-container-low">
+<div class="bg-primary-container p-3 rounded-lg text-on-primary"><span class="material-symbols-outlined">call</span></div>
+<div class="text-right">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">الهاتف</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">+962 6 000 0000</p>
+<p class="font-body-md text-body-md text-on-surface-variant">+962 7 0000 0000</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 border border-outline-variant shadow-sm flex flex-row-reverse items-start gap-4 transition-all hover:bg-surface-container-low">
+<div class="bg-primary-container p-3 rounded-lg text-on-primary"><span class="material-symbols-outlined">location_on</span></div>
+<div class="text-right">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">الموقع</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">عمان، المملكة الأردنية الهاشمية</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 border border-outline-variant shadow-sm flex flex-row-reverse items-start gap-4 transition-all hover:bg-surface-container-low">
+<div class="bg-primary-container p-3 rounded-lg text-on-primary"><span class="material-symbols-outlined">schedule</span></div>
+<div class="text-right">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">ساعات العمل</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">الأحد - الخميس: 9:00 صباحاً - 5:00 مساءً</p>
+<p class="font-body-md text-body-md text-on-surface-variant">الجمعة والسبت: عطلة رسمية</p>
+</div>
+</div>
+</div>
+<div class="relative overflow-hidden border border-outline-variant shadow-sm h-64 bg-surface-container flex flex-col items-center justify-center text-on-surface-variant">
+<div class="absolute inset-0 opacity-20 pointer-events-none sadu-pattern"></div>
+<div class="z-10 flex flex-col items-center">
+<span class="material-symbols-outlined text-6xl mb-2 text-primary opacity-60">map</span>
+<p class="font-label-lg text-label-lg font-bold">موقع الأكاديمية التفاعلي</p>
+<p class="font-label-sm text-label-sm text-secondary">عمان، الأردن</p>
+</div>
+</div>
+</div>
+
+<div class="lg:col-span-7 order-1 lg:order-2">
+<div class="bg-surface-container-lowest p-8 md:p-12 border border-outline-variant shadow-sm relative overflow-hidden">
+<div class="absolute bottom-0 left-0 w-32 h-32 opacity-10 pointer-events-none">
+<div class="sadu-pattern h-full w-full"></div>
+</div>
+<h2 class="font-headline-md text-headline-md text-primary mb-8 text-right border-r-4 border-primary pr-4">أرسل لنا رسالة</h2>
+
+<% if (typeof success !== 'undefined' && success) { %>
+<div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg p-4 mb-6 font-body-md flex items-center gap-3">
+<span class="material-symbols-outlined">check_circle</span><%= success %>
+</div>
+<% } %>
+<% if (typeof error !== 'undefined' && error) { %>
+<div class="bg-error-container text-on-error-container rounded-lg p-4 mb-6 font-body-md flex items-center gap-3">
+<span class="material-symbols-outlined">error</span><%= error %>
+</div>
+<% } %>
+
+<form action="/contact" method="POST" class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2 text-right">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">الاسم الكامل *</label>
+<input class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg py-3 px-4 font-body-md outline-none" name="name" placeholder="أدخل اسمك هنا" type="text" required/>
+</div>
+<div class="space-y-2 text-right">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">البريد الإلكتروني *</label>
+<input class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg py-3 px-4 font-body-md outline-none" name="email" placeholder="example@domain.com" type="email" required/>
+</div>
+</div>
+<div class="space-y-2 text-right">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">الموضوع *</label>
+<select class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg py-3 px-4 font-body-md outline-none" name="subject" required>
+<option value="">اختر الموضوع</option>
+<option value="courses">استفسار عن الدورات التدريبية</option>
+<option value="instructor">طلب انضمام للهيئة التدريسية</option>
+<option value="technical">مشاكل تقنية في الحساب</option>
+<option value="other">أخرى</option>
+</select>
+</div>
+<div class="space-y-2 text-right">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">الرسالة *</label>
+<textarea class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg py-3 px-4 font-body-md outline-none" name="message" placeholder="كيف يمكننا مساعدتك اليوم؟" rows="6" required></textarea>
+</div>
+<div class="pt-4">
+<button class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-3" type="submit" id="submitBtn">
+<span class="material-symbols-outlined">send</span> إرسال الرسالة
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<%- include('../partials/footer') %>
+
+<div class="fixed inset-0 bg-on-surface/50 z-[60] hidden backdrop-blur-sm" id="mobile-menu">
+<aside class="fixed right-0 top-0 h-full w-64 bg-surface-container-low flex flex-col p-4 z-[70] border-l border-outline-variant shadow-xl">
+<div class="flex justify-between items-center mb-8">
+<button class="text-on-surface-variant" onclick="toggleMobileMenu()"><span class="material-symbols-outlined">close</span></button>
+<span class="font-headline-sm text-headline-sm text-primary">القائمة</span>
+</div>
+<div class="space-y-2">
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant hover:bg-secondary-container rounded-lg p-3 transition-colors" href="/"><span class="material-symbols-outlined">home</span><span class="font-label-sm">الرئيسية</span></a>
+<a class="flex flex-row-reverse items-center gap-3 text-on-surface-variant hover:bg-secondary-container rounded-lg p-3 transition-colors" href="/courses"><span class="material-symbols-outlined">school</span><span class="font-label-sm">الدورات</span></a>
+<a class="flex flex-row-reverse items-center gap-3 bg-primary-container text-on-primary rounded-lg p-3 transition-colors" href="/contact"><span class="material-symbols-outlined">mail</span><span class="font-label-sm">اتصل بنا</span></a>
+</div>
+</aside>
+</div>
+
+<div class="md:hidden fixed bottom-6 left-6 z-50">
+<button class="w-14 h-14 bg-primary-container text-on-primary rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform" onclick="toggleMobileMenu()">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+
+<script>
+function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.querySelector('form');
+    var submitBtn = document.getElementById('submitBtn');
+    if (form && submitBtn) {
+        form.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> جاري الإرسال...';
+        });
+    }
+});
+</script>

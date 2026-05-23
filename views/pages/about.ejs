@@ -1,0 +1,222 @@
+<%- include('../partials/header') %>
+
+<style>
+  .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .stat-card:hover { transform: translateY(-4px); }
+  .team-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .team-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(163, 0, 25, 0.15); }
+  .value-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .value-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(163, 0, 25, 0.1); }
+  .animate-fade-in-up { opacity: 0; transform: translateY(30px); animation: fadeInUp 0.6s ease-out forwards; }
+  @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+  .bg-grid-pattern { background-image: linear-gradient(rgba(163, 0, 25, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(163, 0, 25, 0.03) 1px, transparent 1px); background-size: 40px 40px; }
+</style>
+
+<section class="relative bg-gradient-to-b from-primary-fixed/30 via-surface to-surface pt-24 md:pt-32 pb-16 md:pb-20 overflow-hidden">
+<div class="absolute -top-60 -right-60 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-60 -left-60 w-[500px] h-[500px] bg-primary-fixed/10 rounded-full blur-3xl"></div>
+<div class="relative max-w-container-max mx-auto px-gutter text-center">
+<div class="inline-flex items-center gap-2 bg-surface-container px-4 py-2 rounded-full mb-8">
+<span class="material-symbols-outlined text-primary text-sm">dentistry</span>
+<span class="font-label-lg text-on-surface-variant">عن أكاديمية طب الأسنان</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-6 leading-tight">نبني <span class="text-primary">مستقبل</span> تعليم طب الأسنان</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed">منصة تعليمية رقمية متكاملة تجمع بين خبرات أكاديمية متميزة وتقنيات حديثة لتقديم تجربة تعليمية فريدة لطلاب وأطباء طب الأسنان في الوطن العربي.</p>
+</div>
+</section>
+
+<section class="max-w-container-max mx-auto px-gutter py-16 md:py-24">
+<div class="grid md:grid-cols-3 gap-12 md:gap-16">
+<div class="text-center md:text-right animate-fade-in-up" style="animation-delay: 0.1s;">
+<div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 mx-auto md:mx-0">
+<span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">visibility</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">رؤيتنا</h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">أن نكون المنصة الرائدة في تعليم طب الأسنان في الوطن العربي، ومرجعاً موثوقاً لكل طالب وطبيب يسعى للتميز والإبداع في مجال طب الأسنان.</p>
+</div>
+<div class="text-center md:text-right animate-fade-in-up" style="animation-delay: 0.2s;">
+<div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 mx-auto md:mx-0">
+<span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">track_changes</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">رسالتنا</h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">تمكين الطلاب والأطباء من الوصول إلى محتوى تعليمي عالي الجودة، وتوفير بيئة تعليمية تفاعلية تعزز الفهم العميق والمهارات السريرية.</p>
+</div>
+<div class="text-center md:text-right animate-fade-in-up" style="animation-delay: 0.3s;">
+<div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 mx-auto md:mx-0">
+<span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">diamond</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">قيمنا</h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">الجودة، الابتكار، الشفافية، والالتزام بأعلى المعايير العلمية والتعليمية في كل ما نقدمه من محتوى وخدمات.</p>
+</div>
+</div>
+</section>
+
+<section class="bg-primary text-on-primary py-16 md:py-20">
+<div class="max-w-container-max mx-auto px-gutter">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16 text-center">
+<div class="stat-card">
+<span class="material-symbols-outlined text-on-primary text-4xl mb-4 opacity-80" style="font-variation-settings: 'FILL' 1;">school</span>
+<div class="font-display-lg text-display-lg font-bold mb-2" id="statStudents">0</div>
+<p class="font-label-lg text-on-primary/80">طالب وطبيبة</p>
+</div>
+<div class="stat-card">
+<span class="material-symbols-outlined text-on-primary text-4xl mb-4 opacity-80" style="font-variation-settings: 'FILL' 1;">library_books</span>
+<div class="font-display-lg text-display-lg font-bold mb-2" id="statLectures">0</div>
+<p class="font-label-lg text-on-primary/80">محاضرة مسجلة</p>
+</div>
+<div class="stat-card">
+<span class="material-symbols-outlined text-on-primary text-4xl mb-4 opacity-80" style="font-variation-settings: 'FILL' 1;">group</span>
+<div class="font-display-lg text-display-lg font-bold mb-2" id="statInstructors">0</div>
+<p class="font-label-lg text-on-primary/80">محاضر معتمد</p>
+</div>
+<div class="stat-card">
+<span class="material-symbols-outlined text-on-primary text-4xl mb-4 opacity-80" style="font-variation-settings: 'FILL' 1;">verified</span>
+<div class="font-display-lg text-display-lg font-bold mb-2" id="statCertificates">0</div>
+<p class="font-label-lg text-on-primary/80">شهادة معتمدة</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="py-16 md:py-24 bg-surface-container-low">
+<div class="max-w-container-max mx-auto px-gutter">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">لماذا <span class="text-primary">أكاديمية طب الأسنان؟</span></h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">مميزات تجعل تجربتك التعليمية فريدة ومتميزة</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<div class="bg-surface-container-lowest/80 border border-surface-variant rounded-2xl p-8 text-center value-card">
+<div class="w-16 h-16 bg-primary-fixed rounded-2xl flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">subscriptions</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">محتوى تعليمي شامل</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">آلاف المحاضرات المسجلة والحية في جميع تخصصات طب الأسنان، مقدمة من أفضل الأساتذة.</p>
+</div>
+<div class="bg-surface-container-lowest/80 border border-surface-variant rounded-2xl p-8 text-center value-card">
+<div class="w-16 h-16 bg-primary-fixed rounded-2xl flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">experiment</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">تجربة تعلم تفاعلية</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">فيديوهات تفاعلية، اختبارات تقييمية، وحالات سريرية محاكاة للواقع العملي.</p>
+</div>
+<div class="bg-surface-container-lowest/80 border border-surface-variant rounded-2xl p-8 text-center value-card">
+<div class="w-16 h-16 bg-primary-fixed rounded-2xl flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">devices</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">تعلم في أي وقت وأي مكان</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">الوصول إلى المحتوى من أي جهاز، مع خاصية التحميل للمشاهدة بدون إنترنت.</p>
+</div>
+<div class="bg-surface-container-lowest/80 border border-surface-variant rounded-2xl p-8 text-center value-card">
+<div class="w-16 h-16 bg-primary-fixed rounded-2xl flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">شهادات معتمدة</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">احصل على شهادات إتمام معتمدة بعد اجتيازك للمواد والاختبارات بنجاح.</p>
+</div>
+<div class="bg-surface-container-lowest/80 border border-surface-variant rounded-2xl p-8 text-center value-card">
+<div class="w-16 h-16 bg-primary-fixed rounded-2xl flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">support_agent</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">دعم فني متواصل</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">فريق دعم فني متخصص جاهز للمساعدة على مدار الساعة طوال أيام الأسبوع.</p>
+</div>
+<div class="bg-surface-container-lowest/80 border border-surface-variant rounded-2xl p-8 text-center value-card">
+<div class="w-16 h-16 bg-primary-fixed rounded-2xl flex items-center justify-center mx-auto mb-6">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">diversity_3</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">مجتمع تعليمي</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">انضم إلى مجتمع من الطلاب والأطباء، تبادل المعرفة والخبرات في بيئة تعليمية تفاعلية.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="py-16 md:py-24 max-w-container-max mx-auto px-gutter">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">لمن <span class="text-primary">نقدم خدماتنا؟</span></h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">فئات المستفيدين من خدمات المنصة التعليمية</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<div class="relative bg-surface-container-lowest border border-surface-variant rounded-2xl p-8 text-center overflow-hidden group hover:shadow-lg transition-all">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-fixed rounded-bl-full -mr-8 -mt-8 opacity-40"></div>
+<div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
+<span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">الطلاب</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">طلاب طب الأسنان في السنوات السريرية والدراسية الذين يسعون لتعزيز معارفهم ومهاراتهم.</p>
+</div>
+<div class="relative bg-surface-container-lowest border border-surface-variant rounded-2xl p-8 text-center overflow-hidden group hover:shadow-lg transition-all">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-fixed rounded-bl-full -mr-8 -mt-8 opacity-40"></div>
+<div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
+<span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">stethoscope</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">أطباء الأسنان</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">الأطباء الممارسون الراغبون في تطوير مهاراتهم والتعرف على أحدث التقنيات والعلاجات.</p>
+</div>
+<div class="relative bg-surface-container-lowest border border-surface-variant rounded-2xl p-8 text-center overflow-hidden group hover:shadow-lg transition-all">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-fixed rounded-bl-full -mr-8 -mt-8 opacity-40"></div>
+<div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 relative">
+<span class="material-symbols-outlined text-on-primary text-3xl" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">حديثو التخرج</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">خريجو كليات طب الأسنان الذين يستعدون لبدء مسيرتهم المهنية ويحتاجون إلى دعم تعليمي مستمر.</p>
+</div>
+</div>
+</section>
+
+<section class="bg-surface-container-high py-16 md:py-20 border-t border-surface-variant">
+<div class="max-w-container-max mx-auto px-gutter text-center">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">تواصل معنا</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-10">نحن هنا للإجابة عن استفساراتك. تواصل معنا عبر القنوات التالية:</p>
+<div class="flex flex-wrap justify-center gap-4">
+<a class="bg-primary-container text-on-primary font-label-lg text-label-lg px-6 py-3 rounded hover:opacity-90 transition-all flex items-center gap-2" href="/contact">
+<span class="material-symbols-outlined">mail</span>
+راسلنا
+</a>
+<a class="bg-surface-container-lowest text-primary font-label-lg text-label-lg px-6 py-3 rounded border-2 border-primary hover:bg-primary-fixed transition-all flex items-center gap-2" href="mailto:info@dental-platform.com">
+<span class="material-symbols-outlined">email</span>
+info@dental-platform.com
+</a>
+</div>
+</div>
+</section>
+
+<%- include('../partials/footer') %>
+
+<script>
+function animateCounter(elementId, target, suffix) {
+    var el = document.getElementById(elementId);
+    if (!el) return;
+    var current = 0;
+    var increment = Math.ceil(target / 60);
+    var timer = setInterval(function() {
+        current += increment;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        el.textContent = current.toLocaleString('ar-SA') + (suffix || '');
+    }, 25);
+}
+
+function isInViewport(el) {
+    if (!el) return false;
+    var rect = el.getBoundingClientRect();
+    return rect.top < window.innerHeight - 100;
+}
+
+var countersStarted = false;
+function checkCounters() {
+    var section = document.querySelector('.bg-primary');
+    if (!countersStarted && section && isInViewport(section)) {
+        countersStarted = true;
+        animateCounter('statStudents', <%= typeof stats !== 'undefined' && stats.students ? stats.students : 15000 %>);
+        animateCounter('statLectures', <%= typeof stats !== 'undefined' && stats.lectures ? stats.lectures : 500 %>);
+        animateCounter('statInstructors', <%= typeof stats !== 'undefined' && stats.instructors ? stats.instructors : 50 %>);
+        animateCounter('statCertificates', <%= typeof stats !== 'undefined' && stats.certificates ? stats.certificates : 3000 %>);
+    }
+}
+
+window.addEventListener('scroll', checkCounters);
+window.addEventListener('load', checkCounters);
+</script>

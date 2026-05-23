@@ -1,0 +1,42 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">الواجبات</h1>
+      <p class="font-body-lg text-body-lg text-secondary">عرض جميع الواجبات للدورة</p>
+    </div>
+  </div>
+
+  <% if (assignments.length > 0) { %>
+  <div class="space-y-4">
+    <% assignments.forEach(function(a) { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-primary transition-colors">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined">assignment</span>
+          </div>
+          <div>
+            <h3 class="font-headline-sm text-headline-sm text-on-surface"><%= a.title %></h3>
+            <p class="font-body-md text-body-md text-secondary text-sm"><%= a.course_title %> • <%= new Date(a.due_date).toLocaleDateString('ar-SA') %></p>
+          </div>
+        </div>
+        <a href="/assignments/<%= a.id %>" class="bg-primary-container text-on-primary font-label-lg text-label-lg px-4 py-2 rounded hover:opacity-90 transition-opacity">عرض</a>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center">
+    <span class="material-symbols-outlined text-5xl text-secondary mb-4">assignment</span>
+    <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">لا توجد واجبات</h3>
+    <p class="font-body-lg text-body-lg text-secondary">لم يتم إضافة واجبات بعد</p>
+  </div>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

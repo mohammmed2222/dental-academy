@@ -1,0 +1,30 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-md mx-auto text-center">
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
+      <span class="material-symbols-outlined text-6xl <%= attempt.passed ? 'text-primary' : 'text-error' %> mb-4" style="font-variation-settings: 'FILL' 1;">
+        <%= attempt.passed ? 'check_circle' : 'cancel' %>
+      </span>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2"><%= attempt.passed ? 'تهانينا!' : 'لم تنجح هذه المرة' %></h1>
+      <p class="font-body-lg text-body-lg text-secondary mb-6"><%= attempt.passed ? 'لقد اجتزت الاختبار بنجاح' : 'حاول مرة أخرى لتحقيق النجاح' %></p>
+
+      <div class="bg-<%= attempt.passed ? 'primary-fixed-dim' : 'error-container' %> rounded-xl p-6 mb-6">
+        <p class="font-label-lg text-label-lg <%= attempt.passed ? 'text-primary' : 'text-on-error-container' %>">درجتك</p>
+        <p class="font-display-lg text-display-lg <%= attempt.passed ? 'text-primary' : 'text-on-error-container' %>"><%= attempt.score %>%</p>
+      </div>
+
+      <div class="flex justify-center gap-3">
+        <a href="/lessons/<%= lesson.id %>" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">العودة للدرس</a>
+        <% if (!attempt.passed) { %>
+        <a href="/quizzes/<%= attempt.quiz_id %>" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-3 px-8 rounded hover:bg-surface-container-low transition-colors">إعادة المحاولة</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

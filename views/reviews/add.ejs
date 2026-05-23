@@ -1,0 +1,47 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-md mx-auto">
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
+      <div class="text-center mb-6">
+        <span class="material-symbols-outlined text-4xl text-primary mb-2" style="font-variation-settings: 'FILL' 1;">star</span>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface">إضافة تقييم</h1>
+        <p class="font-body-lg text-body-lg text-secondary">قيم هذه الدورة</p>
+      </div>
+
+      <form action="/reviews/add/<%= course.id %>" method="POST" class="space-y-5">
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2">التقييم</label>
+          <div class="flex gap-2" id="star-rating">
+            <% for (var i = 5; i >= 1; i--) { %>
+            <label class="cursor-pointer">
+              <input type="radio" name="rating" value="<%= i %>" class="hidden peer" <%= i === 5 ? 'checked' : '' %>/>
+              <span class="material-symbols-outlined text-3xl text-outline-variant peer-checked:text-primary" style="font-variation-settings: 'FILL' 1;" onclick="this.parentElement.querySelector('input').checked=true; updateStars();">star</span>
+            </label>
+            <% } %>
+          </div>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="review_text">التعليق</label>
+          <textarea id="review_text" name="review_text" rows="4" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors" placeholder="اكتب تقييمك..." required></textarea>
+        </div>
+        <button type="submit" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">إرسال التقييم</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+function updateStars() {
+  var rating = document.querySelector('input[name="rating"]:checked').value;
+  document.querySelectorAll('#star-rating label span').forEach(function(star, index) {
+    star.classList.toggle('text-primary', 5 - index <= parseInt(rating));
+    star.classList.toggle('text-outline-variant', 5 - index > parseInt(rating));
+  });
+}
+</script>
+
+<%- include('../partials/footer') %>

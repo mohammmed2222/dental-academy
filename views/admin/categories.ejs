@@ -1,0 +1,62 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">إدارة التصنيفات</h1>
+    <p class="font-body-lg text-body-lg text-secondary">إضافة وتعديل تصنيفات الدورات</p>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm p-6">
+    <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4">إضافة تصنيف جديد</h2>
+    <form action="/admin/categories/create" method="POST" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-1">الاسم</label>
+        <input type="text" name="name" class="bg-surface border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary" placeholder="اسم التصنيف" required/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-1">الرابط Slug</label>
+        <input type="text" name="slug" class="bg-surface border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary" placeholder="category-slug" required/>
+      </div>
+      <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg px-5 py-2.5 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">add</span>
+        إضافة
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right">
+        <thead class="bg-surface-container border-b border-surface-variant">
+          <tr>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الاسم</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الرابط</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-variant">
+          <% categories.forEach(function(cat) { %>
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="px-4 py-3">
+              <p class="font-label-lg text-label-lg text-on-surface"><%= cat.name %></p>
+            </td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= cat.slug %></td>
+            <td class="px-4 py-3">
+              <form action="/admin/categories/<%= cat.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('حذف التصنيف <%= cat.name %>؟')">
+                <button type="submit" class="text-error p-1 hover:opacity-80 transition-opacity">
+                  <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

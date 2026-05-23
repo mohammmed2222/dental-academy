@@ -1,0 +1,75 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 md:p-10 text-center mb-8">
+      <div class="w-24 h-24 rounded-full bg-primary-fixed flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-5xl text-primary" style="font-variation-settings: 'FILL' 1;">person</span>
+      </div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2"><%= instructor.name %></h1>
+      <div class="flex items-center justify-center gap-2 text-secondary font-body-md mb-4">
+        <span class="material-symbols-outlined text-sm">school</span>
+        <span>مدرس معتمد</span>
+      </div>
+      <% if (instructor.bio) { %>
+      <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto mb-6"><%= instructor.bio %></p>
+      <% } %>
+      <div class="flex flex-wrap justify-center gap-8 pt-4 border-t border-outline-variant">
+        <div class="text-center">
+          <div class="font-headline-md text-headline-md text-primary"><%= courses.length %></div>
+          <div class="font-label-lg text-label-lg text-secondary">دورة</div>
+        </div>
+        <div class="text-center">
+          <div class="font-headline-md text-headline-md text-primary"><%= totalStudents %></div>
+          <div class="font-label-lg text-label-lg text-secondary">طالب</div>
+        </div>
+        <div class="text-center">
+          <div class="font-headline-md text-headline-md text-primary"><%= instructor.created_at ? new Date(instructor.created_at).toLocaleDateString('ar-SA') : '-' %></div>
+          <div class="font-label-lg text-label-lg text-secondary">عضو منذ</div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary">menu_book</span>
+      دورات <%= instructor.name %>
+    </h2>
+
+    <% if (courses.length > 0) { %>
+    <div class="grid md:grid-cols-2 gap-6">
+      <% courses.forEach(function(c) { %>
+      <a href="/courses/<%= c.slug %>" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 hover:border-primary transition-all group">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="w-14 h-14 bg-primary-fixed rounded-xl flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-2xl text-primary">dentistry</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate"><%= c.title %></h3>
+            <div class="flex items-center gap-1 mt-1">
+              <% for (var s = 0; s < 5; s++) { %>
+              <span class="material-symbols-outlined text-sm <%= s < c.avg_rating ? 'text-primary' : 'text-outline-variant' %>" style="font-variation-settings: 'FILL' 1;">star</span>
+              <% } %>
+              <span class="font-label-lg text-label-lg text-secondary mr-1">(<%= c.total_reviews %>)</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 text-secondary font-body-md text-sm">
+          <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">play_lesson</span><%= c.lesson_count %> درس</span>
+          <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span><%= c.student_count %> طالب</span>
+          <span class="bg-surface-container px-2 py-0.5 rounded text-xs"><%= c.level === 'beginner' ? 'مبتدئ' : c.level === 'intermediate' ? 'متوسط' : 'متقدم' %></span>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-secondary mb-4">menu_book</span>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">لا توجد دورات بعد</h3>
+      <p class="font-body-md text-body-md text-secondary">سيتم إضافة الدورات قريباً</p>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

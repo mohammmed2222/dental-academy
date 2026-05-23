@@ -1,0 +1,209 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+<style>
+  .sadu-pattern {
+    background-image: radial-gradient(#e6bdba 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.05;
+  }
+</style>
+
+<div class="flex-grow flex flex-col md:flex-row relative">
+  <main class="flex-grow flex flex-col md:mr-64 w-full md:w-auto p-margin-mobile md:p-margin-desktop gap-gutter relative z-10">
+    <div class="w-full aspect-video bg-on-secondary-fixed rounded-xl overflow-hidden relative shadow-[0_2px_0_0_rgba(26,28,30,0.1)] border border-outline-variant flex items-center justify-center">
+      <div class="absolute inset-0 sadu-pattern"></div>
+      <% if (lesson.video_url) { %>
+        <% if (lesson.video_url.startsWith('http')) { %>
+        <iframe src="<%= lesson.video_url %>" class="absolute inset-0 w-full h-full border-none" allowfullscreen></iframe>
+        <% } else { %>
+        <video class="absolute inset-0 w-full h-full" controls>
+          <source src="<%= lesson.video_url %>" type="video/mp4"/>
+          المتصفح لا يدعم تشغيل الفيديو
+        </video>
+        <% } %>
+      <% } else { %>
+      <div class="relative z-10 flex flex-col items-center justify-center text-surface-container-lowest">
+        <span class="material-symbols-outlined text-6xl">play_circle</span>
+        <p class="font-headline-sm text-headline-sm mt-4">تشغيل المحاضرة</p>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-[0_2px_0_0_rgba(26,28,30,0.1)]">
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <span class="bg-primary-fixed text-on-primary-fixed-variant font-label-lg text-label-lg px-3 py-1 rounded"><%= lesson.course_title %></span>
+        <span class="bg-surface-container text-secondary font-label-lg text-label-lg px-3 py-1 rounded">الدرس <%= currentIndex + 1 %> من <%= totalLessons %></span>
+        <% if (lesson.duration) { %>
+        <span class="bg-surface-container text-secondary font-label-lg text-label-lg px-3 py-1 rounded flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">schedule</span>
+          <%= lesson.duration %> دقيقة
+        </span>
+        <% } %>
+      </div>
+      <h1 class="font-headline-lg text-headline-lg text-primary mb-4"><%= lesson.title %></h1>
+
+      <div class="flex gap-4 border-b border-surface-variant pb-4 mb-4">
+        <button class="text-primary font-bold border-b-2 border-primary pb-1 font-label-lg text-label-lg" onclick="showTab('summary')">ملخص المحاضرة</button>
+        <button class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg" onclick="showTab('attachments')">المرفقات التعليمية</button>
+        <% if (quiz) { %>
+        <button class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg" onclick="showTab('quiz')">أسئلة المناقشة</button>
+        <% } %>
+        <button class="text-secondary hover:text-primary transition-colors font-label-lg text-label-lg" onclick="showTab('comments')">التعليقات (<%= comments.length %>)</button>
+        <% if (isOwner) { %>
+        <div class="mr-auto flex gap-2">
+          <% if (quiz) { %>
+          <a href="/quizzes/<%= quiz.id %>/edit" class="text-primary hover:opacity-80 transition-opacity font-label-lg text-label-lg flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">edit</span> تعديل الاختبار
+          </a>
+          <% } else { %>
+          <a href="/quizzes/create/<%= lesson.id %>" class="text-primary hover:opacity-80 transition-opacity font-label-lg text-label-lg flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span> إضافة اختبار
+          </a>
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+
+      <div id="tab-summary" class="font-body-md text-body-md text-on-surface-variant space-y-4">
+        <%- lesson.content.replace(/\n/g, '<br>') %>
+      </div>
+
+      <div id="tab-attachments" class="hidden font-body-md text-body-md text-on-surface-variant">
+        <p>لا توجد مرفقات لهذه المحاضرة.</p>
+      </div>
+
+      <% if (quiz) { %>
+      <div id="tab-quiz" class="hidden">
+        <div class="bg-primary-fixed/30 border border-primary rounded-lg p-6 text-center">
+          <span class="material-symbols-outlined text-4xl text-primary mb-2">quiz</span>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2"><%= quiz.title %></h3>
+          <p class="font-body-md text-body-md text-secondary mb-4">نسبة النجاح: <%= quiz.passing_score %>%</p>
+          <a href="/quizzes/<%= quiz.id %>" class="inline-flex items-center gap-2 bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-sm">play_arrow</span>
+            ابدأ الاختبار
+          </a>
+        </div>
+      </div>
+      <% } %>
+
+      <div id="tab-comments" class="hidden">
+        <div class="space-y-4">
+          <form action="/comments/lesson/<%= lesson.id %>" method="POST" class="mb-6">
+            <textarea name="content" rows="3" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="أكتب تعليقك..." required></textarea>
+            <button type="submit" class="mt-2 bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-6 rounded hover:opacity-90 transition-opacity">إضافة تعليق</button>
+          </form>
+          <% if (comments.length > 0) { %>
+          <div class="space-y-4">
+            <% comments.forEach(function(c) { %>
+            <div class="bg-surface-container-low border border-outline-variant rounded-lg p-4">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary-container overflow-hidden">
+                  <% if (c.user_avatar && c.user_avatar !== '/images/default-avatar.png') { %>
+                  <img src="<%= c.user_avatar %>" class="w-full h-full object-cover"/>
+                  <% } else { %>
+                  <span class="material-symbols-outlined text-sm">person</span>
+                  <% } %>
+                </div>
+                <div>
+                  <p class="font-label-lg text-label-lg text-on-surface"><%= c.user_name %></p>
+                  <p class="font-body-md text-body-md text-secondary text-sm"><%= new Date(c.created_at).toLocaleDateString('ar-SA') %></p>
+                </div>
+                <% if (c.user_id === req.session.userId || isOwner) { %>
+                <form action="/comments/<%= c.id %>/delete" method="POST" class="mr-auto">
+                  <button type="submit" class="text-error hover:opacity-80 transition-opacity" title="حذف">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                </form>
+                <% } %>
+              </div>
+              <p class="font-body-md text-body-md text-on-surface-variant"><%= c.content %></p>
+            </div>
+            <% }) %>
+          </div>
+          <% } else { %>
+          <p class="text-secondary font-body-md text-body-md text-center py-8">لا توجد تعليقات بعد. كن أول من يعلق!</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <div>
+        <% if (prevLesson) { %>
+        <a href="/lessons/<%= prevLesson.id %>" class="inline-flex items-center gap-1 bg-surface-container-lowest border border-outline-variant text-secondary font-label-lg text-label-lg py-2 px-4 rounded hover:bg-on-secondary-fixed hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          الدرس السابق
+        </a>
+        <% } %>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="markComplete(<%= lesson.id %>)" id="completeBtn" class="inline-flex items-center gap-1 bg-primary text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">
+          <span class="material-symbols-outlined text-sm">check</span>
+          وضع كمكتمل
+        </button>
+        <% if (nextLesson) { %>
+        <a href="/lessons/<%= nextLesson.id %>" class="inline-flex items-center gap-1 bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">
+          الدرس التالي
+          <span class="material-symbols-outlined text-sm">arrow_back</span>
+        </a>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <aside class="hidden md:flex bg-surface-container-low fixed right-0 h-full w-64 border-l border-outline-variant top-16 bottom-0 flex-col z-40 overflow-y-auto">
+    <div class="p-6 border-b border-outline-variant">
+      <h2 class="font-headline-sm text-headline-sm text-primary mb-1">محتوى الدورة</h2>
+      <p class="font-label-lg text-label-lg text-secondary"><%= lesson.course_title %></p>
+    </div>
+    <div class="flex-grow overflow-y-auto pt-4">
+      <ul class="space-y-1 px-2">
+        <% allLessons.forEach(function(l, index) { %>
+        <li>
+          <a href="/lessons/<%= l.id %>" class="flex flex-row-reverse justify-between items-center <%= l.id === lesson.id ? 'bg-primary-container text-on-primary-container' : 'text-secondary hover:bg-surface-container-high' %> rounded-lg px-4 py-3 transition-all duration-200">
+            <div class="flex flex-row-reverse items-center gap-unit">
+              <span class="material-symbols-outlined" style="<%= l.is_completed ? 'font-variation-settings: \"FILL\" 1;' : '' %>">
+                <%= l.is_completed ? 'check_circle' : (l.id === lesson.id ? 'play_circle' : 'lock') %>
+              </span>
+              <span class="font-label-lg text-label-lg"><%= l.title %></span>
+            </div>
+            <% if (l.duration) { %>
+            <span class="font-body-md text-body-md text-sm"><%= l.duration %>:00</span>
+            <% } %>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<script>
+function showTab(tab) {
+  ['summary', 'attachments', 'quiz', 'comments'].forEach(function(t) {
+    var el = document.getElementById('tab-' + t);
+    if (el) el.classList.add('hidden');
+  });
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+}
+
+function markComplete(lessonId) {
+  fetch('/lessons/' + lessonId + '/complete', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        var btn = document.getElementById('completeBtn');
+        btn.innerHTML = '<span class="material-symbols-outlined text-sm" style="font-variation-settings: \'FILL\' 1;">check_circle</span> تم الإكمال';
+        btn.classList.remove('bg-primary', 'text-on-primary');
+        btn.classList.add('bg-surface-variant', 'text-secondary');
+        btn.disabled = true;
+        if (data.completed) {
+          alert('تهانينا! لقد أكملت جميع دروس هذه الدورة!');
+        }
+      }
+    });
+}
+</script>
+
+<%- include('../partials/footer') %>

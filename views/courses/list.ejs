@@ -1,0 +1,148 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+
+
+<div class="flex-grow max-w-container-max w-full mx-auto flex flex-col md:flex-row-reverse px-margin-mobile md:px-margin-desktop py-8 gap-gutter relative">
+  <div class="absolute inset-0 sadu-pattern pointer-events-none -z-10"></div>
+
+  <aside class="w-full md:w-64 flex-shrink-0 bg-surface-container-lowest border border-outline-variant p-6 rounded-lg hard-shadow h-fit">
+    <h2 class="font-headline-sm text-headline-sm text-primary mb-6 border-b border-outline-variant pb-2">التخصصات</h2>
+    <form action="/courses" method="GET" id="filterForm">
+      <ul class="space-y-4">
+        <% categories.forEach(function(cat) { %>
+        <li>
+          <label class="flex items-center gap-2 cursor-pointer group">
+            <input type="checkbox" name="category" value="<%= cat.slug %>" class="form-checkbox text-primary-container border-outline-variant rounded focus:ring-primary-container h-5 w-5" <%= (typeof currentCategory !== 'undefined' && currentCategory === cat.slug) ? 'checked' : '' %>/>
+            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors"><%= cat.name %></span>
+          </label>
+        </li>
+        <% }) %>
+      </ul>
+
+      <h2 class="font-headline-sm text-headline-sm text-primary mt-8 mb-6 border-b border-outline-variant pb-2">مستوى الدورة</h2>
+      <ul class="space-y-4">
+        <li>
+          <label class="flex items-center gap-2 cursor-pointer group">
+            <input type="radio" name="level" value="" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel === 'undefined' || !currentLevel) ? 'checked' : '' %>/>
+            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">الجميع</span>
+          </label>
+        </li>
+        <li>
+          <label class="flex items-center gap-2 cursor-pointer group">
+            <input type="radio" name="level" value="beginner" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel !== 'undefined' && currentLevel === 'beginner') ? 'checked' : '' %>/>
+            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">مبتدئ</span>
+          </label>
+        </li>
+        <li>
+          <label class="flex items-center gap-2 cursor-pointer group">
+            <input type="radio" name="level" value="intermediate" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel !== 'undefined' && currentLevel === 'intermediate') ? 'checked' : '' %>/>
+            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">متوسط</span>
+          </label>
+        </li>
+        <li>
+          <label class="flex items-center gap-2 cursor-pointer group">
+            <input type="radio" name="level" value="advanced" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel !== 'undefined' && currentLevel === 'advanced') ? 'checked' : '' %>/>
+            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">متقدم</span>
+          </label>
+        </li>
+      </ul>
+      <button type="submit" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity mt-6">تصفية</button>
+      <% if (search || currentCategory || currentLevel) { %>
+      <a href="/courses" class="block w-full text-center font-label-lg text-label-lg text-primary border border-primary py-3 px-6 rounded hover:bg-primary-fixed transition-colors mt-2">إلغاء الفلتر</a>
+      <% } %>
+    </form>
+  </aside>
+
+  <main class="flex-grow">
+    <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
+      <div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface">دليل الدورات التدريبية</h1>
+        <p class="font-body-md text-body-md text-secondary mt-2">استكشف برامجنا التعليمية المتخصصة لتطوير مهاراتك السريرية.</p>
+      </div>
+        <div class="mt-4 md:mt-0 relative w-full md:w-72">
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">search</span>
+          <input class="w-full bg-surface-container-lowest border border-outline-variant rounded-full py-2 pr-10 pl-4 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" name="search" placeholder="ابحث عن دورة..." type="text" value="<%= typeof search !== 'undefined' ? search : '' %>" form="filterForm"/>
+        </div>
+    </div>
+
+    <% if (courses.length > 0) { %>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <% courses.forEach(function(course) { %>
+      <article class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col hover:border-primary transition-colors duration-300 hard-shadow relative overflow-hidden group cursor-pointer">
+        <div class="absolute bottom-0 left-0 sadu-pattern w-24 h-24 opacity-10 rounded-tr-xl"></div>
+        <div class="flex items-start justify-between mb-4">
+          <div class="bg-primary-container/10 p-3 rounded-lg text-primary-container">
+            <span class="material-symbols-outlined text-3xl">medical_services</span>
+          </div>
+          <span class="bg-surface-container text-secondary font-label-lg text-label-lg px-2 py-1 rounded">
+            <%= course.level === 'beginner' ? 'مبتدئ' : course.level === 'intermediate' ? 'متوسط' : 'متقدم' %>
+          </span>
+        </div>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2 group-hover:text-primary transition-colors"><%= course.title %></h3>
+        <p class="font-body-md text-body-md text-secondary mb-4 flex-grow line-clamp-2"><%= course.short_description || course.description %></p>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="flex items-center">
+            <% var avgRating = course.avg_rating || 0; for (var s = 0; s < 5; s++) { %>
+            <span class="material-symbols-outlined text-sm <%= s < avgRating ? 'text-primary' : 'text-outline-variant' %>" style="font-variation-settings: 'FILL' 1;">star</span>
+            <% } %>
+          </div>
+          <span class="font-label-lg text-label-lg text-secondary">(<%= course.total_reviews || 0 %>)</span>
+        </div>
+        <div class="border-t border-outline-variant pt-4 mt-auto">
+          <div class="flex items-center gap-3 mb-4">
+            <a href="/instructor/<%= course.instructor_id %>" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary-container">
+                <span class="material-symbols-outlined">person</span>
+              </div>
+              <div>
+                <p class="font-label-lg text-label-lg text-on-surface"><%= course.instructor_name %></p>
+                <p class="font-body-md text-body-md text-secondary text-sm"><%= course.student_count %> طالب • <%= course.total_lessons || 0 %> درس</p>
+              </div>
+            </a>
+          </div>
+          <a href="/courses/<%= course.slug %>" class="block w-full bg-surface-container-lowest border border-on-secondary-fixed flex items-center justify-center gap-2 py-2 rounded-lg text-on-secondary-fixed hover:bg-on-secondary-fixed hover:text-white transition-colors group/btn">
+            <span class="font-label-lg text-label-lg">بدء الدورة</span>
+            <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-reverse group-hover/btn:-translate-x-1 transition-transform">arrow_back</span>
+          </a>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <div class="flex items-center justify-center gap-2 mt-8">
+      <% if (page > 1) { %>
+      <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); qs += '&page=' + (page - 1); %><%= qs.substring(1) %>" class="flex items-center gap-1 px-3 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors">
+        <span class="material-symbols-outlined text-sm">chevron_right</span>
+        <span class="font-label-lg text-label-lg">السابق</span>
+      </a>
+      <% } %>
+      <% for (var p = 1; p <= totalPages; p++) { %>
+        <% if (p === page) { %>
+        <span class="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg"><%= p %></span>
+        <% } else { %>
+        <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); qs += '&page=' + p; %><%= qs.substring(1) %>" class="px-4 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors font-label-lg text-label-lg"><%= p %></a>
+        <% } %>
+      <% } %>
+      <% if (page < totalPages) { %>
+      <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); qs += '&page=' + (page + 1); %><%= qs.substring(1) %>" class="flex items-center gap-1 px-3 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors">
+        <span class="font-label-lg text-label-lg">التالي</span>
+        <span class="material-symbols-outlined text-sm">chevron_left</span>
+      </a>
+      <% } %>
+    </div>
+    <% } %>
+
+    <% } else { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-on-surface-variant mb-4" style="font-variation-settings: 'FILL' 1;">search</span>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">لا توجد نتائج</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant">لم نجد أي دورات تطابق بحثك. حاول تغيير معايير البحث.</p>
+      <a href="/courses" class="inline-block mt-4 bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-6 rounded hover:opacity-90 transition-opacity">عرض الكل</a>
+    </div>
+    <% } %>
+  </main>
+</div>
+
+<%- include('../partials/footer') %>

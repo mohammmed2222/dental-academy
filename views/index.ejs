@@ -1,0 +1,197 @@
+<%- include('partials/header') %>
+
+<main class="flex-grow">
+  <section class="relative py-24 overflow-hidden border-b border-outline-variant/20">
+    <div class="absolute inset-0 sadu-pattern pointer-events-none"></div>
+    <div class="max-w-container-max mx-auto px-gutter grid lg:grid-cols-2 gap-12 items-center relative z-10">
+      <div class="text-right space-y-8">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full border border-primary/20">
+          <span class="material-symbols-outlined text-[18px]">verified</span>
+          <span class="font-label-lg text-label-lg">أكثر من <%= stats.courses %> دورة تعليمية</span>
+        </div>
+        <h1 class="font-display-lg text-display-lg leading-tight text-on-surface">
+          نحو آفاقٍ جديدة في <br/>
+          <span class="text-primary">التميز الإكلينيكي</span> لطب الأسنان
+        </h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+          منصة تعليمية متطورة تهدف إلى تمكين أطباء الأسنان في الأردن والوطن العربي من خلال برامج تدريبية متقدمة مبنية على أحدث المعايير السريرية العالمية.
+        </p>
+        <div class="flex flex-row-reverse gap-4">
+          <a href="/courses" class="bg-primary-container text-on-primary px-8 py-4 rounded-lg font-headline-sm text-headline-sm transition-all hover:shadow-lg hover:shadow-primary/20 flex items-center gap-2">
+            ابدأ رحلتك الآن
+            <span class="material-symbols-outlined">arrow_back</span>
+          </a>
+          <a href="/courses" class="border border-secondary text-secondary px-8 py-4 rounded-lg font-headline-sm text-headline-sm hover:bg-secondary/5 transition-all">
+            تصفح الدورات
+          </a>
+        </div>
+      </div>
+      <div class="hidden lg:block relative">
+        <div class="w-full aspect-square bg-surface-container-high rounded-full overflow-hidden border-8 border-white shadow-2xl relative">
+          <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
+            <span class="material-symbols-outlined text-8xl text-primary/30" style="font-variation-settings: 'FILL' 1;">dentistry</span>
+          </div>
+        </div>
+        <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/5 rounded-full blur-2xl"></div>
+        <div class="absolute -top-6 -left-6 w-48 h-48 bg-secondary/5 rounded-full blur-3xl"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-surface-container-lowest py-16 border-b border-outline-variant/20">
+    <div class="max-w-container-max mx-auto px-gutter">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div class="text-center p-6 border-l border-outline-variant/20 last:border-l-0">
+          <div class="font-display-lg text-display-lg text-primary mb-2"><%= stats.courses %></div>
+          <div class="font-label-lg text-label-lg text-secondary">دورة تخصصية</div>
+        </div>
+        <div class="text-center p-6 border-l border-outline-variant/20 last:border-l-0">
+          <div class="font-display-lg text-display-lg text-primary mb-2"><%= stats.students %></div>
+          <div class="font-label-lg text-label-lg text-secondary">طبيب معتمد</div>
+        </div>
+        <div class="text-center p-6 border-l border-outline-variant/20 last:border-l-0">
+          <div class="font-display-lg text-display-lg text-primary mb-2"><%= stats.lessons %></div>
+          <div class="font-label-lg text-label-lg text-secondary">محتوى تعليمي</div>
+        </div>
+        <div class="text-center p-6 border-l border-outline-variant/20 last:border-l-0">
+          <div class="font-display-lg text-display-lg text-primary mb-2"><%= stats.instructors %></div>
+          <div class="font-label-lg text-label-lg text-secondary">محاضر معتمد</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 bg-background">
+    <div class="max-w-container-max mx-auto px-gutter">
+      <div class="text-center mb-16">
+        <h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">مسارات التخصص والتميز</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto">اختر مسارك التعليمي من بين أكثر التخصصات طلباً، تحت إشراف نخبة من الأكاديميين والممارسين.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <% if (courses.length > 0) { %>
+          <% courses.slice(0, 3).forEach(function(course) { %>
+          <a href="/courses/<%= course.slug %>" class="bg-white p-8 border border-outline-variant/30 rounded-xl hover:shadow-xl hover:shadow-secondary/5 transition-all group relative overflow-hidden block">
+            <div class="absolute bottom-0 left-0 sadu-pattern w-20 h-20 opacity-10 group-hover:opacity-20 transition-opacity"></div>
+            <div class="w-14 h-14 bg-primary/5 rounded-lg flex items-center justify-center mb-6 text-primary">
+              <span class="material-symbols-outlined text-4xl">dentistry</span>
+            </div>
+            <h3 class="font-headline-md text-headline-md text-on-surface mb-3"><%= course.title %></h3>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-6 leading-relaxed"><%= course.short_description || course.description %></p>
+            <span class="text-primary font-label-lg text-label-lg flex items-center gap-2 group-hover:gap-3 transition-all">
+              استكشف المسار <span class="material-symbols-outlined">arrow_back</span>
+            </span>
+          </a>
+          <% }) %>
+        <% } else { %>
+          <div class="bg-white p-8 border border-outline-variant/30 rounded-xl text-center col-span-3">
+            <span class="material-symbols-outlined text-4xl text-primary mb-4">menu_book</span>
+            <h3 class="font-headline-md text-headline-md text-on-surface">قريباً</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant">سيتم إضافة المسارات التعليمية قريباً</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 bg-surface-container-low border-y border-outline-variant/20">
+    <div class="max-w-container-max mx-auto px-gutter grid lg:grid-cols-2 gap-16 items-center">
+      <div class="space-y-8">
+        <h2 class="font-headline-lg text-headline-lg text-on-surface">لماذا أكاديمية طب الأسنان؟</h2>
+        <div class="space-y-6">
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-primary">school</span>
+            </div>
+            <div>
+              <h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">منهج أكاديمي معتمد</h4>
+              <p class="font-body-md text-body-md text-on-surface-variant">مناهجنا مصممة لتواكب المعايير العالمية وتراعي الاحتياجات المحلية للأطباء في المنطقة.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-primary">groups</span>
+            </div>
+            <div>
+              <h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">نخبة من المحاضرين</h4>
+              <p class="font-body-md text-body-md text-on-surface-variant">نتعاون مع أفضل الأطباء والاستشاريين الحاصلين على بوردات دولية وخبرات عملية واسعة.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-primary">clinical_notes</span>
+            </div>
+            <div>
+              <h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">تطبيقات سريرية واقعية</h4>
+              <p class="font-body-md text-body-md text-on-surface-variant">نركز على الجانب العملي من خلال تحليل الحالات الحقيقية وورش العمل المكثفة.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="rounded-2xl overflow-hidden shadow-2xl border border-white bg-gradient-to-br from-primary/10 to-secondary/10 aspect-[4/3] flex items-center justify-center">
+          <span class="material-symbols-outlined text-8xl text-primary/20" style="font-variation-settings: 'FILL' 1;">biotech</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 bg-background">
+    <div class="max-w-container-max mx-auto px-gutter">
+      <div class="text-center mb-16">
+        <h2 class="font-headline-lg text-headline-lg text-on-surface">آراء زملائنا الأطباء</h2>
+      </div>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="p-8 bg-surface-container-lowest rounded-xl border border-outline-variant/30 italic relative">
+          <span class="material-symbols-outlined absolute top-4 right-4 text-primary opacity-20 text-5xl">format_quote</span>
+          <p class="font-body-lg text-body-lg text-on-surface-variant mb-6 relative z-10">"كانت تجربتي مع أكاديمية طب الأسنان نقطة تحول في مساري المهني. المستوى العلمي للمحاضرين والتركيز على التفاصيل الدقيقة في الحالات السريرية جعلني أكثر ثقة في ممارستي اليومية."</p>
+          <div class="flex items-center gap-3 not-italic">
+            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div>
+              <div class="font-label-lg text-label-lg text-on-surface">د. أحمد الزعبي</div>
+              <div class="text-sm text-secondary">أخصائي جراحة لثة</div>
+            </div>
+          </div>
+        </div>
+        <div class="p-8 bg-surface-container-lowest rounded-xl border border-outline-variant/30 italic relative">
+          <span class="material-symbols-outlined absolute top-4 right-4 text-primary opacity-20 text-5xl">format_quote</span>
+          <p class="font-body-lg text-body-lg text-on-surface-variant mb-6 relative z-10">"أكثر ما يميز الأكاديمية هو المتابعة المستمرة حتى بعد انتهاء الدورة. منصة التميز هي فعلاً المجتمع الذي يحتاجه كل طبيب أسنان طموح."</p>
+          <div class="flex items-center gap-3 not-italic">
+            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div>
+              <div class="font-label-lg text-label-lg text-on-surface">د. سارة القضاة</div>
+              <div class="text-sm text-secondary">طبيبة أسنان عامة</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 relative overflow-hidden bg-primary text-on-primary text-center">
+    <div class="absolute inset-0 sadu-pattern opacity-10"></div>
+    <div class="max-w-container-max mx-auto px-gutter relative z-10">
+      <h2 class="font-display-lg text-display-lg mb-6">انضم إلى مجتمع النخبة من أطباء الأسنان</h2>
+      <p class="font-body-lg text-body-lg mb-10 max-w-2xl mx-auto opacity-90">كن جزءاً من أكاديمية طب الأسنان وابدأ في تطوير مهاراتك الإكلينيكية اليوم.</p>
+      <div class="flex flex-col sm:flex-row-reverse justify-center gap-4">
+        <% if (typeof user !== 'undefined' && user) { %>
+        <a href="/courses" class="bg-white text-primary px-10 py-4 rounded-lg font-headline-sm text-headline-sm shadow-xl transition-all hover:scale-105 active:scale-95">
+          تصفح الدورات
+        </a>
+        <% } else { %>
+        <a href="/auth/register" class="bg-white text-primary px-10 py-4 rounded-lg font-headline-sm text-headline-sm shadow-xl transition-all hover:scale-105 active:scale-95">
+          سجل الآن مجاناً
+        </a>
+        <% } %>
+        <a href="/contact" class="border border-white/40 text-white px-10 py-4 rounded-lg font-headline-sm text-headline-sm hover:bg-white/10 transition-all">
+          تواصل معنا
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

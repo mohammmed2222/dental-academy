@@ -1,0 +1,172 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8 relative overflow-hidden">
+  <div class="absolute inset-0 sadu-pattern pointer-events-none"></div>
+  <div class="flex flex-wrap justify-between items-end gap-4 bg-surface-container-lowest p-6 rounded-xl border border-surface-variant shadow-sm relative overflow-hidden">
+    <div class="absolute opacity-5 pointer-events-none transform -scale-x-100 left-0 bottom-0 text-[120px] leading-none text-primary">
+      <span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">school</span>
+    </div>
+    <div class="flex flex-col gap-2 relative z-10">
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">مرحباً بك، <%= user.name %></h1>
+      <p class="font-body-lg text-body-lg text-secondary">نظرة عامة على دوراتك وطلابك.</p>
+    </div>
+    <div class="relative z-10 flex gap-3">
+      <a href="/courses/create" class="bg-primary-container text-on-primary px-6 py-2 rounded-lg font-label-lg text-label-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        إنشاء دورة
+      </a>
+    </div>
+  </div>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary">trending_up</span>
+      نظرة عامة
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="flex flex-col gap-2 rounded-xl p-6 bg-surface-container-lowest border border-surface-variant shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+          <div class="p-2 bg-primary-fixed rounded-lg text-on-primary-fixed-variant">
+            <span class="material-symbols-outlined">menu_book</span>
+          </div>
+          <span class="text-xs font-bold text-primary bg-primary-fixed-dim px-2 py-1 rounded-full"><%= totalCourses %></span>
+        </div>
+        <p class="text-secondary font-label-lg text-label-lg">إجمالي الدورات</p>
+        <p class="font-display-lg text-display-lg text-on-surface"><%= totalCourses %></p>
+      </div>
+      <div class="flex flex-col gap-2 rounded-xl p-6 bg-surface-container-lowest border border-surface-variant shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+          <div class="p-2 bg-tertiary-fixed rounded-lg text-on-tertiary-fixed-variant">
+            <span class="material-symbols-outlined">public</span>
+          </div>
+          <span class="text-xs font-bold text-primary bg-primary-fixed-dim px-2 py-1 rounded-full"><%= publishedCourses %></span>
+        </div>
+        <p class="text-secondary font-label-lg text-label-lg">الدورات المنشورة</p>
+        <p class="font-display-lg text-display-lg text-on-surface"><%= publishedCourses %></p>
+      </div>
+      <div class="flex flex-col gap-2 rounded-xl p-6 bg-surface-container-lowest border border-surface-variant shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+          <div class="p-2 bg-secondary-fixed rounded-lg text-on-secondary-fixed-variant">
+            <span class="material-symbols-outlined">group</span>
+          </div>
+          <span class="text-xs font-bold text-secondary bg-secondary-fixed-dim px-2 py-1 rounded-full"><%= totalStudents %></span>
+        </div>
+        <p class="text-secondary font-label-lg text-label-lg">إجمالي الطلاب</p>
+        <p class="font-display-lg text-display-lg text-on-surface"><%= totalStudents %></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 flex flex-col gap-8">
+      <section class="flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">play_lesson</span>
+            دوراتي
+          </h2>
+          <a class="text-primary hover:underline font-label-lg text-label-lg" href="/courses/my-courses">إدارة الدورات</a>
+        </div>
+        <% if (courses.length > 0) { %>
+        <div class="flex flex-col gap-4">
+          <% courses.forEach(function(course) { %>
+          <div class="flex flex-col sm:flex-row gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-4 shadow-sm hover:border-primary transition-colors group">
+            <div class="w-full sm:w-32 h-24 bg-surface-container-high rounded-lg flex items-center justify-center text-secondary border border-surface-variant group-hover:bg-primary-fixed transition-colors">
+              <span class="material-symbols-outlined text-[32px]">dentistry</span>
+            </div>
+            <div class="flex flex-col justify-between flex-1">
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface"><%= course.title %></h3>
+                <p class="font-body-md text-body-md text-secondary"><%= course.lesson_count || 0 %> دروس • <%= course.student_count || 0 %> طالب</p>
+              </div>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="bg-<%= course.status === 'published' ? 'primary-fixed-dim text-primary' : 'surface-container text-secondary' %> font-label-lg text-label-lg px-3 py-0.5 rounded">
+                  <%= course.status === 'published' ? 'منشور' : course.status === 'draft' ? 'مسودة' : 'مؤرشف' %>
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 sm:pl-4">
+              <a href="/courses/<%= course.slug %>/edit" class="text-secondary p-2 rounded-lg hover:bg-surface-variant transition-colors">
+                <span class="material-symbols-outlined">edit</span>
+              </a>
+              <a href="/courses/<%= course.slug %>" class="text-primary p-2 rounded-lg hover:bg-primary-fixed transition-colors border border-outline-variant hover:border-primary">
+                <span class="material-symbols-outlined">visibility</span>
+              </a>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <% } else { %>
+        <div class="bg-surface-container-lowest border border-surface-variant rounded-xl p-8 text-center">
+          <span class="material-symbols-outlined text-4xl text-secondary mb-2">play_lesson</span>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">لم تنشئ أي دورة بعد</h3>
+          <p class="font-body-md text-body-md text-secondary mb-4">ابدأ بإنشاء أول دورة لك وشارك معرفتك</p>
+          <a href="/courses/create" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-6 rounded hover:opacity-90 transition-opacity">إنشاء دورة جديدة</a>
+        </div>
+        <% } %>
+      </section>
+
+      <% if (typeof recentEnrollments !== 'undefined' && recentEnrollments && recentEnrollments.length > 0) { %>
+      <section class="flex flex-col gap-4">
+        <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">group_add</span>
+          آخر التسجيلات
+        </h2>
+        <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+          <% recentEnrollments.forEach(function(enrollment) { %>
+          <div class="flex items-center gap-4 p-4 border-b border-surface-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
+            <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-sm">person</span>
+            </div>
+            <div>
+              <p class="font-label-lg text-label-lg text-on-surface"><%= enrollment.student_name %></p>
+              <p class="font-body-md text-body-md text-secondary text-sm">سجل في "<%= enrollment.course_title %>" • <%= new Date(enrollment.enrolled_at).toLocaleDateString('ar-SA') %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </section>
+      <% } %>
+    </div>
+
+    <div class="flex flex-col gap-8">
+      <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-5 shadow-sm">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 border-b border-surface-variant pb-3">
+          <span class="material-symbols-outlined text-primary">quick_reference</span>
+          روابط سريعة
+        </h2>
+        <div class="space-y-3 pt-2">
+          <a href="/courses/create" class="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low border border-surface-variant hover:border-primary transition-colors">
+            <span class="material-symbols-outlined text-primary">add_circle</span>
+            <span class="font-label-lg text-label-lg text-on-surface">إنشاء دورة جديدة</span>
+          </a>
+          <a href="/courses/my-courses" class="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low border border-surface-variant hover:border-primary transition-colors">
+            <span class="material-symbols-outlined text-primary">list_alt</span>
+            <span class="font-label-lg text-label-lg text-on-surface">إدارة الدورات</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-5 shadow-sm">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 border-b border-surface-variant pb-3">
+          <span class="material-symbols-outlined text-primary">bar_chart</span>
+          إحصائيات سريعة
+        </h2>
+        <div class="space-y-3 pt-2">
+          <div class="flex justify-between items-center">
+            <span class="font-body-md text-body-md text-secondary">نسبة النشر</span>
+            <span class="font-label-lg text-label-lg text-on-surface font-bold"><%= totalCourses > 0 ? Math.round((publishedCourses / totalCourses) * 100) : 0 %>%</span>
+          </div>
+          <div class="w-full bg-surface-variant rounded-full h-2">
+            <div class="bg-primary h-2 rounded-full" style="width: <%= totalCourses > 0 ? (publishedCourses / totalCourses) * 100 : 0 %>%"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

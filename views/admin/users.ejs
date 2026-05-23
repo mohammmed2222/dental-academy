@@ -1,0 +1,100 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">إدارة المستخدمين</h1>
+    <p class="font-body-lg text-body-lg text-secondary">عرض وإدارة جميع مستخدمي المنصة</p>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm p-6">
+    <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4">إضافة مستخدم جديد</h2>
+    <form action="/admin/users/create" method="POST" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-1">الاسم</label>
+        <input type="text" name="name" class="bg-surface border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="الاسم" required/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-1">البريد الإلكتروني</label>
+        <input type="email" name="email" class="bg-surface border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="البريد" required/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-1">كلمة المرور</label>
+        <input type="password" name="password" class="bg-surface border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="كلمة المرور" required/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-1">الدور</label>
+        <select name="role" class="bg-surface border border-outline-variant rounded px-3 py-2 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary">
+          <option value="student">طالب</option>
+          <option value="instructor">مدرس</option>
+          <option value="admin">مشرف</option>
+        </select>
+      </div>
+      <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg px-5 py-2.5 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">add</span>
+        إضافة
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right">
+        <thead class="bg-surface-container border-b border-surface-variant">
+          <tr>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">المستخدم</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الدور</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">تاريخ التسجيل</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-variant">
+          <% users.forEach(function(u) { %>
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary-container">
+                  <span class="material-symbols-outlined text-sm">person</span>
+                </div>
+                <div>
+                  <p class="font-label-lg text-label-lg text-on-surface"><%= u.name %></p>
+                  <p class="font-body-md text-body-md text-secondary text-sm"><%= u.email %></p>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <span class="font-label-lg text-label-lg px-3 py-1 rounded <%= u.role === 'admin' ? 'bg-primary-fixed text-on-primary-fixed' : u.role === 'instructor' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-secondary-fixed text-on-secondary-fixed' %>">
+                <%= u.role === 'admin' ? 'مشرف' : u.role === 'instructor' ? 'مدرس' : 'طالب' %>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= new Date(u.created_at).toLocaleDateString('ar-SA') %></td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <% if (u.role !== 'admin') { %>
+                <form action="/admin/users/<%= u.id %>/role" method="POST" style="display:inline">
+                  <select name="role" class="bg-surface border border-outline-variant rounded px-2 py-1 text-sm font-body-md focus:outline-none focus:border-primary" onchange="this.form.submit()">
+                    <option value="student" <%= u.role === 'student' ? 'selected' : '' %>>طالب</option>
+                    <option value="instructor" <%= u.role === 'instructor' ? 'selected' : '' %>>مدرس</option>
+                  </select>
+                </form>
+                <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('حذف المستخدم <%= u.name %>؟')">
+                  <button type="submit" class="text-error hover:opacity-80 transition-opacity p-1">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                </form>
+                <% } else { %>
+                <span class="font-body-md text-body-md text-secondary">لا يمكن التعديل</span>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

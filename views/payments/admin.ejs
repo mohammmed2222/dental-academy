@@ -1,0 +1,64 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">إدارة المدفوعات</h1>
+    <p class="font-body-lg text-body-lg text-secondary">مراجعة طلبات الدفع الخاصة بالمساقات المدفوعة</p>
+  </div>
+
+  <div class="mt-8 bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right">
+        <thead class="bg-surface-container border-b border-surface-variant">
+          <tr>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الطالب</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">المساق</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">المبلغ</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">طريقة الدفع</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الحالة</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">التاريخ</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-variant">
+          <% payments.forEach(function(p) { %>
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="px-4 py-3 font-label-lg text-label-lg text-on-surface"><%= p.user_name %></td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= p.course_title %></td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= p.amount %> دينار</td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= p.method === 'bank' ? 'تحويل بنكي' : 'نقدي' %></td>
+            <td class="px-4 py-3">
+              <span class="font-label-lg text-label-lg px-3 py-1 rounded <%= p.status === 'paid' ? 'bg-primary-fixed-dim text-primary' : p.status === 'rejected' ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-secondary' %>">
+                <%= p.status === 'paid' ? 'مدفوع' : p.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة' %>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= new Date(p.created_at).toLocaleDateString('ar-SA') %></td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <% if (p.status === 'pending') { %>
+                <form action="/payments/admin/<%= p.id %>/confirm" method="POST" style="display:inline">
+                  <button type="submit" class="bg-primary-fixed-dim text-primary font-label-lg text-label-lg px-3 py-1 rounded hover:opacity-80 transition-opacity">تأكيد</button>
+                </form>
+                <form action="/payments/admin/<%= p.id %>/reject" method="POST" style="display:inline">
+                  <button type="submit" class="bg-error-container text-on-error-container font-label-lg text-label-lg px-3 py-1 rounded hover:opacity-80 transition-opacity">رفض</button>
+                </form>
+                <% } else { %>
+                <span class="text-secondary font-body-md text-body-md">—</span>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+          <% if (payments.length === 0) { %>
+          <tr>
+            <td colspan="7" class="px-4 py-8 text-center text-secondary font-body-md text-body-md">لا توجد مدفوعات بعد</td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

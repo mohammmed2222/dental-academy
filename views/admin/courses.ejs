@@ -1,0 +1,67 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">إدارة الدورات</h1>
+    <p class="font-body-lg text-body-lg text-secondary">عرض وإدارة جميع الدورات في المنصة</p>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right">
+        <thead class="bg-surface-container border-b border-surface-variant">
+          <tr>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الدورة</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">المدرس</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الدروس</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الطلاب</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الحالة</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-variant">
+          <% courses.forEach(function(c) { %>
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="px-4 py-3">
+              <p class="font-label-lg text-label-lg text-on-surface"><%= c.title %></p>
+            </td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= c.instructor_name %></td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= c.lesson_count || 0 %></td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= c.student_count || 0 %></td>
+            <td class="px-4 py-3">
+              <span class="font-label-lg text-label-lg px-3 py-1 rounded <%= c.status === 'published' ? 'bg-primary-fixed-dim text-primary' : 'bg-surface-container text-secondary' %>">
+                <%= c.status === 'published' ? 'منشور' : c.status === 'draft' ? 'مسودة' : 'مؤرشف' %>
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <a href="/courses/<%= c.slug %>" class="text-primary p-1 hover:opacity-80 transition-opacity">
+                  <span class="material-symbols-outlined text-sm">visibility</span>
+                </a>
+                <form action="/admin/courses/<%= c.id %>/toggle-status" method="POST" style="display:inline">
+                  <button type="submit" class="text-secondary p-1 hover:text-primary transition-colors" title="تغيير الحالة">
+                    <span class="material-symbols-outlined text-sm"><%= c.status === 'published' ? 'unpublished' : 'publish' %></span>
+                  </button>
+                </form>
+                <a href="/admin/courses/<%= c.id %>/edit" class="text-secondary p-1 hover:text-primary transition-opacity" title="تعديل">
+                  <span class="material-symbols-outlined text-sm">edit</span>
+                </a>
+                <form action="/admin/courses/<%= c.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('هل أنت متأكد من حذف هذه الدورة؟')">
+                  <button type="submit" class="text-error p-1 hover:opacity-80 transition-opacity" title="حذف">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

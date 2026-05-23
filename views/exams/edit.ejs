@@ -1,0 +1,170 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="mb-8">
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">تعديل الاختبار النهائي</h1>
+      <p class="font-body-lg text-body-lg text-secondary">تحديث أسئلة الاختبار</p>
+    </div>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
+      <form action="/courses/<%= exam.course_slug %>/exams/<%= exam.id %>/edit" method="POST" id="examForm" class="space-y-5">
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="title">عنوان الاختبار النهائي</label>
+          <input type="text" id="title" name="title" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= exam.title %>" required/>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="passing_score">نسبة النجاح (%)</label>
+            <input type="number" id="passing_score" name="passing_score" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= exam.passing_score %>" min="0" max="100" required/>
+          </div>
+          <div>
+            <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="time_limit">الوقت المحدد (دقائق) - 0 يعني بدون وقت</label>
+            <input type="number" id="time_limit" name="time_limit" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= exam.time_limit || 0 %>" min="0"/>
+          </div>
+        </div>
+
+        <div class="border-t border-outline-variant pt-6 mt-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-headline-md text-headline-md text-on-surface">الأسئلة</h2>
+            <button type="button" onclick="addQuestion()" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+              <span class="material-symbols-outlined text-[18px]">add</span>
+              إضافة سؤال
+            </button>
+          </div>
+          <div id="questionsContainer" class="space-y-4"></div>
+          <p id="noQuestions" class="font-body-md text-body-md text-on-surface-variant text-center py-8">لم يتم إضافة أي أسئلة بعد.</p>
+        </div>
+
+        <div class="flex items-center gap-4 pt-4">
+          <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">حفظ التغييرات</button>
+          <a href="/courses/<%= exam.course_slug %>" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-3 px-8 rounded hover:bg-surface-container-low transition-colors">إلغاء</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>
+
+<script>
+let questionCount = 0;
+
+<% if (questions && questions.length > 0) { %>
+  <% questions.forEach(function(q) { %>
+    addQuestion(<%- JSON.stringify(q) %>);
+  <% }) %>
+<% } %>
+
+function addQuestion(data) {
+  const q = data || {};
+  const index = questionCount++;
+  const container = document.getElementById('questionsContainer');
+  const noMsg = document.getElementById('noQuestions');
+  if (noMsg) noMsg.style.display = 'none';
+
+  const options = q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : ['', ''];
+  const questionType = q.question_type || 'multiple_choice';
+
+  let optionsHtml = '';
+  if (questionType === 'multiple_choice') {
+    optionsHtml = options.map(function(opt, oi) {
+      return '<div class="flex items-center gap-2 mb-2">' +
+        '<input type="radio" name="questions[' + index + '][correct_answer]" value="option_' + oi + '" ' + (q.correct_answer === 'option_' + oi ? 'checked' : '') + ' class="text-primary focus:ring-primary"/>' +
+        '<input type="text" name="questions[' + index + '][options][]" value="' + (opt || '') + '" placeholder="خيار ' + (oi + 1) + '" class="flex-1 bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>' +
+        (oi > 1 ? '<button type="button" onclick="removeOption(this)" class="text-error hover:opacity-80"><span class="material-symbols-outlined text-[18px]">close</span></button>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  const div = document.createElement('div');
+  div.className = 'question-card border border-outline-variant rounded-xl p-5 bg-surface-container-low relative';
+  div.innerHTML = '<button type="button" onclick="removeQuestion(this)" class="absolute top-3 left-3 text-error hover:opacity-80"><span class="material-symbols-outlined">delete</span></button>' +
+    '<div class="flex items-center gap-2 mb-4">' +
+      '<span class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm">' + (index + 1) + '</span>' +
+      '<span class="font-headline-sm text-headline-sm text-on-surface">سؤال ' + (index + 1) + '</span>' +
+    '</div>' +
+    '<div class="space-y-4">' +
+      '<div>' +
+        '<label class="block font-label-lg text-label-lg text-on-surface mb-1">نص السؤال</label>' +
+        '<textarea name="questions[' + index + '][question_text]" rows="2" class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="أدخل نص السؤال" required>' + (q.question_text || '') + '</textarea>' +
+      '</div>' +
+      '<div class="grid grid-cols-2 gap-4">' +
+        '<div>' +
+          '<label class="block font-label-lg text-label-lg text-on-surface mb-1">نوع السؤال</label>' +
+          '<select name="questions[' + index + '][question_type]" onchange="changeQuestionType(this)" class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">' +
+            '<option value="multiple_choice" ' + (questionType === 'multiple_choice' ? 'selected' : '') + '>اختيار من متعدد</option>' +
+            '<option value="true_false" ' + (questionType === 'true_false' ? 'selected' : '') + '>صح/خطأ</option>' +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="block font-label-lg text-label-lg text-on-surface mb-1">الدرجة</label>' +
+          '<input type="number" name="questions[' + index + '][points]" value="' + (q.points || 1) + '" min="1" class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>' +
+        '</div>' +
+      '</div>' +
+      '<div class="options-container">' +
+        '<label class="block font-label-lg text-label-lg text-on-surface mb-1">الخيارات <span class="text-on-surface-variant font-body-md">(اختر الإجابة الصحيحة بواسطة زر الراديو)</span></label>' +
+        '<div class="options-list">' + optionsHtml + '</div>' +
+        (questionType === 'multiple_choice' ? '<button type="button" onclick="addOption(this)" class="text-primary font-label-lg mt-1 flex items-center gap-1 hover:opacity-80"><span class="material-symbols-outlined text-[16px]">add</span>إضافة خيار</button>' : '') +
+      '</div>' +
+    '</div>';
+
+  container.appendChild(div);
+}
+
+function changeQuestionType(select) {
+  const card = select.closest('.question-card');
+  const optionsContainer = card.querySelector('.options-container');
+  const index = Array.from(card.querySelectorAll('[name$="[question_text]"]')).length > 0
+    ? card.querySelector('[name$="[question_text]"]').name.match(/\[(\d+)\]/)[1]
+    : 0;
+
+  if (select.value === 'true_false') {
+    optionsContainer.innerHTML = '<label class="block font-label-lg text-label-lg text-on-surface mb-1">الإجابة الصحيحة</label>' +
+      '<div class="flex items-center gap-4">' +
+        '<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="questions[' + index + '][correct_answer]" value="true" class="text-primary focus:ring-primary"/> صح</label>' +
+        '<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="questions[' + index + '][correct_answer]" value="false" class="text-primary focus:ring-primary"/> خطأ</label>' +
+      '</div>';
+  } else {
+    optionsContainer.innerHTML = '<label class="block font-label-lg text-label-lg text-on-surface mb-1">الخيارات <span class="text-on-surface-variant font-body-md">(اختر الإجابة الصحيحة بواسطة زر الراديو)</span></label>' +
+      '<div class="options-list">' +
+        '<div class="flex items-center gap-2 mb-2"><input type="radio" name="questions[' + index + '][correct_answer]" value="option_0" class="text-primary focus:ring-primary"/><input type="text" name="questions[' + index + '][options][]" placeholder="خيار 1" class="flex-1 bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/></div>' +
+        '<div class="flex items-center gap-2 mb-2"><input type="radio" name="questions[' + index + '][correct_answer]" value="option_1" class="text-primary focus:ring-primary"/><input type="text" name="questions[' + index + '][options][]" placeholder="خيار 2" class="flex-1 bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/></div>' +
+      '</div>' +
+      '<button type="button" onclick="addOption(this)" class="text-primary font-label-lg mt-1 flex items-center gap-1 hover:opacity-80"><span class="material-symbols-outlined text-[16px]">add</span>إضافة خيار</button>';
+  }
+}
+
+function addOption(btn) {
+  const list = btn.previousElementSibling;
+  const index = list.querySelector('[name$="[options][]"]')?.name?.match(/\[(\d+)\]/)?.[1] || 0;
+  const optCount = list.children.length;
+  const div = document.createElement('div');
+  div.className = 'flex items-center gap-2 mb-2';
+  div.innerHTML = '<input type="radio" name="questions[' + index + '][correct_answer]" value="option_' + optCount + '" class="text-primary focus:ring-primary"/>' +
+    '<input type="text" name="questions[' + index + '][options][]" placeholder="خيار ' + (optCount + 1) + '" class="flex-1 bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>' +
+    '<button type="button" onclick="removeOption(this)" class="text-error hover:opacity-80"><span class="material-symbols-outlined text-[18px]">close</span></button>';
+  list.appendChild(div);
+}
+
+function removeOption(btn) {
+  const list = btn.closest('.options-list');
+  if (list.children.length > 2) {
+    btn.parentElement.remove();
+  }
+}
+
+function removeQuestion(btn) {
+  btn.closest('.question-card').remove();
+  const remaining = document.querySelectorAll('.question-card');
+  const noMsg = document.getElementById('noQuestions');
+  if (remaining.length === 0 && noMsg) {
+    noMsg.style.display = 'block';
+  }
+  remaining.forEach(function(card, i) {
+    card.querySelector('.w-8').textContent = i + 1;
+    card.querySelector('.font-headline-sm').textContent = 'سؤال ' + (i + 1);
+  });
+}
+</script>

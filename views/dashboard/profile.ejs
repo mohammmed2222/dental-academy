@@ -1,0 +1,48 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="mb-8 text-center">
+      <div class="w-24 h-24 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center mx-auto mb-4 overflow-hidden">
+        <% if (user.avatar && user.avatar !== '/images/default-avatar.png') { %>
+        <img src="<%= user.avatar %>" alt="<%= user.name %>" class="w-full h-full object-cover"/>
+        <% } else { %>
+        <span class="material-symbols-outlined text-4xl text-primary-container" style="font-variation-settings: 'FILL' 1;">person</span>
+        <% } %>
+      </div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">الملف الشخصي</h1>
+      <p class="font-body-lg text-body-lg text-secondary"><%= user.email %></p>
+    </div>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
+      <form action="/dashboard/profile" method="POST" enctype="multipart/form-data" class="space-y-5">
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="avatar">الصورة الشخصية</label>
+          <input type="file" id="avatar" name="avatar" accept="image/*" class="w-full bg-surface border border-outline-variant rounded py-2 px-4 text-on-surface font-body-md text-body-md file:bg-primary-container file:text-on-primary file:border-0 file:rounded file:py-1 file:px-3 file:font-label-lg file:text-label-lg file:cursor-pointer cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="name">الاسم الكامل</label>
+          <input type="text" id="name" name="name" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= user.name %>" required/>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="email">البريد الإلكتروني</label>
+          <input type="email" id="email" name="email" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left" dir="ltr" value="<%= user.email %>" required/>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="bio">السيرة الذاتية</label>
+          <textarea id="bio" name="bio" rows="4" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="نبذة عنك (اختياري)"><%= typeof user.bio !== 'undefined' ? user.bio : '' %></textarea>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="password">كلمة المرور الجديدة (اتركه فارغاً إذا لم ترد التغيير)</label>
+          <input type="password" id="password" name="password" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="6 أحرف على الأقل"/>
+        </div>
+        <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">حفظ التغييرات</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

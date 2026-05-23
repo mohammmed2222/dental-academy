@@ -1,0 +1,16 @@
+<%- include('partials/header') %>
+<%- include('partials/back-button') %>
+
+<main class="flex-grow flex items-center justify-center p-margin-mobile md:p-margin-desktop relative">
+  <div class="text-center max-w-md">
+    <span class="material-symbols-outlined text-6xl text-secondary mb-4">error_outline</span>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2"><%= title %></h1>
+    <p class="font-body-lg text-body-lg text-secondary mb-6"><%= message %></p>
+    <a href="/" class="inline-flex items-center gap-2 bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">
+      <span class="material-symbols-outlined text-sm">home</span>
+      العودة للرئيسية
+    </a>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,202 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8 relative overflow-hidden">
+  <div class="absolute inset-0 sadu-pattern pointer-events-none"></div>
+  <div class="flex flex-wrap justify-between items-end gap-4 bg-surface-container-lowest p-6 rounded-xl border border-surface-variant shadow-sm relative overflow-hidden">
+    <div class="absolute opacity-5 pointer-events-none transform -scale-x-100 left-0 bottom-0 text-[120px] leading-none text-primary">
+      <span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">school</span>
+    </div>
+    <div class="flex flex-col gap-2 relative z-10">
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">مرحباً بك، <%= user.name %></h1>
+      <p class="font-body-lg text-body-lg text-secondary">إليك نظرة عامة على تقدمك الأكاديمي.</p>
+    </div>
+    <div class="relative z-10 flex gap-3">
+      <a href="/courses" class="bg-primary-container text-on-primary px-6 py-2 rounded-lg font-label-lg text-label-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        استعرض الدورات
+      </a>
+    </div>
+  </div>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary">trending_up</span>
+      نظرة عامة على التقدم
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="flex flex-col gap-2 rounded-xl p-6 bg-surface-container-lowest border border-surface-variant shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+          <div class="p-2 bg-primary-fixed rounded-lg text-on-primary-fixed-variant">
+            <span class="material-symbols-outlined">menu_book</span>
+          </div>
+          <span class="text-xs font-bold text-primary bg-primary-fixed-dim px-2 py-1 rounded-full"><%= enrollments.length %></span>
+        </div>
+        <p class="text-secondary font-label-lg text-label-lg">المسارات النشطة</p>
+        <p class="font-display-lg text-display-lg text-on-surface"><%= enrollments.length %></p>
+      </div>
+      <div class="flex flex-col gap-2 rounded-xl p-6 bg-surface-container-lowest border border-surface-variant shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+          <div class="p-2 bg-tertiary-fixed rounded-lg text-on-tertiary-fixed-variant">
+            <span class="material-symbols-outlined">check_circle</span>
+          </div>
+          <span class="text-xs font-bold text-primary bg-primary-fixed-dim px-2 py-1 rounded-full"><%= completedCourses %></span>
+        </div>
+        <p class="text-secondary font-label-lg text-label-lg">الدورات المكتملة</p>
+        <p class="font-display-lg text-display-lg text-on-surface"><%= completedCourses %></p>
+      </div>
+      <div class="flex flex-col gap-2 rounded-xl p-6 bg-surface-container-lowest border border-surface-variant shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+          <div class="p-2 bg-secondary-fixed rounded-lg text-on-secondary-fixed-variant">
+            <span class="material-symbols-outlined">schedule</span>
+          </div>
+          <span class="text-xs font-bold text-secondary bg-secondary-fixed-dim px-2 py-1 rounded-full"><%= inProgressCourses %></span>
+        </div>
+        <p class="text-secondary font-label-lg text-label-lg">قيد التقدم</p>
+        <p class="font-display-lg text-display-lg text-on-surface"><%= inProgressCourses %></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 flex flex-col gap-8">
+      <section class="flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">play_lesson</span>
+            المسارات النشطة
+          </h2>
+          <a class="text-primary hover:underline font-label-lg text-label-lg" href="/courses">عرض الكل</a>
+        </div>
+        <% if (enrollments.length > 0) { %>
+        <div class="flex flex-col gap-4">
+          <% enrollments.forEach(function(enrollment) { %>
+          <div class="flex flex-col sm:flex-row gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-4 shadow-sm hover:border-primary transition-colors cursor-pointer group">
+            <div class="w-full sm:w-32 h-24 bg-surface-container-high rounded-lg flex items-center justify-center text-secondary border border-surface-variant group-hover:bg-primary-fixed transition-colors">
+              <span class="material-symbols-outlined text-[32px]">dentistry</span>
+            </div>
+            <div class="flex flex-col justify-between flex-1">
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface"><%= enrollment.title %></h3>
+                <p class="font-body-md text-body-md text-secondary"><%= enrollment.instructor_name %> • <%= enrollment.lesson_count || 0 %> دروس</p>
+              </div>
+              <div class="flex items-center gap-3 mt-2">
+                <div class="flex-1 bg-surface-variant rounded-full h-1.5">
+                  <div class="bg-primary h-1.5 rounded-full" style="width: <%= enrollment.lesson_count > 0 ? Math.round((enrollment.completed_lessons / enrollment.lesson_count) * 100) : 0 %>%"></div>
+                </div>
+                <span class="font-label-lg text-label-lg text-secondary min-w-[40px]"><%= enrollment.lesson_count > 0 ? Math.round((enrollment.completed_lessons / enrollment.lesson_count) * 100) : 0 %>%</span>
+              </div>
+            </div>
+            <div class="flex items-center sm:pl-4">
+              <a href="/courses/<%= enrollment.slug %>" class="text-primary p-2 rounded-lg hover:bg-primary-fixed transition-colors border border-outline-variant hover:border-primary">
+                <span class="material-symbols-outlined"><%= enrollment.completed_at ? 'visibility' : 'play_arrow' %></span>
+              </a>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <% } else { %>
+        <div class="bg-surface-container-lowest border border-surface-variant rounded-xl p-8 text-center">
+          <span class="material-symbols-outlined text-4xl text-secondary mb-2">play_lesson</span>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">لم تسجل في أي دورة بعد</h3>
+          <p class="font-body-md text-body-md text-secondary mb-4">تصفح الدورات المتاحة وابدأ رحلة التعلم</p>
+          <a href="/courses" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-6 rounded hover:opacity-90 transition-opacity">استعرض الدورات</a>
+        </div>
+        <% } %>
+      </section>
+
+      <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length > 0) { %>
+      <section class="flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">history</span>
+            آخر الأنشطة
+          </h2>
+        </div>
+        <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+          <% recentActivity.forEach(function(activity) { %>
+          <div class="flex items-center gap-4 p-4 border-b border-surface-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
+            <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
+            </div>
+            <div>
+              <p class="font-label-lg text-label-lg text-on-surface">أكملت درس "<%= activity.lesson_title %>"</p>
+              <p class="font-body-md text-body-md text-secondary text-sm"><%= activity.course_title %> • <%= new Date(activity.completed_at).toLocaleDateString('ar-SA') %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </section>
+      <% } %>
+    </div>
+
+    <div class="flex flex-col gap-8">
+      <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-5 shadow-sm">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 border-b border-surface-variant pb-3">
+          <span class="material-symbols-outlined text-primary">event_upcoming</span>
+          المهام القادمة
+        </h2>
+        <ul class="flex flex-col gap-3 pt-2">
+          <li class="flex gap-3 items-start group">
+            <div class="mt-0.5 flex flex-col items-center">
+              <div class="w-3 h-3 rounded-full border-2 border-primary bg-surface group-hover:bg-primary transition-colors"></div>
+              <div class="w-0.5 h-full bg-surface-variant mt-1 mb-1"></div>
+            </div>
+            <div class="flex-1 pb-4 border-b border-surface-variant border-dashed">
+              <p class="font-body-md text-body-md text-on-surface font-medium">متابعة الدروس الحالية</p>
+              <p class="text-sm text-secondary mt-1 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">schedule</span>
+                مستمر
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3 items-start group">
+            <div class="mt-0.5 flex flex-col items-center">
+              <div class="w-3 h-3 rounded-full border-2 border-primary bg-surface group-hover:bg-primary transition-colors"></div>
+            </div>
+            <div class="flex-1 pb-1">
+              <p class="font-body-md text-body-md text-on-surface font-medium">إكمال جميع الدروس</p>
+              <p class="text-sm text-secondary mt-1 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">emoji_events</span>
+                هدف الدورة الحالية
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-5 shadow-sm">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 border-b border-surface-variant pb-3">
+          <span class="material-symbols-outlined text-primary">emoji_events</span>
+          آخر الإنجازات
+        </h2>
+        <div class="flex flex-col gap-4 pt-2">
+          <div class="flex items-center gap-4 p-3 rounded-lg bg-surface-container-low border border-surface-variant">
+            <div class="size-12 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+            </div>
+            <div>
+              <h4 class="font-body-md font-medium text-on-surface">بداية التعلم</h4>
+              <p class="text-xs text-secondary mt-1">تم التسجيل في أول دورة</p>
+            </div>
+          </div>
+          <% if (completedCourses > 0) { %>
+          <div class="flex items-center gap-4 p-3 rounded-lg bg-surface-container-low border border-surface-variant">
+            <div class="size-12 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
+            </div>
+            <div>
+              <h4 class="font-body-md font-medium text-on-surface">إكمال الدورات</h4>
+              <p class="text-xs text-secondary mt-1"><%= completedCourses %> دورة مكتملة</p>
+            </div>
+          </div>
+          <% } %>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

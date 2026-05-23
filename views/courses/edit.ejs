@@ -1,0 +1,75 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">تعديل الدورة</h1>
+      <p class="font-body-lg text-body-lg text-secondary">تحديث معلومات الدورة</p>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="flex items-center gap-2 bg-error-container text-on-error-container p-3 rounded font-body-md text-body-md mb-6">
+      <span class="material-symbols-outlined text-sm">error</span>
+      <span><%= error %></span>
+    </div>
+    <% } %>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
+      <form action="/courses/<%= course.slug %>/edit" method="POST" class="space-y-5">
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="title">عنوان الدورة</label>
+          <input type="text" id="title" name="title" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= course.title %>" required/>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="description">وصف الدورة</label>
+          <textarea id="description" name="description" rows="5" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" required><%= course.description %></textarea>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="short_description">وصف قصير (اختياري)</label>
+          <input type="text" id="short_description" name="short_description" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= course.short_description || '' %>"/>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="category_id">التصنيف</label>
+            <select id="category_id" name="category_id" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary">
+              <% categories.forEach(function(cat) { %>
+              <option value="<%= cat.id %>" <%= course.category_id == cat.id ? 'selected' : '' %>><%= cat.name %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div>
+            <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="level">المستوى</label>
+            <select id="level" name="level" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary">
+              <option value="beginner" <%= course.level === 'beginner' ? 'selected' : '' %>>مبتدئ</option>
+              <option value="intermediate" <%= course.level === 'intermediate' ? 'selected' : '' %>>متوسط</option>
+              <option value="advanced" <%= course.level === 'advanced' ? 'selected' : '' %>>متقدم</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="price">السعر (دينار) - 0 يعني مجاني</label>
+            <input type="number" id="price" name="price" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= course.price || 0 %>" min="0" step="0.01"/>
+          </div>
+          <div>
+            <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="status">حالة الدورة</label>
+            <select id="status" name="status" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary">
+              <option value="draft" <%= course.status === 'draft' ? 'selected' : '' %>>مسودة</option>
+              <option value="published" <%= course.status === 'published' ? 'selected' : '' %>>منشورة</option>
+              <option value="archived" <%= course.status === 'archived' ? 'selected' : '' %>>مؤرشفة</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 pt-4">
+          <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">حفظ التغييرات</button>
+          <a href="/courses/<%= course.slug %>" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-3 px-8 rounded hover:bg-surface-container-low transition-colors">إلغاء</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,49 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">دوراتي</h1>
+      <p class="font-body-lg text-body-lg text-secondary">إدارة جميع دوراتك</p>
+    </div>
+    <a href="/courses/create" class="bg-primary-container text-on-primary font-label-lg text-label-lg px-5 py-2.5 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm">add</span>
+      إنشاء دورة
+    </a>
+  </div>
+
+  <% if (courses.length > 0) { %>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% courses.forEach(function(course) { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col hover:border-primary transition-colors">
+      <div class="flex items-start justify-between mb-4">
+        <div class="bg-primary-container/10 p-3 rounded-lg text-primary-container">
+          <span class="material-symbols-outlined text-3xl">medical_services</span>
+        </div>
+        <span class="font-label-lg text-label-lg px-2 py-1 rounded <%= course.status === 'published' ? 'bg-primary-fixed-dim text-primary' : 'bg-surface-container text-secondary' %>">
+          <%= course.status === 'published' ? 'منشور' : course.status === 'draft' ? 'مسودة' : 'مؤرشف' %>
+        </span>
+      </div>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2"><%= course.title %></h3>
+      <p class="font-body-md text-body-md text-secondary mb-4 flex-grow"><%= course.lesson_count || 0 %> دروس • <%= course.student_count || 0 %> طالب</p>
+      <div class="border-t border-outline-variant pt-4 flex gap-2">
+        <a href="/courses/<%= course.slug %>" class="flex-1 text-center border border-outline-variant text-secondary font-label-lg text-label-lg py-2 rounded hover:bg-surface-container-low transition-colors">عرض</a>
+        <a href="/courses/<%= course.slug %>/edit" class="flex-1 text-center bg-primary-container text-on-primary font-label-lg text-label-lg py-2 rounded hover:opacity-90 transition-opacity">تعديل</a>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center">
+    <span class="material-symbols-outlined text-5xl text-secondary mb-4">menu_book</span>
+    <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">لم تنشئ أي دورة بعد</h3>
+    <p class="font-body-lg text-body-lg text-secondary mb-6">ابدأ بإنشاء أول دورة لك</p>
+    <a href="/courses/create" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">إنشاء دورة</a>
+  </div>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

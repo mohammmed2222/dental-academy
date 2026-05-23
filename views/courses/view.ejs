@@ -1,0 +1,243 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+<style>
+  .hard-shadow { box-shadow: 2px 2px 0px 0px rgba(26,28,30,0.1); }
+</style>
+
+<main class="flex-grow max-w-container-max w-full mx-auto px-margin-mobile md:px-margin-desktop py-8 relative">
+  <a href="/courses" class="inline-flex items-center gap-1 font-label-lg text-label-lg text-primary hover:underline mb-4">
+    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+    العودة للدورات
+  </a>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 hard-shadow">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="bg-surface-container text-secondary font-label-lg text-label-lg px-3 py-1 rounded"><%= course.category_name || 'عام' %></span>
+          <span class="<%= course.level === 'beginner' ? 'bg-surface-container text-secondary' : course.level === 'intermediate' ? 'bg-surface-container text-secondary' : 'bg-primary-fixed text-on-primary-fixed' %> font-label-lg text-label-lg px-3 py-1 rounded">
+            <%= course.level === 'beginner' ? 'مبتدئ' : course.level === 'intermediate' ? 'متوسط' : 'متقدم' %>
+          </span>
+        </div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface mb-4"><%= course.title %></h1>
+        <p class="font-body-md text-body-md text-secondary mb-4"><%= course.description %></p>
+        <div class="flex flex-wrap items-center gap-6 text-secondary">
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">person</span>
+            <a href="/instructor/<%= course.instructor_id %>" class="font-label-lg hover:text-primary transition-colors"><%= course.instructor_name %></a>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">play_lesson</span>
+            <span class="font-label-lg"><%= totalLessons %> درس</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">group</span>
+            <span class="font-label-lg"><%= course.student_count %> طالب</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">star</span>
+            <span class="font-label-lg"><%= course.total_reviews || 0 %> تقييم</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant hard-shadow overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant">
+          <h2 class="font-headline-sm text-headline-sm text-on-surface">محتوى الدورة</h2>
+          <% if (typeof isOwner !== 'undefined' && isOwner) { %>
+          <a href="/lessons/create/<%= course.id %>" class="bg-primary-container text-on-primary-container font-label-lg text-label-lg px-4 py-2 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span>
+            إضافة درس
+          </a>
+          <% } %>
+        </div>
+        <% if (lessons.length > 0) { %>
+        <div class="divide-y divide-outline-variant">
+          <% lessons.forEach(function(lesson, index) { %>
+          <div class="flex items-center justify-between px-6 py-4 <%= lesson.is_completed ? 'bg-surface-container-low' : '' %>">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold <%= lesson.is_completed ? 'bg-primary-container text-on-primary-container' : 'bg-surface-variant text-secondary' %>">
+                <% if (lesson.is_completed) { %>
+                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
+                <% } else { %>
+                <%= index + 1 %>
+                <% } %>
+              </div>
+              <div>
+                <div class="font-label-lg text-label-lg text-on-surface"><%= lesson.title %></div>
+                <% if (lesson.duration) { %>
+                <div class="font-body-md text-body-md text-secondary text-sm"><%= lesson.duration %> دقيقة</div>
+                <% } %>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <% if (typeof isEnrolled !== 'undefined' && (isEnrolled || isOwner)) { %>
+              <a href="/lessons/<%= lesson.id %>" class="bg-primary-container text-on-primary-container w-9 h-9 rounded flex items-center justify-center hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-sm">play_arrow</span>
+              </a>
+              <% } %>
+              <% if (typeof isOwner !== 'undefined' && isOwner) { %>
+              <a href="/lessons/<%= lesson.id %>/edit" class="text-secondary hover:text-primary transition-colors p-1">
+                <span class="material-symbols-outlined text-sm">edit</span>
+              </a>
+              <form action="/lessons/<%= lesson.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الدرس؟')">
+                <button type="submit" class="text-secondary hover:text-primary transition-colors p-1">
+                  <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+              </form>
+              <% } %>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <% } else { %>
+        <div class="p-12 text-center">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-3">play_lesson</span>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">لا توجد دروس بعد</h3>
+          <p class="font-body-md text-body-md text-secondary">سيتم إضافة الدروس قريباً</p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="lg:col-span-1">
+      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 hard-shadow sticky top-24 space-y-4">
+        <div class="w-full h-40 bg-primary-container/20 rounded-lg flex items-center justify-center text-primary-container">
+          <span class="material-symbols-outlined text-6xl">dentistry</span>
+        </div>
+
+        <% if (totalLessons > 0) { %>
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="font-label-lg text-label-lg text-secondary">التقدم</span>
+            <span class="font-label-lg text-label-lg text-primary font-bold"><%= totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0 %>%</span>
+          </div>
+          <div class="w-full bg-surface-variant rounded-full h-2">
+            <div class="bg-primary h-2 rounded-full" style="width: <%= totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0 %>%"></div>
+          </div>
+        </div>
+        <% } %>
+
+        <% if (typeof prerequisites !== 'undefined' && prerequisites.length > 0) { %>
+        <div class="bg-surface-container border border-outline-variant rounded-xl p-4 mb-4">
+          <h4 class="font-label-lg text-label-lg text-on-surface mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-secondary">playlist_remove</span>
+            المتطلبات الأساسية
+          </h4>
+          <ul class="space-y-2">
+            <% prerequisites.forEach(function(p) { %>
+            <li class="flex items-center gap-2 font-body-md text-body-md text-secondary">
+              <span class="material-symbols-outlined text-sm">checklist</span>
+              <a href="/courses/<%= p.prereq_slug %>" class="hover:text-primary transition-colors"><%= p.prereq_title %></a>
+            </li>
+            <% }) %>
+          </ul>
+        </div>
+        <% } %>
+
+        <% if (typeof isEnrolled === 'undefined' || !isEnrolled) { %>
+          <% if (typeof isOwner === 'undefined' || !isOwner) { %>
+            <% if (typeof user !== 'undefined' && user) { %>
+              <% if (course.price > 0) { %>
+              <div class="bg-surface-container border border-outline-variant rounded-xl p-4 mb-4 text-center">
+                <p class="font-headline-md text-headline-md text-primary mb-2"><%= course.price %> دينار</p>
+                <p class="font-body-md text-body-md text-secondary mb-4">هذا المساق مدفوع. اختر طريقة الدفع:</p>
+                <form action="/payments/request/<%= course.id %>" method="POST" class="space-y-2">
+                  <button type="submit" name="method" value="cash" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">دفع نقدي</button>
+                  <button type="submit" name="method" value="bank" class="w-full border border-primary text-primary font-label-lg text-label-lg py-3 px-6 rounded hover:bg-primary-fixed transition-colors">تحويل بنكي</button>
+                </form>
+              </div>
+              <% } else { %>
+              <form action="/courses/<%= course.slug %>/enroll" method="POST">
+                <button type="submit" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined text-sm">person_add</span>
+                  التسجيل في الدورة
+                </button>
+              </form>
+              <% } %>
+            <% } else { %>
+            <a href="/auth/login" class="block w-full bg-primary-container text-on-primary text-center font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-sm">login</span>
+              سجل دخولك للتسجيل
+            </a>
+            <% } %>
+          <% } %>
+        <% } else if (isEnrolled.completed_at) { %>
+          <div class="flex items-center gap-2 bg-primary-fixed text-on-primary-fixed p-3 rounded font-body-md">
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            تم إكمال هذه الدورة
+          </div>
+          <a href="/dashboard/certificate/<%= course.id %>" class="block w-full bg-primary-container text-on-primary text-center font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">
+            عرض الشهادة
+          </a>
+        <% } else { %>
+          <div class="flex items-center gap-2 text-secondary font-body-md">
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            أنت مسجل في هذه الدورة
+          </div>
+        <% } %>
+
+        <% if (exam) { %>
+        <div class="border-t border-outline-variant pt-4">
+          <div class="bg-primary-fixed/20 border border-primary rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="material-symbols-outlined text-primary">assignment</span>
+              <h3 class="font-headline-sm text-headline-sm text-on-surface"><%= exam.title %></h3>
+            </div>
+            <p class="font-body-md text-body-md text-secondary mb-3">نسبة النجاح: <%= exam.passing_score %>%</p>
+            <% if (examAttempt) { %>
+            <div class="flex items-center gap-2 bg-primary-fixed text-on-primary-fixed p-2 rounded font-body-md mb-2">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+              تم اجتياز الاختبار
+            </div>
+            <% } else if (typeof isEnrolled !== 'undefined' && isEnrolled) { %>
+            <a href="/courses/<%= course.slug %>/exams/<%= exam.id %>" class="block w-full bg-primary-container text-on-primary text-center font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">
+              ابدأ الاختبار النهائي
+            </a>
+            <% } else if (typeof isOwner !== 'undefined' && isOwner) { %>
+            <a href="/courses/<%= course.slug %>/exams/<%= exam.id %>" class="block w-full bg-primary-container text-on-primary text-center font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity mb-2">
+              معاينة الاختبار
+            </a>
+            <% } %>
+            <% if (typeof isOwner !== 'undefined' && isOwner) { %>
+            <div class="flex gap-2 mt-2">
+              <a href="/courses/<%= course.slug %>/exams/<%= exam.id %>/edit" class="flex-1 text-center border border-outline-variant text-secondary font-label-lg text-label-lg py-1 px-2 rounded hover:bg-surface-container-low transition-colors text-sm">تعديل</a>
+              <form action="/courses/<%= course.slug %>/exams/<%= exam.id %>/delete" method="POST" class="flex-1" onsubmit="return confirm('هل أنت متأكد من حذف الاختبار؟')">
+                <button type="submit" class="w-full border border-error text-error font-label-lg text-label-lg py-1 px-2 rounded hover:bg-error hover:text-white transition-colors text-sm">حذف</button>
+              </form>
+            </div>
+            <% } %>
+          </div>
+        </div>
+        <% } else if (typeof isOwner !== 'undefined' && isOwner) { %>
+        <div class="border-t border-outline-variant pt-4">
+          <a href="/courses/<%= course.slug %>/exams/create" class="block w-full border border-primary text-primary text-center font-label-lg text-label-lg py-2 px-4 rounded hover:bg-primary hover:text-white transition-colors flex items-center justify-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span>
+            إضافة اختبار نهائي
+          </a>
+        </div>
+        <% } %>
+
+        <% if (typeof isOwner !== 'undefined' && isOwner) { %>
+        <div class="border-t border-outline-variant pt-4 space-y-2">
+          <a href="/courses/<%= course.slug %>/edit" class="block w-full border border-on-secondary-fixed text-on-secondary-fixed text-center font-label-lg text-label-lg py-2 px-4 rounded hover:bg-on-secondary-fixed hover:text-white transition-colors">تعديل الدورة</a>
+          <form action="/courses/<%= course.slug %>/delete" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذه الدورة؟')">
+            <button type="submit" class="block w-full border border-error text-error text-center font-label-lg text-label-lg py-2 px-4 rounded hover:bg-error hover:text-white transition-colors">حذف الدورة</button>
+          </form>
+        </div>
+        <% } %>
+
+        <div class="border-t border-outline-variant pt-4 space-y-2 font-body-md text-body-md text-secondary">
+          <div class="flex justify-between"><span>عدد الدروس</span><span><%= totalLessons %></span></div>
+          <div class="flex justify-between"><span>المستوى</span><span><%= course.level === 'beginner' ? 'مبتدئ' : course.level === 'intermediate' ? 'متوسط' : 'متقدم' %></span></div>
+          <% if (course.total_duration) { %>
+          <div class="flex justify-between"><span>المدة</span><span><%= course.total_duration %> دقيقة</span></div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

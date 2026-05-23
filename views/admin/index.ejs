@@ -1,0 +1,130 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div class="flex flex-wrap justify-between items-end gap-4 bg-surface-container-lowest p-6 rounded-xl border border-surface-variant shadow-sm">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">لوحة المشرف</h1>
+      <p class="font-body-lg text-body-lg text-secondary">إدارة المنصة بالكامل</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-primary-fixed rounded-lg text-on-primary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">group</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">المستخدمين</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= stats.users %></p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-tertiary-fixed rounded-lg text-on-tertiary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">school</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">طلاب</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= stats.students %></p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-secondary-fixed rounded-lg text-on-secondary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">chalkboard</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">مدرسين</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= stats.instructors %></p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-primary-fixed rounded-lg text-on-primary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">menu_book</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">دورات</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= stats.courses %><span class="text-body-md text-secondary"> (<%= stats.published %> منشور)</span></p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-tertiary-fixed rounded-lg text-on-tertiary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">play_lesson</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">دروس</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= stats.lessons %></p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-secondary-fixed rounded-lg text-on-secondary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">person_add</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">تسجيلات</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= stats.enrollments %></p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-surface-variant">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface">آخر المستخدمين</h2>
+        <a href="/admin/users" class="text-primary hover:underline font-label-lg text-label-lg">عرض الكل</a>
+      </div>
+      <div>
+        <% recentUsers.forEach(function(u) { %>
+        <div class="flex items-center gap-4 p-4 border-b border-surface-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
+          <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary-container">
+            <span class="material-symbols-outlined text-sm">person</span>
+          </div>
+          <div class="flex-1">
+            <p class="font-label-lg text-label-lg text-on-surface"><%= u.name %></p>
+            <p class="font-body-md text-body-md text-secondary text-sm"><%= u.email %></p>
+          </div>
+          <span class="font-label-lg text-label-lg px-3 py-1 rounded <%= u.role === 'admin' ? 'bg-primary-fixed text-on-primary-fixed' : u.role === 'instructor' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-secondary-fixed text-on-secondary-fixed' %>">
+            <%= u.role === 'admin' ? 'مشرف' : u.role === 'instructor' ? 'مدرس' : 'طالب' %>
+          </span>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-surface-variant">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface">آخر الدورات</h2>
+        <a href="/admin/courses" class="text-primary hover:underline font-label-lg text-label-lg">عرض الكل</a>
+      </div>
+      <div>
+        <% recentCourses.forEach(function(c) { %>
+        <div class="flex items-center gap-4 p-4 border-b border-surface-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
+          <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-sm">menu_book</span>
+          </div>
+          <div class="flex-1">
+            <p class="font-label-lg text-label-lg text-on-surface"><%= c.title %></p>
+            <p class="font-body-md text-body-md text-secondary text-sm"><%= c.instructor_name %></p>
+          </div>
+          <span class="font-label-lg text-label-lg px-3 py-1 rounded <%= c.status === 'published' ? 'bg-primary-fixed-dim text-primary' : 'bg-surface-container text-secondary' %>">
+            <%= c.status === 'published' ? 'منشور' : c.status === 'draft' ? 'مسودة' : 'مؤرشف' %>
+          </span>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm p-6">
+    <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4">روابط سريعة</h2>
+    <div class="flex flex-wrap gap-3">
+      <a href="/admin/users" class="inline-flex items-center gap-2 bg-surface-container-low border border-outline-variant text-secondary font-label-lg text-label-lg px-4 py-3 rounded hover:border-primary hover:text-primary transition-colors">
+        <span class="material-symbols-outlined text-sm">group</span>
+        إدارة المستخدمين
+      </a>
+      <a href="/admin/courses" class="inline-flex items-center gap-2 bg-surface-container-low border border-outline-variant text-secondary font-label-lg text-label-lg px-4 py-3 rounded hover:border-primary hover:text-primary transition-colors">
+        <span class="material-symbols-outlined text-sm">menu_book</span>
+        إدارة الدورات
+      </a>
+      <a href="/admin/categories" class="inline-flex items-center gap-2 bg-surface-container-low border border-outline-variant text-secondary font-label-lg text-label-lg px-4 py-3 rounded hover:border-primary hover:text-primary transition-colors">
+        <span class="material-symbols-outlined text-sm">category</span>
+        إدارة التصنيفات
+      </a>
+      <a href="/payments/admin" class="inline-flex items-center gap-2 bg-surface-container-low border border-outline-variant text-secondary font-label-lg text-label-lg px-4 py-3 rounded hover:border-primary hover:text-primary transition-colors">
+        <span class="material-symbols-outlined text-sm">payments</span>
+        إدارة المدفوعات
+      </a>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,54 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface">التقييمات</h1>
+        <p class="font-body-lg text-body-lg text-secondary">تقييمات <%= course.title %></p>
+      </div>
+      <a href="/reviews/add/<%= course.id %>" class="bg-primary-container text-on-primary font-label-lg text-label-lg px-5 py-2.5 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">add</span>
+        إضافة تقييم
+      </a>
+    </div>
+
+    <% if (reviews.length > 0) { %>
+    <div class="space-y-4">
+      <% reviews.forEach(function(r) { %>
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary-container">
+              <span class="material-symbols-outlined text-sm">person</span>
+            </div>
+            <div>
+              <p class="font-label-lg text-label-lg text-on-surface"><%= r.user_name %></p>
+              <p class="font-body-md text-body-md text-secondary text-sm"><%= new Date(r.created_at).toLocaleDateString('ar-SA') %></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-0.5">
+            <% for (var i = 0; i < 5; i++) { %>
+            <span class="material-symbols-outlined text-sm <%= i < r.rating ? 'text-primary' : 'text-outline-variant' %>" style="font-variation-settings: 'FILL' 1;">star</span>
+            <% } %>
+          </div>
+        </div>
+        <p class="font-body-md text-body-md text-secondary"><%= r.review_text %></p>
+      </div>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center">
+      <span class="material-symbols-outlined text-5xl text-secondary mb-4">star</span>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">لا توجد تقييمات بعد</h3>
+      <p class="font-body-lg text-body-lg text-secondary mb-6">كن أول من يقيم هذه الدورة</p>
+      <a href="/reviews/add/<%= course.id %>" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">إضافة تقييم</a>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

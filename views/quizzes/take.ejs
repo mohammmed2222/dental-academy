@@ -1,0 +1,68 @@
+<%- include('../partials/header') %>
+<%- include('../partials/back-button') %>
+
+
+
+<main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-2xl mx-auto">
+    <% if (typeof lastAttempt !== 'undefined' && lastAttempt) { %>
+    <div class="flex items-center gap-2 <%= lastAttempt.passed ? 'bg-primary-fixed-dim text-primary' : 'bg-error-container text-on-error-container' %> p-4 rounded-xl font-body-md text-body-md mb-6">
+      <span class="material-symbols-outlined text-sm"><%= lastAttempt.passed ? 'check_circle' : 'error' %></span>
+      <span>آخر محاولة: <%= lastAttempt.passed ? 'ناجحة' : 'غير ناجحة' %> - الدرجة: <%= lastAttempt.score %>% (<%= new Date(lastAttempt.attempted_at).toLocaleDateString('ar-SA') %>)</span>
+    </div>
+    <% } %>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="font-headline-lg text-headline-lg text-on-surface"><%= quiz.title %></h1>
+          <p class="font-body-md text-body-md text-secondary mt-1"><%= questions.length %> أسئلة | نسبة النجاح: <%= quiz.passing_score %>%</p>
+        </div>
+        <span class="material-symbols-outlined text-5xl text-primary">quiz</span>
+      </div>
+    </div>
+
+    <form action="/quizzes/<%= quiz.id %>/submit" method="POST">
+      <% questions.forEach(function(q, index) { %>
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <span class="font-headline-sm text-headline-sm text-on-surface">السؤال <%= index + 1 %>: <%= q.question_text %></span>
+          <span class="font-label-lg text-label-lg bg-surface-container text-secondary px-3 py-1 rounded"><%= q.points %> درجة</span>
+        </div>
+        <div class="space-y-3">
+          <% if (q.question_type === 'true_false') { %>
+          <label class="flex items-center gap-3 p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+            <input type="radio" name="answers[q<%= q.id %>]" value="صح" class="form-radio text-primary-container focus:ring-primary" required/>
+            <span class="font-body-md text-body-md text-on-surface">صح</span>
+          </label>
+          <label class="flex items-center gap-3 p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+            <input type="radio" name="answers[q<%= q.id %>]" value="خطأ" class="form-radio text-primary-container focus:ring-primary" required/>
+            <span class="font-body-md text-body-md text-on-surface">خطأ</span>
+          </label>
+          <% } else { %>
+            <% var opts = JSON.parse(q.options || '[]'); %>
+            <% opts.forEach(function(option) { %>
+              <% if (option) { %>
+              <label class="flex items-center gap-3 p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+                <input type="radio" name="answers[q<%= q.id %>]" value="<%= option %>" class="form-radio text-primary-container focus:ring-primary" required/>
+                <span class="font-body-md text-body-md text-on-surface"><%= option %></span>
+              </label>
+              <% } %>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+      <% }) %>
+
+      <div class="flex items-center gap-3">
+        <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">send</span>
+          إرسال الإجابات
+        </button>
+        <a href="/lessons/<%= quiz.lesson_id %>" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-3 px-8 rounded hover:bg-surface-container-low transition-colors">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

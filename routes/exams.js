@@ -1,0 +1,245 @@
+const express = require('express');
+const { getDb, saveDatabase } = require('../config/database');
+const { isAuthenticated, isInstructor } = require('../middleware/auth');
+
+const router = express.Router();
+
+router.get('/:slug/exams/create', isInstructor, (req, res) => {
+  const db = getDb();
+  const course = db.prepare('SELECT * FROM courses WHERE slug = ? AND instructor_id = ?')
+    .get(req.params.slug, req.session.userId);
+
+  if (!course) return res.redirect('/courses/my-courses');
+
+  res.render('exams/create', { title: 'إنشاء اختبار نهائي', course, error: null });
+});
+
+router.post('/:slug/exams/create', isInstructor, (req, res) => {
+  const db = getDb();
+  const course = db.prepare('SELECT * FROM courses WHERE slug = ? AND instructor_id = ?')
+    .get(req.params.slug, req.session.userId);
+
+  if (!course) return res.redirect('/courses/my-courses');
+
+  const { title, passing_score, time_limit, questions } = req.body;
+
+  if (!title) {
+    return res.render('exams/create', { title: 'إنشاء اختبار نهائي', course, error: 'عنوان الاختبار مطلوب' });
+  }
+
+  const examResult = db.prepare('INSERT INTO course_exams (course_id, title, passing_score, time_limit) VALUES (?, ?, ?, ?)')
+    .run(course.id, title, parseInt(passing_score) || 70, parseInt(time_limit) || 0);
+
+  if (questions && Array.isArray(questions)) {
+    questions.forEach(function(q, index) {
+      if (q.question_text && q.correct_answer) {
+        var opts = q.options || [];
+        if (!Array.isArray(opts)) opts = [opts];
+        db.prepare(`
+          INSERT INTO exam_questions (exam_id, question_text, question_type, options, correct_answer, points, order_index)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          examResult.lastInsertRowid,
+          q.question_text,
+          q.question_type || 'multiple_choice',
+          JSON.stringify(opts),
+          q.correct_answer,
+          parseInt(q.points) || 1,
+          index + 1
+        );
+      }
+    });
+  }
+
+  res.redirect('/courses/' + course.slug);
+});
+
+router.get('/:slug/exams/:id/edit', isInstructor, (req, res) => {
+  const db = getDb();
+  const exam = db.prepare(`
+    SELECT e.*, c.instructor_id, c.slug as course_slug
+    FROM course_exams e
+    JOIN courses c ON e.course_id = c.id
+    WHERE e.id = ? AND c.slug = ?
+  `).get(parseInt(req.params.id), req.params.slug);
+
+  if (!exam || exam.instructor_id !== req.session.userId) {
+    return res.redirect('/courses/my-courses');
+  }
+
+  const questions = db.prepare('SELECT * FROM exam_questions WHERE exam_id = ? ORDER BY order_index ASC').all(exam.id);
+
+  res.render('exams/edit', { title: 'تعديل الاختبار النهائي', exam, questions, error: null });
+});
+
+router.post('/:slug/exams/:id/edit', isInstructor, (req, res) => {
+  const db = getDb();
+  const exam = db.prepare(`
+    SELECT e.*, c.instructor_id
+    FROM course_exams e
+    JOIN courses c ON e.course_id = c.id
+    WHERE e.id = ? AND c.slug = ?
+  `).get(parseInt(req.params.id), req.params.slug);
+
+  if (!exam || exam.instructor_id !== req.session.userId) {
+    return res.redirect('/courses/my-courses');
+  }
+
+  const { title, passing_score, time_limit, questions } = req.body;
+
+  db.prepare('UPDATE course_exams SET title = ?, passing_score = ?, time_limit = ? WHERE id = ?')
+    .run(title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, exam.id);
+
+  db.prepare('DELETE FROM exam_questions WHERE exam_id = ?').run(exam.id);
+
+  if (questions && Array.isArray(questions)) {
+    questions.forEach(function(q, index) {
+      if (q.question_text && q.correct_answer) {
+        var opts = q.options || [];
+        if (!Array.isArray(opts)) opts = [opts];
+        db.prepare(`
+          INSERT INTO exam_questions (exam_id, question_text, question_type, options, correct_answer, points, order_index)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          exam.id,
+          q.question_text,
+          q.question_type || 'multiple_choice',
+          JSON.stringify(opts),
+          q.correct_answer,
+          parseInt(q.points) || 1,
+          index + 1
+        );
+      }
+    });
+  }
+
+  res.redirect('/courses/' + req.params.slug);
+});
+
+router.post('/:slug/exams/:id/delete', isInstructor, (req, res) => {
+  const db = getDb();
+  const exam = db.prepare(`
+    SELECT e.*, c.instructor_id
+    FROM course_exams e
+    JOIN courses c ON e.course_id = c.id
+    WHERE e.id = ? AND c.slug = ?
+  `).get(parseInt(req.params.id), req.params.slug);
+
+  if (exam && exam.instructor_id === req.session.userId) {
+    db.prepare('DELETE FROM course_exams WHERE id = ?').run(exam.id);
+  }
+
+  res.redirect('/courses/' + req.params.slug);
+});
+
+router.get('/:slug/exams/:id', isAuthenticated, (req, res) => {
+  const db = getDb();
+  const exam = db.prepare(`
+    SELECT e.*, c.title as course_title, c.slug as course_slug, c.instructor_id
+    FROM course_exams e
+    JOIN courses c ON e.course_id = c.id
+    WHERE e.id = ? AND c.slug = ?
+  `).get(parseInt(req.params.id), req.params.slug);
+
+  if (!exam) return res.status(404).render('error', { title: 'غير موجود', message: 'الاختبار غير موجود', error: null });
+
+  const enrollment = db.prepare('SELECT * FROM enrollments WHERE user_id = ? AND course_id = ?')
+    .get(req.session.userId, exam.course_id);
+
+  if (!enrollment && exam.instructor_id !== req.session.userId && req.session.role !== 'admin') {
+    return res.redirect('/courses/' + exam.course_slug);
+  }
+
+  const questions = db.prepare('SELECT * FROM exam_questions WHERE exam_id = ? ORDER BY order_index ASC').all(exam.id);
+
+  const pastAttempts = db.prepare('SELECT * FROM exam_attempts WHERE user_id = ? AND exam_id = ? ORDER BY attempted_at DESC')
+    .all(req.session.userId, exam.id);
+
+  const lastAttempt = pastAttempts.length > 0 ? pastAttempts[0] : null;
+
+  res.render('exams/take', {
+    title: exam.title,
+    exam, questions,
+    lastAttempt, pastAttempts
+  });
+});
+
+router.post('/:slug/exams/:id/submit', isAuthenticated, (req, res) => {
+  const db = getDb();
+  const exam = db.prepare('SELECT * FROM course_exams WHERE id = ?').get(parseInt(req.params.id));
+  if (!exam) return res.status(404).json({ error: 'الاختبار غير موجود' });
+
+  const questions = db.prepare('SELECT * FROM exam_questions WHERE exam_id = ? ORDER BY order_index ASC').all(exam.id);
+  const answers = req.body.answers || {};
+
+  let score = 0;
+  const totalQuestions = questions.length;
+
+  const attemptResult = db.prepare('INSERT INTO exam_attempts (user_id, exam_id, total_questions) VALUES (?, ?, ?)')
+    .run(req.session.userId, exam.id, totalQuestions);
+
+  const attemptId = attemptResult.lastInsertRowid;
+
+  questions.forEach(function(q) {
+    const userAnswer = String(answers['q' + q.id] || '');
+
+    let correctAnswer = q.correct_answer;
+
+    var optMatch = String(q.correct_answer).match(/^option_(\d+)$/);
+    if (optMatch && q.options) {
+      try {
+        var optsList = JSON.parse(q.options);
+        var optIdx = parseInt(optMatch[1], 10);
+        if (optsList[optIdx] !== undefined) correctAnswer = String(optsList[optIdx]);
+      } catch (e) {}
+    }
+
+    if (String(correctAnswer).toLowerCase() === 'true') correctAnswer = 'صح';
+    if (String(correctAnswer).toLowerCase() === 'false') correctAnswer = 'خطأ';
+
+    var isCorrect = String(userAnswer).trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
+
+    if (isCorrect) score += q.points;
+
+    db.prepare('INSERT INTO exam_answers (attempt_id, question_id, answer, is_correct) VALUES (?, ?, ?, ?)')
+      .run(attemptId, q.id, userAnswer, isCorrect ? 1 : 0);
+  });
+
+  const totalPoints = questions.reduce(function(sum, q) { return sum + q.points; }, 0);
+  const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+  const passed = percentage >= exam.passing_score ? 1 : 0;
+
+  db.prepare('UPDATE exam_attempts SET score = ?, passed = ? WHERE id = ?')
+    .run(percentage, passed, attemptId);
+
+  res.redirect('/courses/' + req.params.slug + '/exams/result/' + attemptId);
+});
+
+router.get('/:slug/exams/result/:attemptId', isAuthenticated, (req, res) => {
+  const db = getDb();
+  const attempt = db.prepare(`
+    SELECT ea.*, e.title as exam_title, e.passing_score, e.course_id
+    FROM exam_attempts ea
+    JOIN course_exams e ON ea.exam_id = e.id
+    WHERE ea.id = ? AND ea.user_id = ?
+  `).get(parseInt(req.params.attemptId), req.session.userId);
+
+  if (!attempt) return res.redirect('/dashboard');
+
+  const questions = db.prepare(`
+    SELECT eq.*, ea2.answer as user_answer, ea2.is_correct
+    FROM exam_questions eq
+    LEFT JOIN exam_answers ea2 ON eq.id = ea2.question_id AND ea2.attempt_id = ?
+    WHERE eq.exam_id = ?
+    ORDER BY eq.order_index ASC
+  `).all(attempt.id, attempt.exam_id);
+
+  const course = db.prepare('SELECT * FROM courses WHERE id = ?').get(attempt.course_id);
+
+  res.render('exams/result', {
+    title: 'نتيجة الاختبار النهائي',
+    attempt, questions, course
+  });
+});
+
+module.exports = router;
