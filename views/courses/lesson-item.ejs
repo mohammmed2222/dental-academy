@@ -1,0 +1,35 @@
+<div class="flex items-center justify-between px-6 py-4 <%= lesson.is_completed ? 'bg-surface-container-low' : '' %>">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold <%= lesson.is_completed ? 'bg-primary-container text-on-primary-container' : 'bg-surface-variant text-secondary' %>">
+      <% if (lesson.is_completed) { %>
+      <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
+      <% } else { %>
+      <span class="material-symbols-outlined text-sm">play_lesson</span>
+      <% } %>
+    </div>
+    <div>
+      <div class="font-label-lg text-label-lg text-on-surface"><%= lesson.title %></div>
+      <% if (lesson.duration) { %>
+      <div class="font-body-md text-body-md text-secondary text-sm"><%= lesson.duration %> دقيقة</div>
+      <% } %>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <% if (typeof isEnrolled !== 'undefined' && (isEnrolled || isOwner)) { %>
+    <a href="/lessons/<%= lesson.id %>" class="bg-primary-container text-on-primary-container w-9 h-9 rounded flex items-center justify-center hover:opacity-90 transition-opacity">
+      <span class="material-symbols-outlined text-sm">play_arrow</span>
+    </a>
+    <% } %>
+    <% if (typeof isOwner !== 'undefined' && isOwner) { %>
+    <a href="/lessons/<%= lesson.id %>/edit" class="text-secondary hover:text-primary transition-colors p-1">
+      <span class="material-symbols-outlined text-sm">edit</span>
+    </a>
+    <form action="/lessons/<%= lesson.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الدرس؟')">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="text-secondary hover:text-primary transition-colors p-1">
+        <span class="material-symbols-outlined text-sm">delete</span>
+      </button>
+    </form>
+    <% } %>
+  </div>
+</div>

@@ -323,7 +323,19 @@ async function initializeDatabase() {
       FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS course_sections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      order_index INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    );
+
   `);
+
+  try { dbRaw.run("ALTER TABLE lessons ADD COLUMN section_id INTEGER REFERENCES course_sections(id) ON DELETE SET NULL"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE courses ADD COLUMN sections_order TEXT DEFAULT '[]'"); } catch(e) {}
 
   db = wrap(dbRaw);
 

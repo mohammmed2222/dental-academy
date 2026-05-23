@@ -199,8 +199,13 @@ router.get('/:id', isAuthenticated, (req, res) => {
 
 router.post('/:id/complete', isAuthenticated, (req, res) => {
   const db = getDb();
-  const lesson = db.prepare('SELECT * FROM lessons WHERE id = ?').get(parseInt(req.params.id));
+  const lesson = db.prepare('SELECT l.*, c.instructor_id FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(parseInt(req.params.id));
   if (!lesson) return res.status(404).json({ error: 'الدرس غير موجود' });
+
+  var enrollment = db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, lesson.course_id);
+  if (!enrollment && lesson.instructor_id !== req.session.userId && req.session.role !== 'admin') {
+    return res.status(403).json({ error: 'غير مسجل في هذا الكورس' });
+  }
 
   const existing = db.prepare('SELECT id FROM lesson_progress WHERE user_id = ? AND lesson_id = ?')
     .get(req.session.userId, lesson.id);

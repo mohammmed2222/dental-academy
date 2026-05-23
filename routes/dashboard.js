@@ -93,12 +93,24 @@ router.get('/', isAuthenticated, (req, res) => {
       LIMIT 10
     `).all(userId);
 
+    var recentQuizAttempts = db.prepare(`
+      SELECT qa.*, q.title as quiz_title, l.title as lesson_title
+      FROM quiz_attempts qa
+      JOIN quizzes q ON qa.quiz_id = q.id
+      JOIN lessons l ON q.lesson_id = l.id
+      WHERE qa.user_id = ?
+      ORDER BY qa.attempted_at DESC
+      LIMIT 5
+    `).all(userId);
+
     res.render('dashboard/student', {
       title: 'لوحة التحكم',
+      user: { name: req.session.userName },
       enrollments,
       completedCourses,
       inProgressCourses,
-      recentActivity
+      recentActivity,
+      recentQuizAttempts
     });
   }
 });
@@ -170,30 +182,33 @@ router.get('/certificate/:courseId', isAuthenticated, (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="certificate-' + enrollment.course_slug + '.pdf"');
     doc.pipe(res);
 
-    // Border
+    var fontPath = path.join(__dirname, '..', 'public', 'fonts');
+    doc.registerFont('Arabic', path.join(fontPath, 'Amiri-Regular.ttf'));
+    doc.registerFont('Arabic-Bold', path.join(fontPath, 'Amiri-Bold.ttf'));
+
     doc.rect(30, 20, doc.page.width - 60, doc.page.height - 40).stroke('#a30019');
     doc.rect(35, 25, doc.page.width - 70, doc.page.height - 50).stroke('#a30019');
 
-    doc.font('Helvetica-Bold');
-    doc.fontSize(36).fillColor('#a30019').text('أكاديمية طب الأسنان', { align: 'center', features: ['rtla'] });
+    doc.font('Arabic-Bold');
+    doc.fontSize(36).fillColor('#a30019').text('أكاديمية طب الأسنان', { align: 'center' });
     doc.moveDown(2);
-    doc.font('Helvetica').fontSize(18).fillColor('#333').text('شهادة إتمام', { align: 'center' });
+    doc.font('Arabic').fontSize(18).fillColor('#333').text('شهادة إتمام', { align: 'center' });
     doc.moveDown();
     doc.fontSize(14).text('تشهد هذه الشهادة بأن', { align: 'center' });
     doc.moveDown();
-    doc.font('Helvetica-Bold').fontSize(22).fillColor('#a30019').text(user.name, { align: 'center' });
+    doc.font('Arabic-Bold').fontSize(22).fillColor('#a30019').text(user.name, { align: 'center' });
     doc.moveDown();
-    doc.font('Helvetica').fontSize(14).fillColor('#333').text('قد أتم بنجاح دورة', { align: 'center' });
+    doc.font('Arabic').fontSize(14).fillColor('#333').text('قد أتم بنجاح دورة', { align: 'center' });
     doc.moveDown();
-    doc.font('Helvetica-Bold').fontSize(20).fillColor('#a30019').text(enrollment.course_title, { align: 'center' });
+    doc.font('Arabic-Bold').fontSize(20).fillColor('#a30019').text(enrollment.course_title, { align: 'center' });
     doc.moveDown(2);
-    doc.font('Helvetica').fontSize(12).fillColor('#666')
+    doc.font('Arabic').fontSize(12).fillColor('#666')
       .text('تاريخ الإتمام: ' + new Date(enrollment.completed_at).toLocaleDateString('ar-EG'), { align: 'center' })
       .text('بتاريخ: ' + new Date().toLocaleDateString('ar-EG'), { align: 'center' });
     doc.moveDown(3);
     doc.fontSize(12).fillColor('#333').text('_________________________', { align: 'center' });
-    doc.font('Helvetica-Bold').text(enrollment.instructor_name, { align: 'center' });
-    doc.font('Helvetica').fontSize(10).fillColor('#666').text('مدرب الدورة', { align: 'center' });
+    doc.font('Arabic-Bold').text(enrollment.instructor_name, { align: 'center' });
+    doc.font('Arabic').fontSize(10).fillColor('#666').text('مدرب الدورة', { align: 'center' });
 
     doc.end();
     return;

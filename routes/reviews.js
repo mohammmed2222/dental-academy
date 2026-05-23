@@ -72,7 +72,7 @@ router.post('/add/:courseId', isAuthenticated, (req, res) => {
     return res.redirect('/reviews/course/' + course.id);
   }
   if (!rating || rating < 1 || rating > 5) {
-    return res.render('reviews/add', { title: 'تقييم الكورس', course, error: 'التقييم يجب أن يكون بين 1 و 5', error: null });
+    return res.render('reviews/add', { title: 'تقييم الكورس', course, error: 'التقييم يجب أن يكون بين 1 و 5' });
   }
   db.prepare(`
     INSERT INTO course_reviews (course_id, user_id, rating, review_text, created_at, updated_at)

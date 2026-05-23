@@ -5,6 +5,7 @@ const { getDb } = require('../config/database');
 const { sendMail } = require('../config/mail');
 const { createNotification } = require('../config/notifications');
 const { isAuthenticated } = require('../middleware/auth');
+const { escapeHtml } = require('../config/security');
 
 const router = express.Router();
 
@@ -39,11 +40,12 @@ router.post('/register', (req, res) => {
     return res.render('auth/register', { title: 'إنشاء حساب جديد', error: 'البريد الإلكتروني مستخدم بالفعل', success: null });
   }
 
+  var safeName = escapeHtml(name.trim());
   const hashedPassword = bcrypt.hashSync(password, 10);
   const userRole = role === 'instructor' ? 'instructor' : 'student';
 
   const result = db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
-    name, email, hashedPassword, userRole
+    safeName, email, hashedPassword, userRole
   );
 
   req.session.userId = result.lastInsertRowid;

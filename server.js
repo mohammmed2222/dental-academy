@@ -6,6 +6,9 @@ require('dotenv').config();
 
 const { initializeDatabase, saveDatabase } = require('./config/database');
 const { initializeMail } = require('./config/mail');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { csrfProtection, generateCsrfToken } = require('./config/security');
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
 const lessonRoutes = require('./routes/lessons');
@@ -19,6 +22,7 @@ const examRoutes = require('./routes/exams');
 const commentRoutes = require('./routes/comments');
 const notificationRoutes = require('./routes/notifications');
 const paymentRoutes = require('./routes/payments');
+const sectionRoutes = require('./routes/sections');
 const { setUser } = require('./middleware/auth');
 const { getUnreadCount } = require('./config/notifications');
 
@@ -39,13 +43,31 @@ app.use(session({
   cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+var generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { error: 'طلبات كثيرة جداً، حاول بعد 15 دقيقة' }
+});
+app.use('/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'محاولات كثيرة جداً' } }));
+app.use('/auth/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'محاولات تسجيل كثيرة' } }));
+app.use('/auth/forgot-password', rateLimit({ windowMs: 60 * 60 * 1000, max: 3, message: { error: 'طلبات كثيرة' } }));
+
+app.use(generalLimiter);
 app.use(setUser);
 
 app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   res.locals.unreadNotifications = req.session.userId ? getUnreadCount(req.session.userId) : 0;
+  res.locals.csrfToken = generateCsrfToken(req.session);
   next();
 });
+
+app.use(csrfProtection);
 
 app.use((req, res, next) => {
   res.on('finish', () => {
@@ -94,6 +116,7 @@ app.use('/prerequisites', prerequisiteRoutes);
 app.use('/comments', commentRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/payments', paymentRoutes);
+app.use('/sections', sectionRoutes);
 app.use('/courses', examRoutes);
 
 app.get('/instructor/:id', (req, res) => {

@@ -130,6 +130,30 @@
         </div>
       </section>
       <% } %>
+
+      <% if (typeof recentQuizAttempts !== 'undefined' && recentQuizAttempts && recentQuizAttempts.length > 0) { %>
+      <section class="flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">assignment</span>
+            نتائج الاختبارات
+          </h2>
+        </div>
+        <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+          <% recentQuizAttempts.forEach(function(attempt) { %>
+          <div class="flex items-center gap-4 p-4 border-b border-surface-variant last:border-b-0 hover:bg-surface-container-low transition-colors">
+            <div class="w-10 h-10 rounded-full <%= attempt.passed ? 'bg-primary-fixed text-primary' : 'bg-error-container text-error' %> flex items-center justify-center">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;"><%= attempt.passed ? 'check_circle' : 'cancel' %></span>
+            </div>
+            <div>
+              <p class="font-label-lg text-label-lg text-on-surface"><%= attempt.quiz_title %></p>
+              <p class="font-body-md text-body-md text-secondary text-sm"><%= attempt.score %>% • <%= new Date(attempt.attempted_at).toLocaleDateString('ar-SA') %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </section>
+      <% } %>
     </div>
 
     <div class="flex flex-col gap-8">

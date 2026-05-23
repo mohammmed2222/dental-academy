@@ -2,6 +2,7 @@ const express = require('express');
 const { getDb } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
 const { createNotification } = require('../config/notifications');
+const { escapeHtml } = require('../config/security');
 
 const router = express.Router();
 
@@ -15,8 +16,10 @@ router.post('/lesson/:lessonId', isAuthenticated, (req, res) => {
     return res.status(400).json({ error: 'نص التعليق مطلوب' });
   }
 
+  var safeContent = escapeHtml(content.trim());
+
   db.prepare('INSERT INTO lesson_comments (lesson_id, user_id, content) VALUES (?, ?, ?)')
-    .run(lesson.id, req.session.userId, content.trim());
+    .run(lesson.id, req.session.userId, safeContent);
 
   if (lesson.instructor_id !== req.session.userId) {
     createNotification(lesson.instructor_id, 'comment', 'تعليق جديد على درس', req.session.userName + ' علق على درس ' + lesson.title, lesson.id, 'lesson');

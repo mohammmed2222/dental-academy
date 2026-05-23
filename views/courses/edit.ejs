@@ -69,6 +69,49 @@
         </div>
       </form>
     </div>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm mt-6">
+      <h2 class="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">folder</span>
+        أقسام الدورة
+      </h2>
+      <p class="font-body-md text-body-md text-secondary mb-4">يمكنك تنظيم الدروس في أقسام لتسهيل التصفح</p>
+
+      <div id="sections-list" class="space-y-2 mb-4">
+        <% if (typeof sections !== 'undefined' && sections.length > 0) { %>
+          <% sections.forEach(function(section) { %>
+          <div class="flex items-center gap-2 bg-surface border border-outline-variant rounded p-3" data-section-id="<%= section.id %>">
+            <span class="material-symbols-outlined text-secondary cursor-move">drag_indicator</span>
+            <span class="flex-1 font-body-md text-body-md"><%= section.title %></span>
+            <form action="/sections/<%= section.id %>/rename" method="POST" class="flex items-center gap-1">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="text" name="title" value="<%= section.title %>" class="bg-surface border border-outline-variant rounded py-1 px-2 text-sm w-32 focus:outline-none focus:border-primary">
+              <button type="submit" class="text-primary hover:opacity-80 p-1" title="حفظ">
+                <span class="material-symbols-outlined text-sm">check</span>
+              </button>
+            </form>
+            <form action="/sections/<%= section.id %>/delete" method="POST" onsubmit="return confirm('سيتم نقل الدروس إلى خارج القسم. هل أنت متأكد؟')">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="text-error hover:opacity-80 p-1" title="حذف">
+                <span class="material-symbols-outlined text-sm">delete</span>
+              </button>
+            </form>
+          </div>
+          <% }) %>
+        <% } else { %>
+        <p class="text-on-surface-variant font-body-md text-body-md">لا توجد أقسام بعد. أضف قسماً جديداً لتنظيم الدروس.</p>
+        <% } %>
+      </div>
+
+      <form action="/sections/create/<%= course.id %>" method="POST" class="flex items-center gap-2">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="text" name="title" placeholder="اسم القسم الجديد" required class="flex-1 bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary">
+        <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">add</span>
+          إضافة قسم
+        </button>
+      </form>
+    </div>
   </div>
 </main>
 

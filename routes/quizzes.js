@@ -111,34 +111,54 @@ router.post('/:id/submit', isAuthenticated, (req, res) => {
   const attemptId = attemptResult.lastInsertRowid;
 
   questions.forEach(function(q) {
-    const userAnswer = String(answers['q' + q.id] || '');
+    var userAnswerRaw = answers['q' + q.id];
+    var isCorrect = false;
+    var storedAnswer = '';
+    var qPoints = parseInt(q.points, 10) || 1;
 
-    let correctAnswer = q.correct_answer;
+    var correctAnswer = q.correct_answer;
 
     var optMatch = String(q.correct_answer).match(/^option_(\d+)$/);
-    if (optMatch && q.options) {
-      try {
-        var optsList = JSON.parse(q.options);
-        var optIdx = parseInt(optMatch[1], 10);
-        if (optsList[optIdx] !== undefined) correctAnswer = String(optsList[optIdx]);
-      } catch (e) {
-      }
+    var optsList = [];
+    if (q.options) {
+      try { optsList = JSON.parse(q.options); } catch (e) { optsList = []; }
     }
 
-    if (String(correctAnswer).toLowerCase() === 'true') correctAnswer = 'صح';
-    if (String(correctAnswer).toLowerCase() === 'false') correctAnswer = 'خطأ';
+    if (optMatch && optsList.length > 0) {
+      var optIdx = parseInt(optMatch[1], 10);
+      if (optsList[optIdx] !== undefined) correctAnswer = String(optsList[optIdx]);
+    }
 
-    var isCorrect = String(userAnswer).trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
+    if (q.question_type === 'multiple_correct' && Array.isArray(userAnswerRaw)) {
+      var correctAnswers = correctAnswer.split(',').map(function(s) { return s.trim().toLowerCase(); });
+      var userAnswers = userAnswerRaw.map(function(s) { return String(s).trim().toLowerCase(); });
+      storedAnswer = JSON.stringify(userAnswerRaw);
+      if (correctAnswers.length === userAnswers.length) {
+        var sortedCorrect = correctAnswers.slice().sort();
+        var sortedUser = userAnswers.sort();
+        isCorrect = sortedCorrect.every(function(val, idx) { return val === sortedUser[idx]; });
+      }
+    } else if (q.question_type === 'true_false') {
+      storedAnswer = String(userAnswerRaw || '');
+      var userBool = storedAnswer.trim().toLowerCase();
+      var correctBool = String(correctAnswer).trim().toLowerCase();
+      if (correctBool === 'true') correctAnswer = 'صح';
+      if (correctBool === 'false') correctAnswer = 'خطأ';
+      isCorrect = userBool === String(correctAnswer).trim().toLowerCase();
+    } else {
+      storedAnswer = String(userAnswerRaw || '');
+      isCorrect = storedAnswer.trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
+    }
 
-    if (isCorrect) score += q.points;
+    if (isCorrect) score += qPoints;
 
     db.prepare('INSERT INTO quiz_answers (attempt_id, question_id, answer, is_correct) VALUES (?, ?, ?, ?)')
-      .run(attemptId, q.id, userAnswer, isCorrect ? 1 : 0);
+      .run(attemptId, q.id, storedAnswer, isCorrect ? 1 : 0);
   });
 
-  const totalPoints = questions.reduce(function(sum, q) { return sum + q.points; }, 0);
-  const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
-  const passed = percentage >= quiz.passing_score ? 1 : 0;
+  var totalPoints = questions.reduce(function(sum, q) { return sum + (parseInt(q.points, 10) || 1); }, 0);
+  var percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+  var passed = percentage >= quiz.passing_score ? 1 : 0;
 
   db.prepare('UPDATE quiz_attempts SET score = ?, passed = ? WHERE id = ?')
     .run(percentage, passed, attemptId);

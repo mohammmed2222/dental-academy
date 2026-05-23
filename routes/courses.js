@@ -156,9 +156,22 @@ router.get('/:slug', (req, res) => {
     WHERE cp.course_id = ?
   `).all(course.id);
 
+  var sections = db.prepare('SELECT * FROM course_sections WHERE course_id = ? ORDER BY order_index ASC').all(course.id);
+  var lessonsBySection = {};
+  var unsectionedLessons = [];
+  sections.forEach(function(s) { lessonsBySection[s.id] = []; });
+  lessons.forEach(function(l) {
+    if (l.section_id && lessonsBySection[l.section_id]) {
+      lessonsBySection[l.section_id].push(l);
+    } else {
+      unsectionedLessons.push(l);
+    }
+  });
+
   res.render('courses/view', { 
     title: course.title, 
-    course, lessons, isEnrolled, isOwner,
+    course, lessons, sections, lessonsBySection, unsectionedLessons,
+    isEnrolled, isOwner,
     totalLessons, completedLessons,
     exam, examAttempt,
     prerequisites
@@ -175,7 +188,8 @@ router.get('/:slug/edit', isInstructor, (req, res) => {
   }
 
   const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
-  res.render('courses/edit', { title: 'تعديل الكورس', course, categories, error: null });
+  var sections = db.prepare('SELECT * FROM course_sections WHERE course_id = ? ORDER BY order_index ASC').all(course.id);
+  res.render('courses/edit', { title: 'تعديل الكورس', course, categories, sections, error: null });
 });
 
 router.post('/:slug/edit', isInstructor, (req, res) => {
