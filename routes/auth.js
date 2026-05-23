@@ -144,7 +144,7 @@ router.post('/reset-password/:token', (req, res) => {
 
   const hashed = bcrypt.hashSync(password, 10);
   db.prepare('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hashed, row.user_id);
-  db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?').run(row.id);
+  db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?').run(row.user_id);
 
   res.render('auth/login', { title: 'تسجيل الدخول', error: null, success: 'تم إعادة تعيين كلمة المرور بنجاح. سجل الدخول الآن.' });
 });
@@ -154,8 +154,9 @@ router.get('/verify-email', (req, res) => {
 });
 
 router.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/');
+  req.session.destroy(function() {
+    res.redirect('/');
+  });
 });
 
 module.exports = router;

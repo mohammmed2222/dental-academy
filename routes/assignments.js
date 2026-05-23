@@ -13,7 +13,15 @@ const assignmentStorage = multer.diskStorage({
 });
 const uploadAssignment = multer({
   storage: assignmentStorage,
-  limits: { fileSize: 50 * 1024 * 1024 }
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: function (req, file, cb) {
+    var allowed = ['.pdf', '.doc', '.docx', '.zip', '.rar', '.png', '.jpg', '.jpeg', '.txt', '.ppt', '.pptx', '.xls', '.xlsx'];
+    var ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.indexOf(ext) === -1) {
+      return cb(new Error('صيغة الملف غير مدعومة: ' + ext + '. الصيغ المدعومة: ' + allowed.join(', ')), false);
+    }
+    cb(null, true);
+  }
 });
 
 // List assignments for a lesson
@@ -172,6 +180,15 @@ router.post('/:id/submit', isAuthenticated, function(req, res) {
     `).get(parseInt(req.params.id));
     if (!assignment) {
       return res.status(404).json({ error: 'الواجب غير موجود' });
+    }
+
+    // Check due date
+    if (assignment.due_date) {
+      var dueDate = new Date(assignment.due_date);
+      if (Date.now() > dueDate.getTime()) {
+        req.session.flash = { type: 'error', message: 'انتهى موعد تسليم هذا الواجب' };
+        return res.redirect('/assignments/' + assignment.id);
+      }
     }
 
     // Check enrollment

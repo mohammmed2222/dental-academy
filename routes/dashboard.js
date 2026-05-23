@@ -115,6 +115,45 @@ router.get('/', isAuthenticated, (req, res) => {
   }
 });
 
+router.get('/grades', isAuthenticated, (req, res) => {
+  const db = getDb();
+  var userId = req.session.userId;
+
+  var quizGrades = db.prepare(`
+    SELECT qa.*, q.title as quiz_title, l.title as lesson_title, c.title as course_title, c.slug as course_slug
+    FROM quiz_attempts qa
+    JOIN quizzes q ON qa.quiz_id = q.id
+    JOIN lessons l ON q.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE qa.user_id = ?
+    ORDER BY qa.attempted_at DESC
+  `).all(userId);
+
+  var examGrades = db.prepare(`
+    SELECT ea.*, e.title as exam_title, c.title as course_title, c.slug as course_slug
+    FROM exam_attempts ea
+    JOIN course_exams e ON ea.exam_id = e.id
+    JOIN courses c ON e.course_id = c.id
+    WHERE ea.user_id = ?
+    ORDER BY ea.attempted_at DESC
+  `).all(userId);
+
+  var assignmentGrades = db.prepare(`
+    SELECT s.*, a.title as assignment_title, l.title as lesson_title, c.title as course_title, c.slug as course_slug
+    FROM assignment_submissions s
+    JOIN assignments a ON s.assignment_id = a.id
+    JOIN lessons l ON a.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE s.user_id = ? AND s.score IS NOT NULL
+    ORDER BY s.graded_at DESC
+  `).all(userId);
+
+  res.render('dashboard/grades', {
+    title: 'الدرجات',
+    quizGrades, examGrades, assignmentGrades
+  });
+});
+
 router.get('/profile', isAuthenticated, (req, res) => {
   const db = getDb();
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);

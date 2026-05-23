@@ -1,0 +1,130 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="mb-8">
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">الدرجات</h1>
+    <p class="font-body-lg text-body-lg text-secondary">جميع نتائج الاختبارات والواجبات</p>
+  </div>
+
+  <% if (quizGrades.length > 0 || examGrades.length > 0 || assignmentGrades.length > 0) { %>
+    <% if (quizGrades.length > 0) { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden mb-6">
+      <div class="px-6 py-4 bg-surface-container border-b border-outline-variant">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">quiz</span>
+          نتائج الاختبارات
+        </h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-surface-container-low text-right">
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الاختبار</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الكورس</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الدرجة</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الحالة</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">التاريخ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% quizGrades.forEach(function(g) { %>
+            <tr class="border-t border-outline-variant hover:bg-surface-container-low transition-colors">
+              <td class="px-4 py-3 font-body-md text-body-md"><%= g.quiz_title %></td>
+              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= g.course_title %></td>
+              <td class="px-4 py-3 font-body-md text-body-md"><%= g.score %>%</td>
+              <td class="px-4 py-3">
+                <span class="px-2 py-1 rounded text-xs font-bold <%= g.passed ? 'bg-primary-fixed-dim text-primary' : 'bg-error-container text-on-error-container' %>">
+                  <%= g.passed ? 'ناجح' : 'راسب' %>
+                </span>
+              </td>
+              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= new Date(g.attempted_at).toLocaleDateString('ar-SA') %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (examGrades.length > 0) { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden mb-6">
+      <div class="px-6 py-4 bg-surface-container border-b border-outline-variant">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">assignment</span>
+          نتائج الاختبارات النهائية
+        </h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-surface-container-low text-right">
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الاختبار</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الكورس</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الدرجة</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الحالة</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">التاريخ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% examGrades.forEach(function(g) { %>
+            <tr class="border-t border-outline-variant hover:bg-surface-container-low transition-colors">
+              <td class="px-4 py-3 font-body-md text-body-md"><%= g.exam_title %></td>
+              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= g.course_title %></td>
+              <td class="px-4 py-3 font-body-md text-body-md"><%= g.score %>%</td>
+              <td class="px-4 py-3">
+                <span class="px-2 py-1 rounded text-xs font-bold <%= g.passed ? 'bg-primary-fixed-dim text-primary' : 'bg-error-container text-on-error-container' %>">
+                  <%= g.passed ? 'ناجح' : 'راسب' %>
+                </span>
+              </td>
+              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= new Date(g.attempted_at).toLocaleDateString('ar-SA') %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (assignmentGrades.length > 0) { %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden mb-6">
+      <div class="px-6 py-4 bg-surface-container border-b border-outline-variant">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">task</span>
+          درجات الواجبات
+        </h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-surface-container-low text-right">
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الواجب</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الكورس</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الدرجة</th>
+              <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">التاريخ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% assignmentGrades.forEach(function(g) { %>
+            <tr class="border-t border-outline-variant hover:bg-surface-container-low transition-colors">
+              <td class="px-4 py-3 font-body-md text-body-md"><%= g.assignment_title %></td>
+              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= g.course_title %></td>
+              <td class="px-4 py-3 font-body-md text-body-md"><%= g.score %></td>
+              <td class="px-4 py-3 font-body-md text-body-md text-secondary"><%= new Date(g.graded_at).toLocaleDateString('ar-SA') %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% } %>
+  <% } else { %>
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center">
+    <span class="material-symbols-outlined text-5xl text-on-surface-variant mb-3">grading</span>
+    <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">لا توجد درجات بعد</h3>
+    <p class="font-body-md text-body-md text-secondary">بعد إجراء الاختبارات وتسليم الواجبات ستظهر درجاتك هنا</p>
+  </div>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

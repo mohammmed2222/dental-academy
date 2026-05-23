@@ -25,6 +25,24 @@ function isAdmin(req, res, next) {
 function setUser(req, res, next) {
   res.locals.user = null;
   if (req.session && req.session.userId) {
+    // Revalidate session from DB every 5 minutes
+    var now = Date.now();
+    if (!req.session._lastRevalidated || now - req.session._lastRevalidated > 300000) {
+      try {
+        var db = require('../config/database').getDb();
+        var user = db.prepare('SELECT id, name, email, role, avatar FROM users WHERE id = ?').get(req.session.userId);
+        if (user) {
+          req.session.role = user.role;
+          req.session.userName = user.name;
+          req.session.userEmail = user.email;
+          req.session.userAvatar = user.avatar || '/images/default-avatar.png';
+        } else {
+          // User was deleted - destroy session
+          return req.session.destroy(function() { res.redirect('/auth/login'); });
+        }
+      } catch (e) {}
+      req.session._lastRevalidated = now;
+    }
     res.locals.user = {
       id: req.session.userId,
       name: req.session.userName,

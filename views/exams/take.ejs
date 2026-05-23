@@ -3,6 +3,13 @@
 
 <main class="flex-grow max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
   <div class="max-w-2xl mx-auto">
+    <% if (typeof attemptsExhausted !== 'undefined' && attemptsExhausted) { %>
+    <div class="flex items-center gap-2 bg-error-container text-on-error-container p-4 rounded-xl font-body-md text-body-md mb-6">
+      <span class="material-symbols-outlined text-sm">block</span>
+      <span>لقد استنفذت جميع المحاولات المتاحة لهذا الاختبار</span>
+    </div>
+    <% } %>
+
     <% if (typeof lastAttempt !== 'undefined' && lastAttempt) { %>
     <div class="flex items-center gap-2 <%= lastAttempt.passed ? 'bg-primary-fixed-dim text-primary' : 'bg-error-container text-on-error-container' %> p-4 rounded-xl font-body-md text-body-md mb-6">
       <span class="material-symbols-outlined text-sm"><%= lastAttempt.passed ? 'check_circle' : 'error' %></span>
@@ -15,11 +22,21 @@
         <div>
           <h1 class="font-headline-lg text-headline-lg text-on-surface"><%= exam.title %></h1>
           <p class="font-body-md text-body-md text-secondary mt-1"><%= questions.length %> أسئلة | نسبة النجاح: <%= exam.passing_score %>%</p>
+          <% if (exam.time_limit > 0) { %>
+          <p class="font-body-md text-body-md text-secondary mt-1 flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">timer</span>
+            <span id="timer-display">الوقت المتبقي: <span id="timer"><%= exam.time_limit %>:00</span></span>
+          </p>
+          <% } %>
+          <% if (exam.max_attempts > 0) { %>
+          <p class="font-body-md text-body-md text-secondary mt-1">الحد الأقصى للمحاولات: <%= exam.max_attempts %></p>
+          <% } %>
         </div>
         <span class="material-symbols-outlined text-5xl text-primary">quiz</span>
       </div>
     </div>
 
+    <% if (typeof attemptsExhausted === 'undefined' || !attemptsExhausted) { %>
     <form action="/courses/<%= exam.course_slug %>/exams/<%= exam.id %>/submit" method="POST">
       <% questions.forEach(function(q, index) { %>
       <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm mb-4">
@@ -37,6 +54,16 @@
             <input type="radio" name="answers[q<%= q.id %>]" value="خطأ" class="form-radio text-primary-container focus:ring-primary" required/>
             <span class="font-body-md text-body-md text-on-surface">خطأ</span>
           </label>
+          <% } else if (q.question_type === 'multiple_correct') { %>
+            <% var opts = JSON.parse(q.options || '[]'); %>
+            <% opts.forEach(function(option) { %>
+              <% if (option) { %>
+              <label class="flex items-center gap-3 p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+                <input type="checkbox" name="answers[q<%= q.id %>][]" value="<%= option %>" class="form-checkbox text-primary-container focus:ring-primary"/>
+                <span class="font-body-md text-body-md text-on-surface"><%= option %></span>
+              </label>
+              <% } %>
+            <% }) %>
           <% } else { %>
             <% var opts = JSON.parse(q.options || '[]'); %>
             <% opts.forEach(function(option) { %>
@@ -60,7 +87,33 @@
         <a href="/courses/<%= exam.course_slug %>" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-3 px-8 rounded hover:bg-surface-container-low transition-colors">إلغاء</a>
       </div>
     </form>
+    <% } %>
   </div>
 </main>
+
+<% if (exam.time_limit > 0) { %>
+<script>
+(function() {
+  var totalSeconds = <%= exam.time_limit %> * 60;
+  var display = document.getElementById('timer');
+  var form = document.querySelector('form');
+  if (!display || !form) return;
+  var interval = setInterval(function() {
+    totalSeconds--;
+    if (totalSeconds <= 0) {
+      clearInterval(interval);
+      form.submit();
+      return;
+    }
+    var min = Math.floor(totalSeconds / 60);
+    var sec = totalSeconds % 60;
+    display.textContent = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
+    if (totalSeconds < 60) {
+      display.style.color = '#ba1a1a';
+    }
+  }, 1000);
+})();
+</script>
+<% } %>
 
 <%- include('../partials/footer') %>

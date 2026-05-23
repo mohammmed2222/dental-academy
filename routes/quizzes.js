@@ -33,14 +33,14 @@ router.post('/create/:lessonId', isInstructor, (req, res) => {
     return res.redirect('/courses/my-courses');
   }
 
-  const { title, passing_score, time_limit, questions } = req.body;
+  const { title, passing_score, time_limit, max_attempts, questions } = req.body;
 
   if (!title) {
     return res.render('quizzes/create', { title: 'إنشاء اختبار', lesson, error: 'عنوان الاختبار مطلوب' });
   }
 
-  const quizResult = db.prepare('INSERT INTO quizzes (lesson_id, title, passing_score, time_limit) VALUES (?, ?, ?, ?)')
-    .run(lesson.id, title, parseInt(passing_score) || 70, parseInt(time_limit) || 0);
+  const quizResult = db.prepare('INSERT INTO quizzes (lesson_id, title, passing_score, time_limit, max_attempts) VALUES (?, ?, ?, ?, ?)')
+    .run(lesson.id, title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, parseInt(max_attempts) || 0);
 
   if (questions && Array.isArray(questions)) {
     questions.forEach(function(q, index) {
@@ -86,11 +86,19 @@ router.get('/:id', isAuthenticated, (req, res) => {
 
   const lastAttempt = pastAttempts.length > 0 ? pastAttempts[0] : null;
 
+  // Store quiz start time in session for timer enforcement
+  req.session['quizStart_' + quiz.id] = Date.now();
+
+  // Check if max attempts reached
+  var maxAttempts = quiz.max_attempts || 0;
+  var attemptsExhausted = maxAttempts > 0 && pastAttempts.length >= maxAttempts;
+
   res.render('quizzes/take', { 
     title: quiz.title, 
     quiz, questions, 
     lastAttempt, 
-    pastAttempts 
+    pastAttempts,
+    attemptsExhausted
   });
 });
 
@@ -98,6 +106,29 @@ router.post('/:id/submit', isAuthenticated, (req, res) => {
   const db = getDb();
   const quiz = db.prepare('SELECT * FROM quizzes WHERE id = ?').get(parseInt(req.params.id));
   if (!quiz) return res.status(404).json({ error: 'الاختبار غير موجود' });
+
+  // Check max attempts
+  var maxAttempts = quiz.max_attempts || 0;
+  if (maxAttempts > 0) {
+    var pastCount = db.prepare('SELECT COUNT(*) as count FROM quiz_attempts WHERE user_id = ? AND quiz_id = ?')
+      .get(req.session.userId, quiz.id).count;
+    if (pastCount >= maxAttempts) {
+      req.session.flash = { type: 'error', message: 'لقد استنفذت جميع المحاولات المتاحة لهذا الاختبار' };
+      return res.redirect('/quizzes/' + quiz.id);
+    }
+  }
+
+  // Check timer
+  if (quiz.time_limit > 0) {
+    var startTime = req.session['quizStart_' + quiz.id];
+    if (startTime) {
+      var elapsed = Math.floor((Date.now() - startTime) / 1000 / 60);
+      if (elapsed > quiz.time_limit) {
+        req.session.flash = { type: 'error', message: 'انتهى الوقت المخصص للاختبار' };
+        return res.redirect('/quizzes/' + quiz.id);
+      }
+    }
+  }
 
   const questions = db.prepare('SELECT * FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC').all(quiz.id);
   const answers = req.body.answers || {};
@@ -227,10 +258,10 @@ router.post('/:id/edit', isInstructor, (req, res) => {
     return res.redirect('/courses/my-courses');
   }
 
-  const { title, passing_score, time_limit, questions } = req.body;
+  const { title, passing_score, time_limit, max_attempts, questions } = req.body;
 
-  db.prepare('UPDATE quizzes SET title = ?, passing_score = ?, time_limit = ? WHERE id = ?')
-    .run(title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, quiz.id);
+  db.prepare('UPDATE quizzes SET title = ?, passing_score = ?, time_limit = ?, max_attempts = ? WHERE id = ?')
+    .run(title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, parseInt(max_attempts) || 0, quiz.id);
 
   db.prepare('DELETE FROM quiz_questions WHERE quiz_id = ?').run(quiz.id);
 

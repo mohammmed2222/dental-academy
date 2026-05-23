@@ -336,6 +336,10 @@ async function initializeDatabase() {
 
   try { dbRaw.run("ALTER TABLE lessons ADD COLUMN section_id INTEGER REFERENCES course_sections(id) ON DELETE SET NULL"); } catch(e) {}
   try { dbRaw.run("ALTER TABLE courses ADD COLUMN sections_order TEXT DEFAULT '[]'"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE quizzes ADD COLUMN max_attempts INTEGER DEFAULT 0"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE course_exams ADD COLUMN max_attempts INTEGER DEFAULT 0"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE quiz_attempts ADD COLUMN started_at DATETIME"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE exam_attempts ADD COLUMN started_at DATETIME"); } catch(e) {}
 
   db = wrap(dbRaw);
 

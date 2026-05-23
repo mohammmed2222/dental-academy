@@ -19,7 +19,7 @@ router.post('/add/:courseId', isInstructor, (req, res) => {
   if (prereqId === course.id) {
     return res.redirect('/courses/' + course.slug + '/edit');
   }
-  const prereqCourse = db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(prereqId, req.session.userId);
+  const prereqCourse = db.prepare("SELECT * FROM courses WHERE id = ? AND status = 'published'").get(prereqId);
   if (!prereqCourse) {
     return res.redirect('/courses/' + course.slug + '/edit');
   }
