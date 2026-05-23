@@ -2,7 +2,6 @@ const express = require('express');
 const { getDb } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
 const { createNotification } = require('../config/notifications');
-const { escapeHtml } = require('../config/security');
 
 const router = express.Router();
 
@@ -12,11 +11,10 @@ router.post('/lesson/:lessonId', isAuthenticated, (req, res) => {
   if (!lesson) return res.status(404).json({ error: 'الدرس غير موجود' });
 
   const { content } = req.body;
-  if (!content || !content.trim()) {
+  var safeContent = String(content || '').trim();
+  if (!safeContent) {
     return res.status(400).json({ error: 'نص التعليق مطلوب' });
   }
-
-  var safeContent = escapeHtml(content.trim());
 
   db.prepare('INSERT INTO lesson_comments (lesson_id, user_id, content) VALUES (?, ?, ?)')
     .run(lesson.id, req.session.userId, safeContent);

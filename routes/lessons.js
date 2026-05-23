@@ -93,7 +93,7 @@ router.post('/create/:courseId', isInstructor, handleUpload, (req, res) => {
     });
   }
 
-  let finalVideoUrl = video_url || '';
+  let finalVideoUrl = String(video_url || '');
   if (req.file) {
     finalVideoUrl = '/uploads/videos/' + req.file.filename;
   } else if (finalVideoUrl) {
@@ -273,7 +273,7 @@ router.post('/:id/edit', isInstructor, handleUpload, (req, res) => {
     return res.render('lessons/edit', { title: 'تعديل الدرس', lesson, quiz: existingQuiz, quizQuestions: existingQuestions, error: 'عنوان الدرس مطلوب' });
   }
 
-  let finalVideoUrl = video_url || '';
+  let finalVideoUrl = String(video_url || '');
   if (req.file) {
     finalVideoUrl = '/uploads/videos/' + req.file.filename;
   } else if (finalVideoUrl && !finalVideoUrl.startsWith('http') && !finalVideoUrl.startsWith('/uploads/')) {

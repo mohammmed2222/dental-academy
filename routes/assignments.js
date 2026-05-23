@@ -20,7 +20,7 @@ const uploadAssignment = multer({
 router.get('/lesson/:lessonId', isAuthenticated, (req, res) => {
   const db = getDb();
   const lessonId = parseInt(req.params.lessonId);
-  const lesson = db.prepare('SELECT l.*, c.instructor_id FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(lessonId);
+  const lesson = db.prepare('SELECT l.*, c.instructor_id, c.slug as course_slug, c.title as course_title FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(lessonId);
   if (!lesson) {
     return res.status(404).render('error', { title: 'غير موجود', message: 'الدرس غير موجود', error: null });
   }

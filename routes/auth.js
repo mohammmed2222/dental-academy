@@ -5,7 +5,6 @@ const { getDb } = require('../config/database');
 const { sendMail } = require('../config/mail');
 const { createNotification } = require('../config/notifications');
 const { isAuthenticated } = require('../middleware/auth');
-const { escapeHtml } = require('../config/security');
 
 const router = express.Router();
 
@@ -21,9 +20,11 @@ router.get('/register', (req, res) => {
 
 router.post('/register', (req, res) => {
   const db = getDb();
-  const { name, email, password, confirmPassword, role } = req.body;
+  const { email, password, confirmPassword, role } = req.body;
+  var name = String(req.body.name || '').trim();
+  var mail = String(email || '').trim();
 
-  if (!name || !email || !password) {
+  if (!name || !mail || !password) {
     return res.render('auth/register', { title: 'إنشاء حساب جديد', error: 'جميع الحقول مطلوبة', success: null });
   }
 
@@ -35,17 +36,16 @@ router.post('/register', (req, res) => {
     return res.render('auth/register', { title: 'إنشاء حساب جديد', error: 'كلمة المرور غير متطابقة', success: null });
   }
 
-  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(mail);
   if (existingUser) {
     return res.render('auth/register', { title: 'إنشاء حساب جديد', error: 'البريد الإلكتروني مستخدم بالفعل', success: null });
   }
 
-  var safeName = escapeHtml(name.trim());
   const hashedPassword = bcrypt.hashSync(password, 10);
   const userRole = role === 'instructor' ? 'instructor' : 'student';
 
   const result = db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
-    safeName, email, hashedPassword, userRole
+    name, mail, hashedPassword, userRole
   );
 
   req.session.userId = result.lastInsertRowid;
@@ -96,28 +96,26 @@ router.post('/forgot-password', async (req, res) => {
     return res.render('auth/forgot-password', { title: 'نسيت كلمة المرور', error: 'يرجى إدخال البريد الإلكتروني', success: null });
   }
   const user = db.prepare('SELECT id, name FROM users WHERE email = ?').get(email);
-  if (!user) {
-    return res.render('auth/forgot-password', { title: 'نسيت كلمة المرور', success: 'إذا كان البريد مسجلاً لدينا، ستتلقى رابط إعادة تعيين كلمة المرور', error: null });
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    db.prepare('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expiresAt);
+
+    const resetLink = req.protocol + '://' + req.get('host') + '/auth/reset-password/' + token;
+
+    try {
+      await sendMail({
+        to: email,
+        subject: 'إعادة تعيين كلمة المرور - أكاديمية طب الأسنان',
+        html: '<div style="font-family:sans-serif;max-width:600px;margin:0 auto"><h1 style="color:#a30019">أكاديمية طب الأسنان</h1><p>مرحباً ' + user.name + '،</p><p>لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بك.</p><p><a href="' + resetLink + '" style="display:inline-block;background:#ce1126;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">إعادة تعيين كلمة المرور</a></p><p>رابط إعادة التعيين صالح لمدة ساعة واحدة.</p><p>إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد.</p><hr/><p style="color:#777;font-size:12px">أكاديمية طب الأسنان</p></div>',
+      });
+    } catch (e) {
+      console.error('Mail error:', e);
+    }
   }
 
-  const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-
-  db.prepare('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expiresAt);
-
-  const resetLink = req.protocol + '://' + req.get('host') + '/auth/reset-password/' + token;
-
-  try {
-    await sendMail({
-      to: email,
-      subject: 'إعادة تعيين كلمة المرور - أكاديمية طب الأسنان',
-      html: '<div style="font-family:sans-serif;max-width:600px;margin:0 auto"><h1 style="color:#a30019">أكاديمية طب الأسنان</h1><p>مرحباً ' + user.name + '،</p><p>لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بك.</p><p><a href="' + resetLink + '" style="display:inline-block;background:#ce1126;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">إعادة تعيين كلمة المرور</a></p><p>رابط إعادة التعيين صالح لمدة ساعة واحدة.</p><p>إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد.</p><hr/><p style="color:#777;font-size:12px">أكاديمية طب الأسنان</p></div>',
-    });
-  } catch (e) {
-    console.error('Mail error:', e);
-  }
-
-  res.render('auth/forgot-password', { title: 'نسيت كلمة المرور', success: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني', error: null });
+  res.render('auth/forgot-password', { title: 'نسيت كلمة المرور', success: 'إذا كان البريد مسجلاً لدينا، ستتلقى رابط إعادة تعيين كلمة المرور', error: null });
 });
 
 router.get('/reset-password/:token', (req, res) => {

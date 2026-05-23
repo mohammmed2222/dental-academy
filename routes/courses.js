@@ -28,9 +28,10 @@ router.get('/', (req, res) => {
     params.push(level);
   }
   if (search) {
+    var searchStr = String(search);
     where += ' AND (c.title LIKE ? OR c.description LIKE ?)';
-    countParams.push('%' + search + '%', '%' + search + '%');
-    params.push('%' + search + '%', '%' + search + '%');
+    countParams.push('%' + searchStr + '%', '%' + searchStr + '%');
+    params.push('%' + searchStr + '%', '%' + searchStr + '%');
   }
 
   const totalResult = db.prepare('SELECT COUNT(*) as total FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id' + where).get(...countParams);

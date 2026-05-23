@@ -143,10 +143,16 @@ router.post('/categories/create', isAdmin, (req, res) => {
 
   const slug = slugify(name, { lower: true, replacement: '-' });
   
+  const existing = db.prepare('SELECT id FROM categories WHERE slug = ?').get(slug);
+  if (existing) {
+    const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
+    return res.render('admin/categories', { title: 'التصنيفات', categories, error: 'التصنيف موجود بالفعل' });
+  }
+  
   try {
     db.prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)').run(name, slug, description || '');
   } catch (e) {
-    // slug or name might be duplicate
+    req.session.flash = { type: 'error', message: 'فشل إنشاء التصنيف' };
   }
   
   res.redirect('/admin/categories');
