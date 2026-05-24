@@ -50,8 +50,8 @@ router.post('/register', registerLimiter, async (req, res) => {
   const userRole = role === 'instructor' ? 'instructor' : 'student';
   const verificationToken = crypto.randomBytes(32).toString('hex');
 
-  const result = db.prepare('INSERT INTO users (name, email, password, role, verification_token, email_verified) VALUES (?, ?, ?, ?, ?, ?)').run(
-    name, mail, hashedPassword, userRole, verificationToken, 0
+  const result = db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, ?)').run(
+    name, mail, hashedPassword, userRole, 1
   );
 
   req.session.userId = result.lastInsertRowid;
@@ -59,19 +59,9 @@ router.post('/register', registerLimiter, async (req, res) => {
   req.session.userEmail = email;
   req.session.role = userRole;
   req.session.userAvatar = '/images/default-avatar.png';
+  req.session.emailVerified = true;
 
   createNotification(result.lastInsertRowid, 'info', 'مرحباً بك في أكاديمية طب الأسنان!', 'نتمنى لك رحلة تعليمية موفقة');
-
-  try {
-    var verifyLink = req.protocol + '://' + req.get('host') + '/auth/verify-email?token=' + verificationToken;
-    await sendMail({
-      to: mail,
-      subject: 'تأكيد البريد الإلكتروني - أكاديمية طب الأسنان',
-      html: '<div style="font-family:sans-serif;max-width:600px;margin:0 auto"><h1 style="color:#a30019">أكاديمية طب الأسنان</h1><p>مرحباً ' + name + '،</p><p>يرجى تأكيد بريدك الإلكتروني بالضغط على الرابط أدناه:</p><p><a href="' + verifyLink + '" style="display:inline-block;background:#ce1126;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">تأكيد البريد الإلكتروني</a></p><hr/><p style="color:#777;font-size:12px">أكاديمية طب الأسنان</p></div>',
-    });
-  } catch (e) {
-    console.error('Verification mail error:', e);
-  }
 
   res.redirect('/dashboard');
 });
