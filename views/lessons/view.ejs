@@ -21,7 +21,7 @@
     </div>
     <% } else if (lesson.video_url) { %>
       <% if (lesson.video_url.startsWith('http')) { %>
-      <iframe src="<%= lesson.video_url %>" class="absolute inset-0 w-full h-full border-none" allowfullscreen></iframe>
+      <iframe src="<%= lesson.video_url %>" class="absolute inset-0 w-full h-full border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       <% } else { %>
       <video class="absolute inset-0 w-full h-full" controls>
         <source src="<%= lesson.video_url %>" type="video/mp4"/>
