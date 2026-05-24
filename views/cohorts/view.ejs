@@ -1,0 +1,89 @@
+<%- include('../partials/header') %>
+<main class="flex-grow max-w-container-max mx-auto w-full p-margin-mobile md:p-margin-desktop flex flex-col gap-6">
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <div class="flex items-center gap-4">
+      <a href="/cohorts" class="flex items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors font-label-lg text-label-lg">
+        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+        <span>المجموعات</span>
+      </a>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/cohorts/<%= cohort.id %>/edit" class="bg-surface-container-high text-on-surface flex items-center gap-2 font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined text-sm">edit</span>
+        <span>تعديل</span>
+      </a>
+      <form action="/cohorts/<%= cohort.id %>/delete" method="POST" onsubmit="return confirm('حذف المجموعة؟')">
+        <button type="submit" class="bg-error-container text-on-error-container flex items-center gap-2 font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">
+          <span class="material-symbols-outlined text-sm">delete</span>
+          <span>حذف</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded p-6 flex flex-col gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center">
+        <span class="material-symbols-outlined text-2xl text-primary">group</span>
+      </div>
+      <div>
+        <h1 class="font-headline-md text-headline-md text-on-surface"><%= cohort.name %></h1>
+        <p class="font-body-md text-body-md text-on-surface-variant">بواسطة <%= cohort.creator_name %> · <%= cohort.student_count %> طالب</p>
+      </div>
+    </div>
+    <% if (cohort.description) { %>
+    <p class="font-body-md text-body-md text-on-surface-variant"><%= cohort.description %></p>
+    <% } %>
+    <% if (cohort.start_date) { %>
+    <p class="font-label-sm text-label-sm text-on-surface-variant">من <%= cohort.start_date %> إلى <%= cohort.end_date || 'مستمر' %></p>
+    <% } %>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-surface-container-lowest border border-outline-variant rounded p-6 flex flex-col gap-4">
+      <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">person</span>
+        الطلاب (<%= students.length %>)
+      </h2>
+      <% if (students.length === 0) { %>
+      <p class="font-body-md text-body-md text-on-surface-variant">لا يوجد طلاب في هذه المجموعة</p>
+      <% } else { %>
+      <div class="flex flex-col gap-2">
+        <% students.forEach(function(s) { %>
+        <div class="flex items-center gap-3 p-2 rounded hover:bg-surface-container-high transition-colors">
+          <img src="<%= s.avatar || '/images/default-avatar.png' %>" class="w-8 h-8 rounded-full object-cover" alt=""/>
+          <div class="flex-1 min-w-0">
+            <p class="font-body-md text-body-md text-on-surface truncate"><%= s.name %></p>
+            <p class="font-label-sm text-label-sm text-on-surface-variant truncate"><%= s.email %></p>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded p-6 flex flex-col gap-4">
+      <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">book</span>
+        الكورسات (<%= courses.length %>)
+      </h2>
+      <% if (courses.length === 0) { %>
+      <p class="font-body-md text-body-md text-on-surface-variant">لا توجد كورسات في هذه المجموعة</p>
+      <% } else { %>
+      <div class="flex flex-col gap-2">
+        <% courses.forEach(function(c) { %>
+        <a href="/courses/<%= c.id %>" class="flex items-center gap-3 p-2 rounded hover:bg-surface-container-high transition-colors">
+          <img src="<%= c.image || '/images/default-course.png' %>" class="w-12 h-8 rounded object-cover" alt=""/>
+          <div class="flex-1 min-w-0">
+            <p class="font-body-md text-body-md text-on-surface truncate"><%= c.title %></p>
+            <p class="font-label-sm text-label-sm text-on-surface-variant"><%= c.enrolled_count %> مسجل</p>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant">chevron_left</span>
+        </a>
+        <% }); %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>

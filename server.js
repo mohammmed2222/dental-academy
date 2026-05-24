@@ -135,6 +135,8 @@ app.use('/question-bank', questionBankRoutes);
 app.use('/coupons', couponRoutes);
 app.use('/admin', bulkImportRoutes);
 app.use('/learning-paths', learningPathRoutes);
+app.use('/live', require('./routes/live'));
+app.use('/cohorts', require('./routes/cohorts'));
 
 app.get('/instructor/:id', async (req, res, next) => {
   try {
@@ -215,7 +217,7 @@ app.use((err, req, res, next) => {
 });
 
 // Ensure upload directories exist
-['uploads', 'uploads/videos', 'uploads/avatars', 'uploads/assignments'].forEach(function(dir) {
+['uploads', 'uploads/videos', 'uploads/avatars', 'uploads/assignments', 'uploads/payments'].forEach(function(dir) {
   var fullPath = path.join(__dirname, 'public', dir);
   try { fs.mkdirSync(fullPath, { recursive: true }); } catch (e) { console.error('خطأ في إنشاء مجلد ' + dir + ':', e.message); }
 });

@@ -1,0 +1,47 @@
+<%- include('../partials/header') %>
+<main class="flex-grow max-w-container-max mx-auto w-full p-margin-mobile md:p-margin-desktop flex flex-col gap-6">
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <div>
+      <h1 class="font-headline-md text-headline-md text-on-surface">المجموعات</h1>
+      <p class="font-body-md text-body-md text-on-surface-variant">إدارة مجموعات الطلاب</p>
+    </div>
+    <a href="/cohorts/create" class="bg-primary-container text-on-primary flex items-center gap-2 font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">
+      <span class="material-symbols-outlined text-sm">add</span>
+      <span>مجموعة جديدة</span>
+    </a>
+  </div>
+
+  <% if (cohorts.length === 0) { %>
+  <div class="flex flex-col items-center justify-center py-16 gap-4 text-on-surface-variant">
+    <span class="material-symbols-outlined text-6xl">group</span>
+    <p class="font-body-lg text-body-lg">لا توجد مجموعات بعد</p>
+    <a href="/cohorts/create" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">إنشاء أول مجموعة</a>
+  </div>
+  <% } else { %>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% cohorts.forEach(function(c) { %>
+    <a href="/cohorts/<%= c.id %>" class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col gap-3 hover:shadow-sm transition-shadow">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">group</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3 class="font-label-lg text-label-lg text-on-surface truncate"><%= c.name %></h3>
+          <p class="font-label-sm text-label-sm text-on-surface-variant"><%= c.creator_name %></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-label-sm text-label-sm text-on-surface-variant">
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">person</span> <%= c.student_count %> طالب</span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">book</span> <%= c.course_count %> كورس</span>
+      </div>
+      <% if (c.start_date) { %>
+      <div class="text-label-sm text-label-sm text-on-surface-variant">
+        <%= c.start_date %> <% if (c.end_date) { %> - <%= c.end_date %><% } %>
+      </div>
+      <% } %>
+    </a>
+    <% }); %>
+  </div>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>

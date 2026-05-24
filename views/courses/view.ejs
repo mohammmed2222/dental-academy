@@ -130,20 +130,22 @@
         </div>
         <% } %>
 
+        <a href="/live/course/<%= course.id %>" class="w-full bg-surface-container-high text-on-surface flex items-center justify-center gap-2 font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity mb-4">
+          <span class="material-symbols-outlined text-sm">videocam</span>
+          <span>الدروس المباشرة</span>
+        </a>
+
         <% if (typeof isEnrolled === 'undefined' || !isEnrolled) { %>
           <% if (typeof isOwner === 'undefined' || !isOwner) { %>
             <% if (typeof user !== 'undefined' && user) { %>
               <% if (course.price > 0) { %>
               <div class="bg-surface-container border border-outline-variant rounded-xl p-4 mb-4 text-center">
-                <p class="font-headline-md text-headline-md text-primary mb-2"><%= course.price %> دينار</p>
-                <p class="font-body-md text-body-md text-secondary mb-4">هذا المساق مدفوع. اختر طريقة الدفع:</p>
-                <form action="/payments/request/<%= course.id %>" method="POST" class="space-y-2">
-                  <div>
-                    <input type="text" name="coupon_code" placeholder="كود خصم (اختياري)" class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-center" style="direction: ltr;"/>
-                  </div>
-                  <button type="submit" name="method" value="cash" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">دفع نقدي</button>
-                  <button type="submit" name="method" value="bank" class="w-full border border-primary text-primary font-label-lg text-label-lg py-3 px-6 rounded hover:bg-primary-fixed transition-colors">تحويل بنكي</button>
-                </form>
+                <p class="font-headline-md text-headline-md text-primary mb-2"><%= course.price %> ر.س</p>
+                <p class="font-body-md text-body-md text-on-surface-variant mb-4">هذا المساق مدفوع</p>
+                <a href="/payments/checkout/<%= course.id %>" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined text-sm">lock</span>
+                  <span>إتمام الدفع</span>
+                </a>
               </div>
               <% } else { %>
               <form action="/courses/<%= course.slug %>/enroll" method="POST">

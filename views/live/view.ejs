@@ -1,0 +1,106 @@
+<%- include('../partials/header') %>
+<main class="flex-grow max-w-container-max mx-auto w-full p-margin-mobile md:p-margin-desktop flex flex-col gap-6">
+  <% var isUpcoming = new Date(session.scheduled_at) > new Date(); %>
+  <% var isLive = session.status === 'live'; %>
+
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <div class="flex items-center gap-4">
+      <a href="/live/course/<%= session.course_id %>" class="flex items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors font-label-lg text-label-lg">
+        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+        <span>الدروس المباشرة</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden">
+    <div class="aspect-video bg-surface-container flex items-center justify-center relative">
+      <% if (session.status === 'cancelled') { %>
+      <div class="flex flex-col items-center gap-3 text-on-surface-variant">
+        <span class="material-symbols-outlined text-6xl">cancel</span>
+        <p class="font-headline-sm text-headline-sm">تم إلغاء هذا الدرس</p>
+      </div>
+      <% } else if (session.recording_url) { %>
+      <div class="absolute inset-0 flex items-center justify-center bg-surface-container">
+        <a href="<%= session.recording_url %>" target="_blank" rel="noopener" class="bg-primary-container text-on-primary flex items-center gap-2 font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">
+          <span class="material-symbols-outlined text-sm">play_circle</span>
+          <span>مشاهدة التسجيل</span>
+        </a>
+      </div>
+      <% } else if (isLive) { %>
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-20 h-20 rounded-full bg-error-container flex items-center justify-center animate-pulse">
+          <span class="material-symbols-outlined text-4xl text-error">radio_button_checked</span>
+        </div>
+        <p class="font-headline-sm text-headline-sm text-on-surface">البث المباشر جاري الآن</p>
+        <a href="<%= session.meeting_url %>" target="_blank" rel="noopener" class="bg-primary-container text-on-primary flex items-center gap-2 font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity text-lg">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span>انضمام إلى الاجتماع</span>
+        </a>
+      </div>
+      <% } else if (isUpcoming) { %>
+      <div class="flex flex-col items-center gap-3">
+        <span class="material-symbols-outlined text-6xl text-primary">schedule</span>
+        <p class="font-headline-sm text-headline-sm text-on-surface">الدرس لم يبدأ بعد</p>
+        <p class="font-body-md text-body-md text-on-surface-variant">
+          يبدأ في <%= new Date(session.scheduled_at).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+        </p>
+      </div>
+      <% } else { %>
+      <div class="flex flex-col items-center gap-3">
+        <span class="material-symbols-outlined text-6xl text-on-surface-variant">videocam</span>
+        <p class="font-headline-sm text-headline-sm text-on-surface">انتهى الدرس</p>
+        <% if (!session.recording_url) { %>
+        <p class="font-body-md text-body-md text-on-surface-variant">التسجيل غير متوفر</p>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded p-6 flex flex-col gap-4">
+      <h1 class="font-headline-md text-headline-md text-on-surface"><%= session.title %></h1>
+      <div class="flex items-center gap-4 text-label-sm text-label-sm text-on-surface-variant flex-wrap">
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">person</span> <%= session.instructor_name %></span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">schedule</span> <%= new Date(session.scheduled_at).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">timer</span> <%= session.duration %> دقيقة</span>
+        <span class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">book</span>
+          <a href="/courses/<%= session.course_id %>" class="hover:underline"><%= session.course_title %></a>
+        </span>
+      </div>
+      <% if (session.description) { %>
+      <div class="font-body-md text-body-md text-on-surface-variant whitespace-pre-wrap"><%= session.description %></div>
+      <% } %>
+    </div>
+
+    <div class="bg-surface-container-lowest border border-outline-variant rounded p-6 flex flex-col gap-4">
+      <h2 class="font-label-lg text-label-lg text-on-surface">معلومات الاجتماع</h2>
+      <% if (session.meeting_url && (isLive || !isUpcoming || true)) { %>
+      <a href="<%= session.meeting_url %>" target="_blank" rel="noopener" class="bg-primary-container text-on-primary flex items-center justify-center gap-2 font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined text-sm">open_in_new</span>
+        <span>فتح رابط الاجتماع</span>
+      </a>
+      <% } %>
+      <div class="flex flex-col gap-2 text-label-sm text-label-sm">
+        <% if (session.meeting_id) { %>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">معرف الاجتماع:</span>
+          <span class="text-on-surface text-left" dir="ltr"><%= session.meeting_id %></span>
+        </div>
+        <% } %>
+        <% if (session.meeting_password) { %>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">كلمة المرور:</span>
+          <span class="text-on-surface text-left" dir="ltr"><%= session.meeting_password %></span>
+        </div>
+        <% } %>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">الحالة:</span>
+          <span class="text-on-surface"><%= {scheduled:'مجدول', live:'مباشر', ended:'منتهي', cancelled:'ملغي'}[session.status] %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<%- include('../partials/footer') %>

@@ -1,0 +1,73 @@
+<%- include('../partials/header') %>
+<main class="flex-grow max-w-container-max mx-auto w-full p-margin-mobile md:p-margin-desktop flex flex-col gap-6">
+  <% var isOwner = req.session && req.session.role === 'instructor' && req.session.userId === course.instructor_id; %>
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <div>
+      <h1 class="font-headline-md text-headline-md text-on-surface">الدروس المباشرة</h1>
+      <p class="font-body-md text-body-md text-on-surface-variant"><%= course.title %></p>
+    </div>
+    <% if (isOwner) { %>
+    <a href="/live/create/<%= course.id %>" class="bg-primary-container text-on-primary flex items-center gap-2 font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">
+      <span class="material-symbols-outlined text-sm">add</span>
+      <span>إضافة درس مباشر</span>
+    </a>
+    <% } %>
+  </div>
+
+  <% if (sessions.length === 0) { %>
+  <div class="flex flex-col items-center justify-center py-16 gap-4 text-on-surface-variant">
+    <span class="material-symbols-outlined text-6xl">videocam</span>
+    <p class="font-body-lg text-body-lg">لا توجد دروس مباشرة بعد</p>
+    <% if (isOwner) { %>
+    <a href="/live/create/<%= course.id %>" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">إضافة درس مباشر</a>
+    <% } %>
+  </div>
+  <% } else { %>
+  <div class="flex flex-col gap-3">
+    <% sessions.forEach(function(s) { %>
+    <% var isUpcoming = new Date(s.scheduled_at) > new Date(); %>
+    <% var isLive = s.status === 'live'; %>
+    <div class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col md:flex-row items-start md:items-center gap-4">
+      <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center <%= isLive ? 'bg-error-container' : isUpcoming ? 'bg-secondary-container' : 'bg-surface-container-high' %>">
+        <span class="material-symbols-outlined <%= isLive ? 'text-error' : isUpcoming ? 'text-primary' : 'text-on-surface-variant' %>"><%= isLive ? 'radio_button_checked' : isUpcoming ? 'schedule' : 'check_circle' %></span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h3 class="font-label-lg text-label-lg text-on-surface"><%= s.title %></h3>
+        <p class="font-label-sm text-label-sm text-on-surface-variant"><%= s.instructor_name %></p>
+        <div class="flex items-center gap-3 mt-1 text-label-sm text-label-sm text-on-surface-variant">
+          <span><%= new Date(s.scheduled_at).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+          <span>·</span>
+          <span><%= s.duration %> دقيقة</span>
+          <% if (s.status === 'scheduled') { %><span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded text-xs">مجدول</span><% } %>
+          <% if (s.status === 'live') { %><span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-xs">مباشر الآن</span><% } %>
+          <% if (s.status === 'ended') { %><span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded text-xs">منتهي</span><% } %>
+          <% if (s.status === 'cancelled') { %><span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded text-xs">ملغي</span><% } %>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <a href="/live/<%= s.id %>" class="bg-primary-container text-on-primary flex items-center gap-1 font-label-sm text-label-sm py-2 px-4 rounded hover:opacity-90 transition-opacity">
+          <span class="material-symbols-outlined text-xs">visibility</span>
+          <span>عرض</span>
+        </a>
+        <% if (isOwner) { %>
+        <a href="/live/<%= s.id %>/edit" class="bg-surface-container-high text-on-surface flex items-center gap-1 font-label-sm text-label-sm py-2 px-3 rounded hover:opacity-90 transition-opacity">
+          <span class="material-symbols-outlined text-xs">edit</span>
+        </a>
+        <form action="/live/<%= s.id %>/delete" method="POST" onsubmit="return confirm('حذف الدرس المباشر؟')">
+          <button type="submit" class="bg-error-container text-on-error-container flex items-center gap-1 font-label-sm text-label-sm py-2 px-3 rounded hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-xs">delete</span>
+          </button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+  <% } %>
+
+  <a href="/courses/<%= course.id %>" class="flex items-center gap-2 text-primary hover:underline font-label-lg text-label-lg self-start">
+    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+    <span>العودة إلى الكورس</span>
+  </a>
+</main>
+<%- include('../partials/footer') %>
