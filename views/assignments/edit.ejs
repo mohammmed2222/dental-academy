@@ -12,6 +12,7 @@
 
     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
       <form action="/assignments/<%= assignment.id %>/edit" method="POST" class="space-y-5">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div>
           <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="title">عنوان الواجب</label>
           <input type="text" id="title" name="title" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors" value="<%= assignment.title %>" required/>
@@ -23,6 +24,14 @@
         <div>
           <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="due_date">تاريخ التسليم</label>
           <input type="date" id="due_date" name="due_date" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors" value="<%= assignment.due_date %>" required/>
+        </div>
+        <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="max_points">الدرجة القصوى</label>
+          <input type="number" id="max_points" name="max_points" value="<%= assignment.max_points || 100 %>" min="1" max="1000" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors"/>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="file_allowed" name="file_allowed" value="1" <%= assignment.file_allowed ? 'checked' : '' %> class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary"/>
+          <label class="font-label-lg text-label-lg text-on-surface" for="file_allowed">السماح برفع ملف</label>
         </div>
         <div class="flex items-center gap-4 pt-4">
           <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 transition-opacity">حفظ التغييرات</button>

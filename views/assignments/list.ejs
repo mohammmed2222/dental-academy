@@ -22,7 +22,7 @@
           </div>
           <div>
             <h3 class="font-headline-sm text-headline-sm text-on-surface"><%= a.title %></h3>
-            <p class="font-body-md text-body-md text-secondary text-sm"><%= a.course_title %> • <%= new Date(a.due_date).toLocaleDateString('ar-SA') %></p>
+            <p class="font-body-md text-body-md text-secondary text-sm"><%= lesson.course_title %> • <%= new Date(a.due_date).toLocaleDateString('ar-SA') %></p>
           </div>
         </div>
         <a href="/assignments/<%= a.id %>" class="bg-primary-container text-on-primary font-label-lg text-label-lg px-4 py-2 rounded hover:opacity-90 transition-opacity">عرض</a>

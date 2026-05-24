@@ -9,6 +9,26 @@
 
 <main class="flex-grow flex flex-col items-center justify-center px-margin-mobile py-12 relative z-10">
 <div class="w-full max-w-md relative">
+
+<% if (typeof success !== 'undefined' && success) { %>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-8 md:p-12 text-center flex flex-col items-center shadow-sm">
+<div class="w-20 h-20 bg-primary-fixed rounded-full flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">تم التحقق بنجاح!</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8"><%= success %></p>
+<a href="/auth/login" class="block w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-all">تسجيل الدخول</a>
+</div>
+<% } else if (typeof error !== 'undefined' && error) { %>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-8 md:p-12 text-center flex flex-col items-center shadow-sm">
+<div class="w-20 h-20 bg-error-container rounded-full flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-error text-5xl" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">فشل التحقق</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8"><%= error %></p>
+<a href="/auth/login" class="block w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-all">عودة لتسجيل الدخول</a>
+</div>
+<% } else { %>
 <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-8 md:p-12 text-center flex flex-col items-center shadow-sm">
 <div class="w-20 h-20 bg-primary-fixed rounded-full flex items-center justify-center mb-8 animate-pulse">
 <span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">mark_email_unread</span>
@@ -31,6 +51,7 @@
 <div class="mt-8 text-center">
 <p class="font-body-md text-body-md text-on-surface-variant">تواجه مشكلة؟ <a class="text-primary font-bold" href="/contact">اتصل بالدعم الفني</a></p>
 </div>
+<% } %>
 </div>
 </main>
 

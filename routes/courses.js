@@ -28,8 +28,8 @@ router.get('/', (req, res) => {
     params.push(level);
   }
   if (search) {
-    var searchStr = String(search);
-    where += ' AND (c.title LIKE ? OR c.description LIKE ?)';
+    var searchStr = String(search).replace(/[%_]/g, '\\$&');
+    where += " AND (c.title LIKE ? ESCAPE '\\' OR c.description LIKE ? ESCAPE '\\')";
     countParams.push('%' + searchStr + '%', '%' + searchStr + '%');
     params.push('%' + searchStr + '%', '%' + searchStr + '%');
   }

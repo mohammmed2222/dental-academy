@@ -9,9 +9,9 @@ const { isAuthenticated } = require('../middleware/auth');
 
 const router = express.Router();
 
-var loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'محاولات كثيرة جداً' } });
-var registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'محاولات تسجيل كثيرة' } });
-var forgotLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, message: { error: 'طلبات كثيرة' } });
+var loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, handler: function(req, res) { res.status(429).render('auth/login', { title: 'تسجيل الدخول', error: 'محاولات كثيرة جداً، حاول بعد 15 دقيقة', success: null }); } });
+var registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, handler: function(req, res) { res.status(429).render('auth/register', { title: 'إنشاء حساب جديد', error: 'محاولات تسجيل كثيرة جداً، حاول بعد ساعة', success: null }); } });
+var forgotLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, handler: function(req, res) { res.status(429).render('auth/forgot-password', { title: 'نسيت كلمة المرور', error: 'طلبات كثيرة جداً، حاول بعد ساعة', success: null }); } });
 
 router.get('/login', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
@@ -23,7 +23,7 @@ router.get('/register', (req, res) => {
   res.render('auth/register', { title: 'إنشاء حساب جديد', error: null, success: null });
 });
 
-router.post('/register', registerLimiter, (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   const db = getDb();
   const { email, password, confirmPassword, role } = req.body;
   var name = String(req.body.name || '').trim();
@@ -48,9 +48,10 @@ router.post('/register', registerLimiter, (req, res) => {
 
   const hashedPassword = bcrypt.hashSync(password, 10);
   const userRole = role === 'instructor' ? 'instructor' : 'student';
+  const verificationToken = crypto.randomBytes(32).toString('hex');
 
-  const result = db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
-    name, mail, hashedPassword, userRole
+  const result = db.prepare('INSERT INTO users (name, email, password, role, verification_token, email_verified) VALUES (?, ?, ?, ?, ?, ?)').run(
+    name, mail, hashedPassword, userRole, verificationToken, 0
   );
 
   req.session.userId = result.lastInsertRowid;
@@ -60,6 +61,17 @@ router.post('/register', registerLimiter, (req, res) => {
   req.session.userAvatar = '/images/default-avatar.png';
 
   createNotification(result.lastInsertRowid, 'info', 'مرحباً بك في أكاديمية طب الأسنان!', 'نتمنى لك رحلة تعليمية موفقة');
+
+  try {
+    var verifyLink = req.protocol + '://' + req.get('host') + '/auth/verify-email?token=' + verificationToken;
+    await sendMail({
+      to: mail,
+      subject: 'تأكيد البريد الإلكتروني - أكاديمية طب الأسنان',
+      html: '<div style="font-family:sans-serif;max-width:600px;margin:0 auto"><h1 style="color:#a30019">أكاديمية طب الأسنان</h1><p>مرحباً ' + name + '،</p><p>يرجى تأكيد بريدك الإلكتروني بالضغط على الرابط أدناه:</p><p><a href="' + verifyLink + '" style="display:inline-block;background:#ce1126;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">تأكيد البريد الإلكتروني</a></p><hr/><p style="color:#777;font-size:12px">أكاديمية طب الأسنان</p></div>',
+    });
+  } catch (e) {
+    console.error('Verification mail error:', e);
+  }
 
   res.redirect('/dashboard');
 });
@@ -81,11 +93,16 @@ router.post('/login', loginLimiter, (req, res) => {
     return res.render('auth/login', { title: 'تسجيل الدخول', error: 'بريد إلكتروني أو كلمة مرور غير صحيحة', success: null });
   }
 
+  if (user.role !== 'admin' && !user.email_verified) {
+    return res.render('auth/login', { title: 'تسجيل الدخول', error: 'يرجى تأكيد بريدك الإلكتروني أولاً. تحقق من بريدك الوارد.', success: null });
+  }
+
   req.session.userId = user.id;
   req.session.userName = user.name;
   req.session.userEmail = user.email;
   req.session.role = user.role;
   req.session.userAvatar = user.avatar;
+  req.session.emailVerified = user.email_verified ? true : false;
 
   res.redirect('/dashboard');
 });
@@ -149,13 +166,26 @@ router.post('/reset-password/:token', (req, res) => {
 
   const hashed = bcrypt.hashSync(password, 10);
   db.prepare('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hashed, row.user_id);
-  db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?').run(row.user_id);
+  db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?').run(row.id);
 
   res.render('auth/login', { title: 'تسجيل الدخول', error: null, success: 'تم إعادة تعيين كلمة المرور بنجاح. سجل الدخول الآن.' });
 });
 
 router.get('/verify-email', (req, res) => {
-  res.render('auth/verify-email', { title: 'تأكيد البريد الإلكتروني', email: req.query.email || '' });
+  const db = getDb();
+  var token = req.query.token || '';
+  if (token) {
+    var user = db.prepare('SELECT id FROM users WHERE verification_token = ? AND email_verified = 0').get(token);
+    if (user) {
+      db.prepare('UPDATE users SET email_verified = 1, verification_token = NULL WHERE id = ?').run(user.id);
+      if (req.session.userId === user.id) {
+        req.session.emailVerified = true;
+      }
+      return res.render('auth/verify-email', { title: 'تأكيد البريد الإلكتروني', success: 'تم تأكيد بريدك الإلكتروني بنجاح!', error: null, email: '' });
+    }
+    return res.render('auth/verify-email', { title: 'تأكيد البريد الإلكتروني', error: 'رابط التأكيد غير صالح أو منتهي الصلاحية', success: null, email: '' });
+  }
+  res.render('auth/verify-email', { title: 'تأكيد البريد الإلكتروني', error: null, success: null, email: req.query.email || '' });
 });
 
 router.get('/logout', (req, res) => {

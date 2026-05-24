@@ -18,8 +18,6 @@ function csrfProtection(req, res, next) {
   if (skipPaths.indexOf(req.path) !== -1) return next();
   if (['POST', 'PUT', 'PATCH', 'DELETE'].indexOf(req.method) !== -1) {
     var ctype = req.headers['content-type'] || '';
-    // Skip CSRF for multipart forms (multer parses body later, same-site cookies protect against CSRF)
-    if (ctype.indexOf('multipart/form-data') !== -1) return next();
     var token = req.body && req.body._csrf || req.query._csrf || req.headers['x-csrf-token'];
     if (!token || !req.session.csrfToken || token !== req.session.csrfToken) {
       if (req.xhr || ctype.indexOf('json') !== -1) {

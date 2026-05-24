@@ -39,7 +39,12 @@ function wrap(dbRaw) {
           stmt.free();
           return result;
         },
-        iterate() { return [][Symbol.iterator](); }
+        iterate(...params) {
+          var self = this;
+          var stmt = dbRaw.prepare(sql);
+          if (params.length > 0) stmt.bind(params.length === 1 && Array.isArray(params[0]) ? params[0] : params);
+          return { [Symbol.iterator]: function() { return self; }, next: function() { if (stmt.step()) return { value: stmt.getAsObject(), done: false }; stmt.free(); return { done: true }; } };
+        }
       };
     },
     exec(sql) {
@@ -340,6 +345,16 @@ async function initializeDatabase() {
   try { dbRaw.run("ALTER TABLE course_exams ADD COLUMN max_attempts INTEGER DEFAULT 0"); } catch(e) {}
   try { dbRaw.run("ALTER TABLE quiz_attempts ADD COLUMN started_at DATETIME"); } catch(e) {}
   try { dbRaw.run("ALTER TABLE exam_attempts ADD COLUMN started_at DATETIME"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE users ADD COLUMN verification_token TEXT"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN id INTEGER PRIMARY KEY AUTOINCREMENT"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN name TEXT"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN email TEXT"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN phone TEXT"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN subject TEXT"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN message TEXT"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"); } catch(e) {}
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS contact_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, subject TEXT NOT NULL, message TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)"); } catch(e) {}
 
   db = wrap(dbRaw);
 

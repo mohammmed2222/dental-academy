@@ -28,14 +28,20 @@ router.post('/request/:courseId', isAuthenticated, (req, res) => {
 // Admin: list all payments
 router.get('/admin', isAdmin, (req, res) => {
   const db = getDb();
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = 20;
+  const offset = (page - 1) * limit;
+  const total = db.prepare('SELECT COUNT(*) as count FROM payments').get().count;
+  const totalPages = Math.ceil(total / limit);
   const payments = db.prepare(`
     SELECT p.*, u.name as user_name, c.title as course_title, c.slug as course_slug
     FROM payments p
     JOIN users u ON p.user_id = u.id
     JOIN courses c ON p.course_id = c.id
     ORDER BY p.created_at DESC
-  `).all();
-  res.render('payments/admin', { title: 'إدارة المدفوعات', payments });
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
+  res.render('payments/admin', { title: 'إدارة المدفوعات', payments, page, totalPages });
 });
 
 // Admin: confirm payment

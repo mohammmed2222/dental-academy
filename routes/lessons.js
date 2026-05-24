@@ -19,7 +19,8 @@ const upload = multer({
   limits: { fileSize: 200 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     const allowed = /\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv)$/i;
-    if (allowed.test(path.extname(file.originalname))) {
+    var allowedMimes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/x-flv', 'video/x-ms-wmv'];
+    if (allowed.test(path.extname(file.originalname)) && allowedMimes.indexOf(file.mimetype) !== -1) {
       cb(null, true);
     } else {
       cb(new Error('صيغة الملف غير مدعومة. الصيغ المدعومة: mp4, webm, ogg, mov, avi, mkv, flv, wmv'), false);

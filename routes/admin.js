@@ -30,8 +30,13 @@ router.get('/', isAdmin, (req, res) => {
 
 router.get('/users', isAdmin, (req, res) => {
   const db = getDb();
-  const users = db.prepare('SELECT * FROM users ORDER BY created_at DESC').all();
-  res.render('admin/users', { title: 'إدارة المستخدمين', users });
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = 20;
+  const offset = (page - 1) * limit;
+  const total = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+  const totalPages = Math.ceil(total / limit);
+  const users = db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
+  res.render('admin/users', { title: 'إدارة المستخدمين', users, page, totalPages });
 });
 
 router.post('/users/create', isAdmin, (req, res) => {
@@ -75,6 +80,11 @@ router.post('/users/:id/role', isAdmin, (req, res) => {
 
 router.get('/courses', isAdmin, (req, res) => {
   const db = getDb();
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = 20;
+  const offset = (page - 1) * limit;
+  const total = db.prepare('SELECT COUNT(*) as count FROM courses').get().count;
+  const totalPages = Math.ceil(total / limit);
   const courses = db.prepare(`
     SELECT c.*, u.name as instructor_name, cat.name as category_name,
       (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
@@ -83,9 +93,10 @@ router.get('/courses', isAdmin, (req, res) => {
     JOIN users u ON c.instructor_id = u.id
     LEFT JOIN categories cat ON c.category_id = cat.id
     ORDER BY c.created_at DESC
-  `).all();
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
 
-  res.render('admin/courses', { title: 'إدارة الكورسات', courses });
+  res.render('admin/courses', { title: 'إدارة الكورسات', courses, page, totalPages });
 });
 
 router.get('/courses/:id/edit', isAdmin, (req, res) => {

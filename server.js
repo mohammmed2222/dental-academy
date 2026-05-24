@@ -9,7 +9,7 @@ const { initializeMail } = require('./config/mail');
 const { startScheduler } = require('./config/scheduler');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { csrfProtection, generateCsrfToken } = require('./config/security');
+const { csrfProtection, generateCsrfToken, escapeHtml } = require('./config/security');
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
 const lessonRoutes = require('./routes/lessons');
@@ -61,6 +61,7 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   try { res.locals.unreadNotifications = req.session.userId ? getUnreadCount(req.session.userId) : 0; } catch (e) { res.locals.unreadNotifications = 0; }
   res.locals.csrfToken = generateCsrfToken(req.session);
+  res.locals.escapeHtml = escapeHtml;
   next();
 });
 
@@ -68,7 +69,7 @@ app.use(csrfProtection);
 
 app.use((req, res, next) => {
   res.on('finish', () => {
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && res.statusCode < 400) {
       saveDatabase();
     }
   });
@@ -151,9 +152,16 @@ app.get('/contact', (req, res) => {
 });
 
 app.post('/contact', (req, res) => {
+  const { getDb } = require('./config/database');
+  const db = getDb();
   const { name, email, phone, subject, message } = req.body;
   if (!name || !email || !subject || !message) {
     return res.render('pages/contact', { title: 'تواصل معنا', error: 'يرجى ملء جميع الحقول المطلوبة', success: null, currentPath: '/contact' });
+  }
+  try {
+    db.prepare('INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)').run(name, email, phone || '', subject, message);
+  } catch (e) {
+    console.error('Failed to save contact message:', e);
   }
   return res.render('pages/contact', { title: 'تواصل معنا', success: 'تم إرسال رسالتك بنجاح، سنتواصل معك قريباً', error: null, currentPath: '/contact' });
 });

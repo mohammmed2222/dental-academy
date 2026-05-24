@@ -121,12 +121,14 @@ router.post('/:id/submit', isAuthenticated, (req, res) => {
   // Check timer
   if (quiz.time_limit > 0) {
     var startTime = req.session['quizStart_' + quiz.id];
-    if (startTime) {
-      var elapsed = Math.floor((Date.now() - startTime) / 1000 / 60);
-      if (elapsed > quiz.time_limit) {
-        req.session.flash = { type: 'error', message: 'انتهى الوقت المخصص للاختبار' };
-        return res.redirect('/quizzes/' + quiz.id);
-      }
+    if (!startTime) {
+      req.session.flash = { type: 'error', message: 'يرجى بدء الاختبار من صفحة الاختبار' };
+      return res.redirect('/quizzes/' + quiz.id);
+    }
+    var elapsed = Math.floor((Date.now() - startTime) / 1000 / 60);
+    if (elapsed > quiz.time_limit) {
+      req.session.flash = { type: 'error', message: 'انتهى الوقت المخصص للاختبار' };
+      return res.redirect('/quizzes/' + quiz.id);
     }
   }
 

@@ -77,7 +77,7 @@ router.get('/create/:lessonId', isInstructor, (req, res) => {
   if (!lesson || lesson.instructor_id !== req.session.userId) {
     return res.redirect('/courses/my-courses');
   }
-  res.render('assignments/create', { title: 'إنشاء واجب جديد', lesson, error: null });
+  res.render('assignments/create', { title: 'إنشاء واجب جديد', lesson, courseId: lesson.course_id, error: null });
 });
 
 // Create assignment

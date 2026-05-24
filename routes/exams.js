@@ -189,12 +189,14 @@ router.post('/:slug/exams/:id/submit', isAuthenticated, (req, res) => {
   // Check timer
   if (exam.time_limit > 0) {
     var startTime = req.session['examStart_' + exam.id];
-    if (startTime) {
-      var elapsed = Math.floor((Date.now() - startTime) / 1000 / 60);
-      if (elapsed > exam.time_limit) {
-        req.session.flash = { type: 'error', message: 'انتهى الوقت المخصص للاختبار' };
-        return res.redirect('/courses/' + req.params.slug + '/exams/' + exam.id);
-      }
+    if (!startTime) {
+      req.session.flash = { type: 'error', message: 'يرجى بدء الاختبار من صفحة الاختبار' };
+      return res.redirect('/courses/' + req.params.slug + '/exams/' + exam.id);
+    }
+    var elapsed = Math.floor((Date.now() - startTime) / 1000 / 60);
+    if (elapsed > exam.time_limit) {
+      req.session.flash = { type: 'error', message: 'انتهى الوقت المخصص للاختبار' };
+      return res.redirect('/courses/' + req.params.slug + '/exams/' + exam.id);
     }
   }
 
