@@ -32,9 +32,9 @@ function convertYouTubeUrl(url) {
   if (!url) return '';
   url = url.trim();
   var match;
-  match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+  match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube-nocookie\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
   if (match) {
-    return 'https://www.youtube.com/embed/' + match[1];
+    return 'https://www.youtube-nocookie.com/embed/' + match[1];
   }
   if (url.startsWith('http') || url.startsWith('/uploads/')) {
     return url;
@@ -306,9 +306,9 @@ router.post('/:id/edit', isInstructor, handleUpload, async (req, res, next) => {
     let finalVideoUrl = String(video_url || '');
     if (req.file) {
       finalVideoUrl = '/uploads/videos/' + req.file.filename;
-    } else if (finalVideoUrl && !finalVideoUrl.startsWith('http') && !finalVideoUrl.startsWith('/uploads/')) {
+    } else if (finalVideoUrl) {
       finalVideoUrl = convertYouTubeUrl(finalVideoUrl);
-    } else if (!finalVideoUrl) {
+    } else {
       finalVideoUrl = lesson.video_url || '';
     }
 
