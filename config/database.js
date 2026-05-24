@@ -57,7 +57,10 @@ async function initializeDatabase() {
   const initSqlJs = require('sql.js');
   const SQL = await initSqlJs();
 
-  const dbDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, '..');
+  // DB_PATH env var: set on Railway to a persistent volume path (e.g. /data)
+  // Fallback: RAILWAY_VOLUME_MOUNT_PATH, then project root
+  const dbDir = process.env.DB_PATH || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, '..');
+  try { fs.mkdirSync(dbDir, { recursive: true }); } catch(e) {}
   const dbPath = path.join(dbDir, 'database.sqlite');
   
   let dbBuffer;
@@ -409,8 +412,11 @@ function saveDatabase() {
   if (db && db.raw) {
     const data = db.raw.export();
     const buffer = Buffer.from(data);
-    const dbDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, '..');
-    fs.writeFileSync(path.join(dbDir, 'database.sqlite'), buffer);
+    var dbDir = process.env.DB_PATH || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, '..');
+    try { fs.mkdirSync(dbDir, { recursive: true }); } catch(e) {}
+    var dbPath = path.join(dbDir, 'database.sqlite');
+    var tmpPath = dbPath + '.tmp';
+    try { fs.writeFileSync(tmpPath, buffer); fs.renameSync(tmpPath, dbPath); } catch(e) { fs.writeFileSync(dbPath, buffer); }
   }
 }
 
