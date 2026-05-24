@@ -51,6 +51,7 @@ function setUser(req, res, next) {
       avatar: req.session.userAvatar
     };
   }
+  res.locals.darkMode = req.session.darkMode || 0;
   res.locals.flash = req.session.flash || null;
   req.session.flash = null;
   next();

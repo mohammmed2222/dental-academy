@@ -1,0 +1,120 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">استيراد المستخدمين</h1>
+    <p class="font-body-lg text-body-lg text-secondary">رفع ملف CSV لإضافة مستخدمين بشكل مجمع</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <section class="bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm">
+      <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">upload_file</span>
+        رفع الملف
+      </h2>
+
+      <% if (error) { %>
+      <div class="bg-error-container border border-error text-error font-body-md text-body-md p-4 rounded-lg mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined">error</span>
+        <%= error %>
+      </div>
+      <% } %>
+
+      <form action="/admin/bulk-import" method="POST" enctype="multipart/form-data">
+        <div class="border-2 border-dashed border-outline-variant rounded-xl p-8 text-center hover:border-primary transition-colors cursor-pointer mb-4" onclick="document.getElementById('csvFile').click()">
+          <span class="material-symbols-outlined text-4xl text-secondary mb-2">description</span>
+          <p class="font-body-md text-body-md text-secondary mb-1">انقر لاختيار ملف CSV</p>
+          <p class="font-body-md text-body-md text-secondary text-sm">أو اسحب الملف وأفلته هنا</p>
+        </div>
+        <input type="file" id="csvFile" name="csv_file" accept=".csv" class="hidden" required onchange="document.querySelector('.border-dashed p:first-of-type').textContent = this.files[0].name"/>
+        <button type="submit" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-sm">upload</span>
+          رفع واستيراد
+        </button>
+      </form>
+    </section>
+
+    <section class="bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm">
+      <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">info</span>
+        تعليمات رفع الملف
+      </h2>
+      <div class="flex flex-col gap-4">
+        <div class="bg-surface-container-low rounded-lg p-4 border border-surface-variant">
+          <h3 class="font-label-lg text-label-lg text-on-surface mb-2">صيغة CSV المطلوبة</h3>
+          <pre class="bg-surface-container-high p-3 rounded-lg text-sm font-mono overflow-x-auto" dir="ltr">name,email,password,role
+أحمد محمد,ahmed@example.com,pass123,student
+سارة علي,sara@example.com,pass456,instructor</pre>
+        </div>
+        <ul class="flex flex-col gap-2 font-body-md text-body-md text-secondary">
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm text-primary">check_circle</span>
+            <span><strong class="text-on-surface">name</strong>: اسم المستخدم (نص)</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm text-primary">check_circle</span>
+            <span><strong class="text-on-surface">email</strong>: البريد الإلكتروني (يجب أن يكون فريداً)</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm text-primary">check_circle</span>
+            <span><strong class="text-on-surface">password</strong>: كلمة المرور (6 أحرف على الأقل)</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm text-primary">check_circle</span>
+            <span><strong class="text-on-surface">role</strong>: الدور (student أو instructor، اختياري - القيمة الافتراضية student)</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm text-warning">warning</span>
+            <span>الملفات يجب أن تنتهي بـ .csv وبحد أقصى 5 ميجابايت</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <% if (result) { %>
+  <section class="bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm">
+    <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary">summarize</span>
+      نتيجة الاستيراد
+    </h2>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="bg-primary-fixed-dim text-on-primary-fixed-variant p-4 rounded-lg text-center">
+        <p class="font-display-lg text-display-lg"><%= result.succeeded %></p>
+        <p class="font-label-lg text-label-lg">تم بنجاح</p>
+      </div>
+      <div class="bg-error-container text-error p-4 rounded-lg text-center">
+        <p class="font-display-lg text-display-lg"><%= result.failed %></p>
+        <p class="font-label-lg text-label-lg">فشل</p>
+      </div>
+    </div>
+    <% if (result.errors.length > 0) { %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-right">
+        <thead class="bg-surface-container border-b border-surface-variant">
+          <tr>
+            <th class="px-3 py-2 font-label-lg text-label-lg text-secondary">الصف</th>
+            <th class="px-3 py-2 font-label-lg text-label-lg text-secondary">الاسم</th>
+            <th class="px-3 py-2 font-label-lg text-label-lg text-secondary">الخطأ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-variant">
+          <% result.errors.forEach(function(e) { %>
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="px-3 py-3 font-body-md text-body-md text-secondary"><%= e.row %></td>
+            <td class="px-3 py-3 font-body-md text-body-md text-on-surface"><%= e.name %></td>
+            <td class="px-3 py-3">
+              <span class="font-body-md text-body-md text-error"><%= e.error %></span>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

@@ -103,6 +103,7 @@ router.post('/login', loginLimiter, (req, res) => {
   req.session.role = user.role;
   req.session.userAvatar = user.avatar;
   req.session.emailVerified = user.email_verified ? true : false;
+  req.session.darkMode = user.dark_mode || 0;
 
   res.redirect('/dashboard');
 });

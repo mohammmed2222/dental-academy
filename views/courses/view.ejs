@@ -20,7 +20,14 @@
             <%= course.level === 'beginner' ? 'مبتدئ' : course.level === 'intermediate' ? 'متوسط' : 'متقدم' %>
           </span>
         </div>
-        <h1 class="font-headline-lg text-headline-lg text-on-surface mb-4"><%= course.title %></h1>
+        <div class="flex items-center gap-3 mb-4">
+          <h1 class="font-headline-lg text-headline-lg text-on-surface flex-1"><%= course.title %></h1>
+          <button onclick="shareCourse()" class="flex items-center gap-1 bg-surface-container text-secondary font-label-lg text-label-lg px-3 py-2 rounded hover:bg-surface-container-high transition-colors relative" title="مشاركة">
+            <span class="material-symbols-outlined text-sm">share</span>
+            مشاركة
+            <span id="shareTooltip" class="absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 transition-opacity">تم نسخ الرابط</span>
+          </button>
+        </div>
         <p class="font-body-md text-body-md text-secondary mb-4"><%= course.description %></p>
         <div class="flex flex-wrap items-center gap-6 text-secondary">
           <div class="flex items-center gap-1">
@@ -131,6 +138,9 @@
                 <p class="font-headline-md text-headline-md text-primary mb-2"><%= course.price %> دينار</p>
                 <p class="font-body-md text-body-md text-secondary mb-4">هذا المساق مدفوع. اختر طريقة الدفع:</p>
                 <form action="/payments/request/<%= course.id %>" method="POST" class="space-y-2">
+                  <div>
+                    <input type="text" name="coupon_code" placeholder="كود خصم (اختياري)" class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-center" style="direction: ltr;"/>
+                  </div>
                   <button type="submit" name="method" value="cash" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">دفع نقدي</button>
                   <button type="submit" name="method" value="bank" class="w-full border border-primary text-primary font-label-lg text-label-lg py-3 px-6 rounded hover:bg-primary-fixed transition-colors">تحويل بنكي</button>
                 </form>
@@ -205,6 +215,13 @@
           </a>
         </div>
         <% } %>
+
+        <div class="border-t border-outline-variant pt-4">
+          <a href="/announcements/course/<%= course.id %>" class="block w-full bg-primary-container/10 text-primary text-center font-label-lg text-label-lg py-2 px-4 rounded hover:bg-primary-container/30 transition-colors flex items-center justify-center gap-1">
+            <span class="material-symbols-outlined text-sm">campaign</span>
+            الإعلانات
+          </a>
+        </div>
 
         <% if (typeof isOwner !== 'undefined' && isOwner) { %>
         <div class="border-t border-outline-variant pt-4 space-y-2">

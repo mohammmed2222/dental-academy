@@ -16,10 +16,47 @@ router.post('/request/:courseId', isAuthenticated, (req, res) => {
     return res.redirect('/courses/' + course.slug);
   }
 
+  let finalAmount = course.price;
+  let couponId = null;
+  let discountAmount = 0;
+
+  const couponCode = req.body.coupon_code ? req.body.coupon_code.trim().toUpperCase() : '';
+  if (couponCode) {
+    const coupon = db.prepare('SELECT * FROM coupons WHERE code = ?').get(couponCode);
+    if (coupon) {
+      const now = new Date();
+      const expired = coupon.expires_at && new Date(coupon.expires_at) < now;
+      const maxedOut = coupon.max_uses > 0 && coupon.used_count >= coupon.max_uses;
+      const courseMismatch = coupon.course_id && coupon.course_id !== course.id;
+
+      if (expired) {
+        req.session.flash = { type: 'error', message: 'كود الخصم منتهي الصلاحية' };
+        return res.redirect('/courses/' + course.slug);
+      }
+      if (maxedOut) {
+        req.session.flash = { type: 'error', message: 'تم استنفاذ عدد مرات استخدام كود الخصم' };
+        return res.redirect('/courses/' + course.slug);
+      }
+      if (courseMismatch) {
+        req.session.flash = { type: 'error', message: 'كود الخصم غير صالح لهذا المساق' };
+        return res.redirect('/courses/' + course.slug);
+      }
+
+      discountAmount = Math.round(course.price * coupon.discount_percent / 100);
+      finalAmount = course.price - discountAmount;
+      couponId = coupon.id;
+
+      db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(coupon.id);
+    } else {
+      req.session.flash = { type: 'error', message: 'كود الخصم غير صالح' };
+      return res.redirect('/courses/' + course.slug);
+    }
+  }
+
   const allowedMethods = ['cash', 'bank'];
   var method = allowedMethods.indexOf(req.body.method) !== -1 ? req.body.method : 'cash';
-  db.prepare('INSERT INTO payments (user_id, course_id, amount, method, status) VALUES (?, ?, ?, ?, \'pending\')')
-    .run(req.session.userId, course.id, course.price, method);
+  db.prepare('INSERT INTO payments (user_id, course_id, amount, method, status, coupon_id, discount_amount) VALUES (?, ?, ?, ?, \'pending\', ?, ?)')
+    .run(req.session.userId, course.id, finalAmount, method, couponId, discountAmount);
 
   req.session.flash = { type: 'success', message: 'تم إرسال طلب الدفع. سيقوم الإدارة بمراجعته قريباً.' };
   res.redirect('/courses/' + course.slug);

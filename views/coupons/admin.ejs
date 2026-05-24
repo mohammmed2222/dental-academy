@@ -1,0 +1,109 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">إدارة كوبونات الخصم</h1>
+      <p class="font-body-lg text-body-lg text-secondary">إنشاء وإدارة كوبونات الخصم للمساقات</p>
+    </div>
+  </div>
+
+  <% if (error) { %>
+  <div class="bg-error-container text-on-error-container font-body-md text-body-md p-4 rounded-lg mb-6"><%= error %></div>
+  <% } %>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-8">
+    <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4">إنشاء كوبون جديد</h2>
+    <form action="/coupons/create" method="POST" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="code">رمز الكوبون</label>
+        <input type="text" id="code" name="code" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="SAVE20" required/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="discount_percent">نسبة الخصم (%)</label>
+        <input type="number" id="discount_percent" name="discount_percent" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="20" min="1" max="100" required/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="max_uses">الحد الأقصى للاستخدام</label>
+        <input type="number" id="max_uses" name="max_uses" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="0 = غير محدود" min="0"/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="expires_at">تاريخ الانتهاء (اختياري)</label>
+        <input type="datetime-local" id="expires_at" name="expires_at" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+      </div>
+      <div>
+        <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="course_id">مخصص لمساق (اختياري)</label>
+        <select id="course_id" name="course_id" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+          <option value="">جميع المساقات</option>
+          <% courses.forEach(function(c) { %>
+          <option value="<%= c.id %>"><%= c.title %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button type="submit" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">إنشاء الكوبون</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right">
+        <thead class="bg-surface-container border-b border-surface-variant">
+          <tr>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الرمز</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الخصم</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الاستخدام</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">المساق</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">ينتهي في</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">المنشئ</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-secondary">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-variant">
+          <% coupons.forEach(function(c) { %>
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="px-4 py-3">
+              <span class="font-label-lg text-label-lg text-on-surface font-bold"><%= c.code %></span>
+            </td>
+            <td class="px-4 py-3 font-label-lg text-label-lg text-primary font-bold"><%= c.discount_percent %>%</td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md">
+              <%= c.used_count %>
+              <% if (c.max_uses > 0) { %>
+              / <%= c.max_uses %>
+              <% } else { %>
+              / ∞
+              <% } %>
+            </td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= c.course_title || 'جميع المساقات' %></td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md">
+              <% if (c.expires_at) { %>
+                <%= new Date(c.expires_at).toLocaleDateString('ar-SA') %>
+                <% if (new Date(c.expires_at) < new Date()) { %>
+                <span class="bg-error-container text-on-error-container font-label-lg text-label-lg px-2 py-0.5 rounded text-sm mr-1">منتهي</span>
+                <% } %>
+              <% } else { %>
+              —
+              <% } %>
+            </td>
+            <td class="px-4 py-3 text-secondary font-body-md text-body-md"><%= c.creator_name %></td>
+            <td class="px-4 py-3">
+              <form action="/coupons/<%= c.id %>/delete" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذا الكوبون؟')">
+                <button type="submit" class="bg-error-container text-on-error-container font-label-lg text-label-lg px-3 py-1 rounded hover:opacity-80 transition-opacity">حذف</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+          <% if (coupons.length === 0) { %>
+          <tr>
+            <td colspan="7" class="px-4 py-8 text-center text-secondary font-body-md text-body-md">لا توجد كوبونات بعد</td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

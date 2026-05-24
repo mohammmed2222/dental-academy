@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="rtl" lang="ar" class="<%= typeof darkMode !== 'undefined' && darkMode ? 'dark' : '' %>">
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -123,6 +123,28 @@
     .material-symbols-outlined {
       font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
+    .dark body {
+      background: #1a1c1e !important;
+      color: #e3e3e3;
+    }
+    .dark .bg-background { background: #1a1c1e !important; }
+    .dark .bg-surface { background: #1a1c1e !important; }
+    .dark .bg-surface-container-lowest { background: #2a2c2e !important; }
+    .dark .bg-surface-container { background: #333537 !important; }
+    .dark .bg-surface-container-low { background: #2a2c2e !important; }
+    .dark .bg-surface-container-high { background: #3a3c3e !important; }
+    .dark .bg-surface-container-highest { background: #404244 !important; }
+    .dark .bg-surface-variant { background: #444749 !important; }
+    .dark .bg-surface-dim { background: #1a1c1e !important; }
+    .dark .bg-surface-bright { background: #3a3c3e !important; }
+    .dark .border-outline-variant { border-color: #444749 !important; }
+    .dark .text-on-surface { color: #e3e3e3 !important; }
+    .dark .text-secondary { color: #c4c6c6 !important; }
+    .dark .text-on-surface-variant { color: #c4c6c6 !important; }
+    .dark .text-on-secondary-fixed { color: #e3e3e3 !important; }
+    .dark .text-on-tertiary-fixed { color: #e3e3e3 !important; }
+    .dark .text-on-primary-fixed { color: #410004 !important; }
+    .dark .bg-primary-fixed { background: #ffb3ae !important; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -152,6 +174,9 @@
           </div>
           <div class="flex flex-1 justify-end gap-8">
             <div class="flex items-center gap-9">
+              <button onclick="toggleDarkMode()" class="text-secondary hover:text-primary transition-colors flex items-center justify-center" title="الوضع الليلي">
+                <span class="material-symbols-outlined text-[24px]"><%= typeof darkMode !== 'undefined' && darkMode ? 'light_mode' : 'dark_mode' %></span>
+              </button>
               <a href="/notifications" class="text-secondary hover:text-primary transition-colors flex items-center justify-center relative">
                 <span class="material-symbols-outlined text-[24px]">notifications</span>
                 <% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %>
@@ -184,6 +209,7 @@
     <nav class="hidden md:flex flex-row-reverse gap-8 items-center">
       <a href="/" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الرئيسية</a>
       <a href="/courses" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/courses') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الدورات</a>
+      <a href="/learning-paths" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/learning-paths') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">المسارات التعليمية</a>
       <% if (typeof user === 'undefined' || !user) { %>
       <a href="/about" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/about' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">عن المنصة</a>
       <a href="/faq" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/faq' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الأسئلة الشائعة</a>
@@ -198,6 +224,9 @@
       <% } %>
     </nav>
     <div class="flex items-center gap-3">
+      <button onclick="toggleDarkMode()" class="text-secondary hover:text-primary transition-colors flex items-center justify-center" title="الوضع الليلي">
+        <span class="material-symbols-outlined text-[24px]"><%= typeof darkMode !== 'undefined' && darkMode ? 'light_mode' : 'dark_mode' %></span>
+      </button>
       <% if (typeof user !== 'undefined' && user) { %>
       <a href="/dashboard" class="hidden md:flex items-center gap-2 font-label-lg text-label-lg text-on-surface hover:text-secondary transition-colors">
         <span class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm"><%= user.name.charAt(0) %></span>

@@ -356,6 +356,21 @@ async function initializeDatabase() {
   try { dbRaw.run("ALTER TABLE contact_messages ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"); } catch(e) {}
   try { dbRaw.run("CREATE TABLE IF NOT EXISTS contact_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, subject TEXT NOT NULL, message TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)"); } catch(e) {}
 
+  // === v3.0 NEW TABLES ===
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS course_announcements (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id INTEGER NOT NULL, instructor_id INTEGER NOT NULL, title TEXT NOT NULL, content TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE, FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE)"); } catch(e) {}
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, sender_id INTEGER NOT NULL, receiver_id INTEGER NOT NULL, subject TEXT NOT NULL, content TEXT NOT NULL, is_read INTEGER DEFAULT 0, parent_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE)"); } catch(e) {}
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS question_bank (id INTEGER PRIMARY KEY AUTOINCREMENT, instructor_id INTEGER NOT NULL, question_text TEXT NOT NULL, question_type TEXT DEFAULT 'multiple_choice', options TEXT DEFAULT '[]', correct_answer TEXT NOT NULL, points INTEGER DEFAULT 1, category TEXT DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE)"); } catch(e) {}
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS learning_paths (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT DEFAULT '', image TEXT DEFAULT '/images/default-course.png', instructor_id INTEGER NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE)"); } catch(e) {}
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS learning_path_courses (id INTEGER PRIMARY KEY AUTOINCREMENT, path_id INTEGER NOT NULL, course_id INTEGER NOT NULL, order_index INTEGER DEFAULT 0, FOREIGN KEY (path_id) REFERENCES learning_paths(id) ON DELETE CASCADE, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE, UNIQUE(path_id, course_id))"); } catch(e) {}
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS coupons (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT UNIQUE NOT NULL, discount_percent INTEGER NOT NULL DEFAULT 10, max_uses INTEGER DEFAULT 0, used_count INTEGER DEFAULT 0, expires_at DATETIME, course_id INTEGER, created_by INTEGER NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL, FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE)"); } catch(e) {}
+  try { dbRaw.run("CREATE TABLE IF NOT EXISTS learning_path_enrollments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, path_id INTEGER NOT NULL, completed_courses TEXT DEFAULT '[]', started_at DATETIME DEFAULT CURRENT_TIMESTAMP, completed_at DATETIME, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (path_id) REFERENCES learning_paths(id) ON DELETE CASCADE, UNIQUE(user_id, path_id))"); } catch(e) {}
+
+  // ALTER TABLE for existing tables - new columns
+  try { dbRaw.run("ALTER TABLE lessons ADD COLUMN release_date DATETIME"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE users ADD COLUMN dark_mode INTEGER DEFAULT 0"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE payments ADD COLUMN coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL"); } catch(e) {}
+  try { dbRaw.run("ALTER TABLE payments ADD COLUMN discount_amount REAL DEFAULT 0"); } catch(e) {}
+
   db = wrap(dbRaw);
 
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@manassa.com';

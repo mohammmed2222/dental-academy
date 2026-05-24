@@ -1,0 +1,62 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="flex items-center gap-3 mb-8">
+      <span class="material-symbols-outlined text-primary-container text-3xl" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">رسالة جديدة</h1>
+    </div>
+
+    <% if (typeof parentMessage !== 'undefined' && parentMessage) { %>
+    <div class="bg-surface-container-low border border-outline-variant rounded-xl p-4 mb-6">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-secondary">reply</span>
+        <div>
+          <p class="font-label-sm text-label-sm text-secondary">الرد على:</p>
+          <p class="font-label-lg text-label-lg text-on-surface"><%= parentMessage.subject %></p>
+          <p class="font-body-md text-body-md text-secondary mt-1"><%= parentMessage.content %></p>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <form action="/messages/send" method="POST" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 space-y-6">
+      <div class="space-y-2 text-right">
+        <label class="font-label-lg text-label-lg text-on-surface-variant block">إلى</label>
+        <select name="receiver_id" class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg py-3 px-4 font-body-md outline-none" required>
+          <option value="">اختر المستلم</option>
+          <% users.forEach(function(u) { %>
+          <option value="<%= u.id %>" <%= typeof preselectedUser !== 'undefined' && preselectedUser === u.id ? 'selected' : '' %>>
+            <%= u.name %> - <%= u.role === 'admin' ? 'مشرف' : u.role === 'instructor' ? 'مدرس' : 'طالب' %>
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="space-y-2 text-right">
+        <label class="font-label-lg text-label-lg text-on-surface-variant block">الموضوع</label>
+        <input type="text" name="subject" class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg py-3 px-4 font-body-md outline-none" placeholder="عنوان الرسالة" required
+          <%= typeof parentMessage !== 'undefined' && parentMessage ? 'value="رد: ' + parentMessage.subject + '"' : '' %>>
+      </div>
+
+      <div class="space-y-2 text-right">
+        <label class="font-label-lg text-label-lg text-on-surface-variant block">الرسالة</label>
+        <textarea name="content" rows="8" class="w-full bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg py-3 px-4 font-body-md outline-none resize-y" placeholder="اكتب رسالتك هنا..." required></textarea>
+      </div>
+
+      <% if (typeof parentMessage !== 'undefined' && parentMessage) { %>
+      <input type="hidden" name="parent_id" value="<%= parentMessage.id %>">
+      <% } %>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-8 rounded hover:opacity-90 active:scale-[0.99] transition-all inline-flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">send</span> إرسال
+        </button>
+        <a href="/messages" class="font-label-lg text-label-lg text-secondary hover:text-primary transition-colors py-3 px-4">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

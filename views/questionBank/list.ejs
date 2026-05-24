@@ -1,0 +1,96 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div class="flex flex-wrap justify-between items-end gap-4 bg-surface-container-lowest p-6 rounded-xl border border-surface-variant shadow-sm">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">بنك الأسئلة</h1>
+      <p class="font-body-lg text-body-lg text-secondary">إدارة الأسئلة المحفوظة واستيرادها للاختبارات</p>
+    </div>
+    <a href="/question-bank/create" class="bg-primary-container text-on-primary px-6 py-2 rounded-lg font-label-lg text-label-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">add</span>
+      إضافة سؤال
+    </a>
+  </div>
+
+  <form method="GET" action="/question-bank" class="flex flex-wrap gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-4 shadow-sm">
+    <div class="flex-1 min-w-[200px]">
+      <label class="block font-label-lg text-label-lg text-on-surface mb-1">بحث</label>
+      <input type="text" name="search" value="<%= typeof search !== 'undefined' && search ? search : '' %>" placeholder="ابحث عن سؤال..." class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+    </div>
+    <div class="w-48">
+      <label class="block font-label-lg text-label-lg text-on-surface mb-1">التصنيف</label>
+      <select name="category" class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+        <option value="">جميع التصنيفات</option>
+        <% categories.forEach(function(cat) { %>
+        <option value="<%= cat.category %>" <%= typeof category !== 'undefined' && category === cat.category ? 'selected' : '' %>><%= cat.category %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="flex items-end gap-2">
+      <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-5 rounded hover:opacity-90 transition-opacity">بحث</button>
+      <a href="/question-bank" class="border border-outline-variant text-secondary font-label-lg text-label-lg py-2 px-5 rounded hover:bg-surface-container-low transition-colors">إلغاء</a>
+    </div>
+  </form>
+
+  <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+    <% if (questions.length > 0) { %>
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-surface-container border-b border-surface-variant">
+            <th class="text-right font-label-lg text-label-lg text-on-surface p-4">#</th>
+            <th class="text-right font-label-lg text-label-lg text-on-surface p-4">نص السؤال</th>
+            <th class="text-right font-label-lg text-label-lg text-on-surface p-4">النوع</th>
+            <th class="text-right font-label-lg text-label-lg text-on-surface p-4">الدرجة</th>
+            <th class="text-right font-label-lg text-label-lg text-on-surface p-4">التصنيف</th>
+            <th class="text-right font-label-lg text-label-lg text-on-surface p-4">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% questions.forEach(function(q, i) { %>
+          <tr class="border-b border-surface-variant hover:bg-surface-container-low transition-colors">
+            <td class="p-4 font-body-md text-body-md text-on-surface"><%= i + 1 %></td>
+            <td class="p-4 font-body-md text-body-md text-on-surface max-w-md truncate"><%= escapeHtml(q.question_text) %></td>
+            <td class="p-4">
+              <span class="bg-primary-fixed-dim text-on-primary-fixed-variant font-label-lg text-label-lg px-2 py-0.5 rounded">
+                <% if (q.question_type === 'multiple_choice') { %>اختيار من متعدد<% } %>
+                <% if (q.question_type === 'multiple_correct') { %>اختيار متعدد الإجابات<% } %>
+                <% if (q.question_type === 'true_false') { %>صح/خطأ<% } %>
+                <% if (q.question_type === 'essay') { %>مقالي<% } %>
+              </span>
+            </td>
+            <td class="p-4 font-body-md text-body-md text-on-surface"><%= q.points %></td>
+            <td class="p-4 font-body-md text-body-md text-on-surface"><%= q.category || '-' %></td>
+            <td class="p-4">
+              <div class="flex items-center gap-2">
+                <a href="/question-bank/<%= q.id %>/edit" class="text-secondary p-1.5 rounded-lg hover:bg-surface-variant transition-colors" title="تعديل">
+                  <span class="material-symbols-outlined text-[20px]">edit</span>
+                </a>
+                <form method="POST" action="/question-bank/<%= q.id %>/delete" class="inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا السؤال؟')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>"/>
+                  <button type="submit" class="text-error p-1.5 rounded-lg hover:bg-error-container transition-colors" title="حذف">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } else { %>
+    <div class="text-center py-12">
+      <span class="material-symbols-outlined text-4xl text-secondary mb-2">quiz</span>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">لا توجد أسئلة</h3>
+      <p class="font-body-md text-body-md text-secondary mb-4">
+        <% if (search || category) { %>لا توجد نتائج مطابقة لبحثك.<% } else { %>لم تقم بإضافة أي سؤال إلى بنك الأسئلة بعد.<% } %>
+      </p>
+      <a href="/question-bank/create" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-6 rounded hover:opacity-90 transition-opacity">إضافة سؤال جديد</a>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,8 +1,6 @@
 <%- include('../partials/header') %>
 <%- include('../partials/back-button') %>
 
-
-
 <div class="flex-grow max-w-container-max w-full mx-auto flex flex-col md:flex-row-reverse px-margin-mobile md:px-margin-desktop py-8 gap-gutter relative">
   <div class="absolute inset-0 sadu-pattern pointer-events-none -z-10"></div>
 
@@ -47,8 +45,32 @@
           </label>
         </li>
       </ul>
+
+      <h2 class="font-headline-sm text-headline-sm text-primary mt-8 mb-6 border-b border-outline-variant pb-2">السعر</h2>
+      <div class="flex gap-2 mb-1">
+        <div class="flex-1">
+          <label class="font-body-md text-body-md text-secondary mb-1 block">الحد الأدنى</label>
+          <input type="number" name="price_min" min="0" step="0.01" placeholder="0" class="w-full bg-surface-container-lowest border border-outline-variant rounded py-2 px-3 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none" value="<%= typeof price_min !== 'undefined' ? price_min : '' %>"/>
+        </div>
+        <div class="flex-1">
+          <label class="font-body-md text-body-md text-secondary mb-1 block">الحد الأقصى</label>
+          <input type="number" name="price_max" min="0" step="0.01" placeholder="999" class="w-full bg-surface-container-lowest border border-outline-variant rounded py-2 px-3 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none" value="<%= typeof price_max !== 'undefined' ? price_max : '' %>"/>
+        </div>
+      </div>
+
+      <h2 class="font-headline-sm text-headline-sm text-primary mt-8 mb-6 border-b border-outline-variant pb-2">التقييم</h2>
+      <select name="min_rating" class="w-full bg-surface-container-lowest border border-outline-variant rounded py-2 px-3 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+        <option value="">الكل</option>
+        <option value="3" <%= typeof min_rating !== 'undefined' && min_rating === '3' ? 'selected' : '' %>>3+ نجوم</option>
+        <option value="4" <%= typeof min_rating !== 'undefined' && min_rating === '4' ? 'selected' : '' %>>4+ نجوم</option>
+        <option value="5" <%= typeof min_rating !== 'undefined' && min_rating === '5' ? 'selected' : '' %>>5 نجوم</option>
+      </select>
+
+      <h2 class="font-headline-sm text-headline-sm text-primary mt-8 mb-6 border-b border-outline-variant pb-2">المدرب</h2>
+      <input type="text" name="instructor" placeholder="ابحث عن مدرب..." class="w-full bg-surface-container-lowest border border-outline-variant rounded py-2 px-3 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none" value="<%= typeof instructor !== 'undefined' ? instructor : '' %>"/>
+
       <button type="submit" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity mt-6">تصفية</button>
-      <% if (search || currentCategory || currentLevel) { %>
+      <% if (search || currentCategory || currentLevel || price_min || price_max || min_rating || instructor || sort !== 'newest') { %>
       <a href="/courses" class="block w-full text-center font-label-lg text-label-lg text-primary border border-primary py-3 px-6 rounded hover:bg-primary-fixed transition-colors mt-2">إلغاء الفلتر</a>
       <% } %>
     </form>
@@ -60,9 +82,18 @@
         <h1 class="font-headline-lg text-headline-lg text-on-surface">دليل الدورات التدريبية</h1>
         <p class="font-body-md text-body-md text-secondary mt-2">استكشف برامجنا التعليمية المتخصصة لتطوير مهاراتك السريرية.</p>
       </div>
-        <div class="mt-4 md:mt-0 relative w-full md:w-72">
-          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">search</span>
-          <input class="w-full bg-surface-container-lowest border border-outline-variant rounded-full py-2 pr-10 pl-4 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" name="search" placeholder="ابحث عن دورة..." type="text" value="<%= typeof search !== 'undefined' ? search : '' %>" form="filterForm"/>
+        <div class="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div class="relative w-full md:w-72">
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">search</span>
+            <input class="w-full bg-surface-container-lowest border border-outline-variant rounded-full py-2 pr-10 pl-4 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" name="search" placeholder="ابحث عن دورة..." type="text" value="<%= typeof search !== 'undefined' ? search : '' %>" form="filterForm"/>
+          </div>
+          <select name="sort" form="filterForm" onchange="document.getElementById('filterForm').submit()" class="bg-surface-container-lowest border border-outline-variant rounded-full py-2 px-4 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+            <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>الأحدث</option>
+            <option value="popular" <%= sort === 'popular' ? 'selected' : '' %>>الأكثر تسجيلاً</option>
+            <option value="rated" <%= sort === 'rated' ? 'selected' : '' %>>الأعلى تقييماً</option>
+            <option value="price_asc" <%= sort === 'price_asc' ? 'selected' : '' %>>السعر: الأقل أولاً</option>
+            <option value="price_desc" <%= sort === 'price_desc' ? 'selected' : '' %>>السعر: الأعلى أولاً</option>
+          </select>
         </div>
     </div>
 
@@ -113,7 +144,7 @@
     <% if (totalPages > 1) { %>
     <div class="flex items-center justify-center gap-2 mt-8">
       <% if (page > 1) { %>
-      <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); qs += '&page=' + (page - 1); %><%= qs.substring(1) %>" class="flex items-center gap-1 px-3 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors">
+      <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); if (price_min) qs += '&price_min=' + encodeURIComponent(price_min); if (price_max) qs += '&price_max=' + encodeURIComponent(price_max); if (min_rating) qs += '&min_rating=' + encodeURIComponent(min_rating); if (instructor) qs += '&instructor=' + encodeURIComponent(instructor); qs += '&sort=' + encodeURIComponent(sort); qs += '&page=' + (page - 1); %><%= qs.substring(1) %>" class="flex items-center gap-1 px-3 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors">
         <span class="material-symbols-outlined text-sm">chevron_right</span>
         <span class="font-label-lg text-label-lg">السابق</span>
       </a>
@@ -122,11 +153,11 @@
         <% if (p === page) { %>
         <span class="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg"><%= p %></span>
         <% } else { %>
-        <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); qs += '&page=' + p; %><%= qs.substring(1) %>" class="px-4 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors font-label-lg text-label-lg"><%= p %></a>
+        <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); if (price_min) qs += '&price_min=' + encodeURIComponent(price_min); if (price_max) qs += '&price_max=' + encodeURIComponent(price_max); if (min_rating) qs += '&min_rating=' + encodeURIComponent(min_rating); if (instructor) qs += '&instructor=' + encodeURIComponent(instructor); qs += '&sort=' + encodeURIComponent(sort); qs += '&page=' + p; %><%= qs.substring(1) %>" class="px-4 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors font-label-lg text-label-lg"><%= p %></a>
         <% } %>
       <% } %>
       <% if (page < totalPages) { %>
-      <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); qs += '&page=' + (page + 1); %><%= qs.substring(1) %>" class="flex items-center gap-1 px-3 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors">
+      <a href="?<% var qs = ''; if (currentCategory) qs += '&category=' + encodeURIComponent(currentCategory); if (currentLevel) qs += '&level=' + encodeURIComponent(currentLevel); if (search) qs += '&search=' + encodeURIComponent(search); if (price_min) qs += '&price_min=' + encodeURIComponent(price_min); if (price_max) qs += '&price_max=' + encodeURIComponent(price_max); if (min_rating) qs += '&min_rating=' + encodeURIComponent(min_rating); if (instructor) qs += '&instructor=' + encodeURIComponent(instructor); qs += '&sort=' + encodeURIComponent(sort); qs += '&page=' + (page + 1); %><%= qs.substring(1) %>" class="flex items-center gap-1 px-3 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors">
         <span class="font-label-lg text-label-lg">التالي</span>
         <span class="material-symbols-outlined text-sm">chevron_left</span>
       </a>

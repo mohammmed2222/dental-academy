@@ -8,7 +8,8 @@ const router = express.Router();
 
 router.get('/', (req, res) => {
   const db = getDb();
-  const { category, level, search } = req.query;
+  const { category, level, search, price_min, price_max, min_rating, sort, instructor } = req.query;
+  const currentSort = sort || 'newest';
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = 9;
   const offset = (page - 1) * limit;
@@ -29,14 +30,53 @@ router.get('/', (req, res) => {
   }
   if (search) {
     var searchStr = String(search).replace(/[%_]/g, '\\$&');
-    where += " AND (c.title LIKE ? ESCAPE '\\' OR c.description LIKE ? ESCAPE '\\')";
-    countParams.push('%' + searchStr + '%', '%' + searchStr + '%');
-    params.push('%' + searchStr + '%', '%' + searchStr + '%');
+    where += " AND (c.title LIKE ? ESCAPE '\\' OR c.description LIKE ? ESCAPE '\\' OR u.name LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM lessons WHERE course_id = c.id AND (title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\')))";
+    countParams.push('%' + searchStr + '%', '%' + searchStr + '%', '%' + searchStr + '%', '%' + searchStr + '%', '%' + searchStr + '%');
+    params.push('%' + searchStr + '%', '%' + searchStr + '%', '%' + searchStr + '%', '%' + searchStr + '%', '%' + searchStr + '%');
+  }
+  if (price_min) {
+    where += ' AND c.price >= ?';
+    countParams.push(parseFloat(price_min));
+    params.push(parseFloat(price_min));
+  }
+  if (price_max) {
+    where += ' AND c.price <= ?';
+    countParams.push(parseFloat(price_max));
+    params.push(parseFloat(price_max));
+  }
+  if (min_rating) {
+    where += ' AND (SELECT COALESCE(AVG(rating), 0) FROM course_reviews WHERE course_id = c.id) >= ?';
+    countParams.push(parseFloat(min_rating));
+    params.push(parseFloat(min_rating));
+  }
+  if (instructor) {
+    var instrStr = String(instructor).replace(/[%_]/g, '\\$&');
+    where += " AND u.name LIKE ? ESCAPE '\\'";
+    countParams.push('%' + instrStr + '%');
+    params.push('%' + instrStr + '%');
   }
 
-  const totalResult = db.prepare('SELECT COUNT(*) as total FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id' + where).get(...countParams);
+  const totalResult = db.prepare('SELECT COUNT(*) as total FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id JOIN users u ON c.instructor_id = u.id' + where).get(...countParams);
   const total = totalResult.total;
   const totalPages = Math.ceil(total / limit);
+
+  let orderBy;
+  switch (currentSort) {
+    case 'popular':
+      orderBy = 'student_count DESC';
+      break;
+    case 'rated':
+      orderBy = 'avg_rating DESC';
+      break;
+    case 'price_asc':
+      orderBy = 'c.price ASC';
+      break;
+    case 'price_desc':
+      orderBy = 'c.price DESC';
+      break;
+    default:
+      orderBy = 'c.created_at DESC';
+  }
 
   const courses = db.prepare(`
     SELECT c.*, u.name as instructor_name, cat.name as category_name,
@@ -48,7 +88,7 @@ router.get('/', (req, res) => {
     JOIN users u ON c.instructor_id = u.id
     LEFT JOIN categories cat ON c.category_id = cat.id
     ${where}
-    ORDER BY c.created_at DESC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
 
@@ -60,7 +100,12 @@ router.get('/', (req, res) => {
     page, totalPages, limit,
     currentCategory: category || '',
     currentLevel: level || '',
-    search: search || ''
+    search: search || '',
+    price_min: price_min || '',
+    price_max: price_max || '',
+    min_rating: min_rating || '',
+    sort: currentSort,
+    instructor: instructor || ''
   });
 });
 

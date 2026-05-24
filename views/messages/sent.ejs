@@ -1,0 +1,49 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">الرسائل المرسلة</h1>
+      <a href="/messages/compose" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity inline-flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">add</span> رسالة جديدة
+      </a>
+    </div>
+
+    <% if (messages.length > 0) { %>
+    <div class="space-y-2">
+      <% messages.forEach(function(m) { %>
+      <a href="/messages/conversation/<%= m.receiver_id %>" class="block bg-surface-container-lowest border border-outline-variant rounded-xl p-4 hover:bg-surface-container-low transition-colors">
+        <div class="flex items-start gap-3">
+          <div class="bg-surface-container-high flex items-center justify-center aspect-square rounded-full size-12 border border-surface-variant text-primary font-bold flex-shrink-0">
+            <%= m.receiver_name.charAt(0) %>
+          </div>
+          <div class="flex-grow min-w-0">
+            <div class="flex items-center justify-between">
+              <h3 class="font-label-lg text-label-lg text-on-surface"><%= m.receiver_name %></h3>
+              <span class="font-body-md text-body-md text-secondary text-sm"><%= new Date(m.created_at).toLocaleDateString('ar-SA') %></span>
+            </div>
+            <p class="font-label-sm text-label-sm text-on-surface font-medium mt-1"><%= m.subject %></p>
+            <p class="font-body-md text-body-md text-secondary mt-0.5 truncate"><%= m.content %></p>
+          </div>
+          <form action="/messages/<%= m.id %>/delete" method="POST" class="flex-shrink-0" onsubmit="return confirm('هل أنت متأكد من حذف هذه الرسالة؟')">
+            <button type="submit" class="text-secondary hover:text-error transition-colors p-1" title="حذف">
+              <span class="material-symbols-outlined text-[20px]">delete</span>
+            </button>
+          </form>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="text-center py-16">
+      <span class="material-symbols-outlined text-5xl text-secondary mb-4" style="font-variation-settings: 'FILL' 1;">send</span>
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">لا توجد رسائل مرسلة</h3>
+      <p class="font-body-md text-body-md text-secondary mb-6">لم ترسل أي رسالة بعد</p>
+      <a href="/messages/compose" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-6 rounded hover:opacity-90 transition-opacity">إرسال رسالة جديدة</a>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

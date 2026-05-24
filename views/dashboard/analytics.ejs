@@ -1,0 +1,162 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div class="flex flex-wrap justify-between items-end gap-4 bg-surface-container-lowest p-6 rounded-xl border border-surface-variant shadow-sm">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">تحليلات الأداء</h1>
+      <p class="font-body-lg text-body-lg text-secondary">إحصائيات وتقارير أدائك الأكاديمي</p>
+    </div>
+    <a href="/dashboard/report" class="bg-primary-container text-on-primary px-6 py-2 rounded-lg font-label-lg text-label-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">download</span>
+      تحميل تقرير PDF
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-primary-fixed rounded-lg text-on-primary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">assignment</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">إجمالي المحاولات</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= totalAttempts %></p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-tertiary-fixed rounded-lg text-on-tertiary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">analytics</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">متوسط الدرجات</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= totalAvgScore %>%</p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-secondary-fixed rounded-lg text-on-secondary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">check_circle</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">نسبة النجاح</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= passRate %>%</p>
+    </div>
+    <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-container-lowest border border-surface-variant shadow-sm">
+      <div class="p-2 bg-primary-fixed rounded-lg text-on-primary-fixed-variant w-fit mb-2">
+        <span class="material-symbols-outlined">school</span>
+      </div>
+      <p class="text-secondary font-label-lg text-label-lg">الدورات المكتملة</p>
+      <p class="font-display-lg text-display-lg text-on-surface"><%= coursesCompleted %></p>
+    </div>
+  </div>
+
+  <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm">
+    <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary">trending_up</span>
+      تطور الدرجات (آخر 10 محاولات)
+    </h2>
+    <% if (scoresOverTime.length > 0) { %>
+    <div class="relative" dir="ltr" style="height:220px">
+      <svg viewBox="0 0 <%= Math.max(scoresOverTime.length * 60, 300) %> 200" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
+        <% var maxScore = Math.max(...scoresOverTime.map(function(s){return s.score}), 100); %>
+        <% var barWidth = Math.min(40, Math.floor((Math.max(scoresOverTime.length * 60, 300) - 40) / scoresOverTime.length)); %>
+        <% var gap = Math.max(10, Math.floor((Math.max(scoresOverTime.length * 60, 300) - 40 - barWidth * scoresOverTime.length) / (scoresOverTime.length - 1))); %>
+        <% scoresOverTime.forEach(function(s, i) { %>
+          <% var barH = Math.max(5, (s.score / maxScore) * 160); %>
+          <% var x = 20 + i * (barWidth + gap); %>
+          <% var y = 190 - barH; %>
+          <rect x="<%= x %>" y="<%= y %>" width="<%= barWidth %>" height="<%= barH %>" rx="4" fill="<%= s.passed ? '#a30019' : '#ba1a1a' %>" opacity="0.85"/>
+          <text x="<%= x + barWidth / 2 %>" y="<%= y - 6 %>" text-anchor="middle" font-size="10" fill="#5c3f3d"><%= s.score %>%</text>
+          <text x="<%= x + barWidth / 2 %>" y="210" text-anchor="middle" font-size="8" fill="#5c3f3d"><%= new Date(s.attempted_at).toLocaleDateString('ar-SA',{month:'short',day:'numeric'}) %></text>
+        <% }) %>
+        <line x1="18" y1="190" x2="<%= 20 + scoresOverTime.length * (barWidth + gap) %>" y2="190" stroke="#e4e2dd" stroke-width="1"/>
+      </svg>
+    </div>
+    <% } else { %>
+    <p class="text-secondary font-body-md text-body-md">لا توجد درجات بعد. ابدأ بحل الاختبارات لعرض تطورك.</p>
+    <% } %>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm">
+      <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">menu_book</span>
+        الأداء حسب الدورة
+      </h2>
+      <% if (coursePerformance.length > 0) { %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-right">
+          <thead class="bg-surface-container border-b border-surface-variant">
+            <tr>
+              <th class="px-3 py-2 font-label-lg text-label-lg text-secondary">الدورة</th>
+              <th class="px-3 py-2 font-label-lg text-label-lg text-secondary">متوسط الدرجة</th>
+              <th class="px-3 py-2 font-label-lg text-label-lg text-secondary">المحاولات</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-variant">
+            <% coursePerformance.forEach(function(cp) { %>
+            <tr class="hover:bg-surface-container-low transition-colors">
+              <td class="px-3 py-3 font-body-md text-body-md text-on-surface"><%= cp.title %></td>
+              <td class="px-3 py-3">
+                <span class="font-label-lg text-label-lg px-2 py-1 rounded <%= cp.avg_score >= 70 ? 'bg-primary-fixed-dim text-on-primary-fixed-variant' : 'bg-error-container text-error' %>">
+                  <%= cp.avg_score %>%
+                </span>
+              </td>
+              <td class="px-3 py-3 font-body-md text-body-md text-secondary"><%= cp.attempts %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } else { %>
+      <p class="text-secondary font-body-md text-body-md">لا توجد بيانات أداء بعد.</p>
+      <% } %>
+    </section>
+
+    <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm">
+      <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">report</span>
+        نقاط الضعف
+      </h2>
+      <% if (weakAreas.length > 0) { %>
+      <div class="flex flex-col gap-3">
+        <% weakAreas.forEach(function(w) { %>
+        <div class="flex items-center gap-3 p-3 rounded-lg bg-error-container border border-error">
+          <span class="material-symbols-outlined text-error">warning</span>
+          <div class="flex-1">
+            <p class="font-body-md text-body-md text-on-surface"><%= w.question_text %></p>
+            <p class="font-body-md text-body-md text-secondary text-sm"><%= w.quiz_title %> • أخطأت <%= w.wrong_count %> مرات</p>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } else { %>
+      <p class="text-secondary font-body-md text-body-md">لم يتم تحديد نقاط ضعف بعد. استمر في حل الاختبارات!</p>
+      <% } %>
+    </section>
+  </div>
+
+  <section class="flex flex-col gap-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm">
+    <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary">history</span>
+      آخر الأنشطة
+    </h2>
+    <% if (recentActivity.length > 0) { %>
+    <div class="flex flex-col gap-2">
+      <% recentActivity.forEach(function(a) { %>
+      <div class="flex items-center gap-4 p-3 rounded-lg bg-surface-container-low border border-surface-variant hover:border-primary transition-colors">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center <%= a.type === 'lesson' ? 'bg-primary-fixed text-primary' : a.type === 'quiz' ? 'bg-tertiary-fixed text-tertiary' : 'bg-secondary-fixed text-secondary' %>">
+          <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">
+            <%= a.type === 'lesson' ? 'play_lesson' : a.type === 'quiz' ? 'assignment' : 'task' %>
+          </span>
+        </div>
+        <div class="flex-1">
+          <p class="font-label-lg text-label-lg text-on-surface">
+            <%= a.type === 'lesson' ? 'أكملت درس' : a.type === 'quiz' ? 'حللت اختبار' : 'سلمت واجب' %> "<%= a.item_title %>"
+          </p>
+          <p class="font-body-md text-body-md text-secondary text-sm"><%= a.parent_title %> • <%= new Date(a.completed_at).toLocaleDateString('ar-SA') %></p>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <p class="text-secondary font-body-md text-body-md">لا توجد أنشطة حديثة.</p>
+    <% } %>
+  </section>
+</main>
+
+<%- include('../partials/footer') %>

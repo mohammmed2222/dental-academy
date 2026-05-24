@@ -22,6 +22,33 @@
     </div>
   </div>
 </footer>
+<script>
+function shareCourse() {
+  var tooltip = document.getElementById('shareTooltip');
+  navigator.clipboard.writeText(window.location.href).then(function() {
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
+    setTimeout(function() {
+      tooltip.classList.add('opacity-0');
+      tooltip.classList.remove('opacity-100');
+    }, 2000);
+  });
+}
+function toggleDarkMode() {
+  var icon = event.currentTarget.querySelector('.material-symbols-outlined');
+  fetch('/dashboard/toggle-dark-mode', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.darkMode) {
+        document.documentElement.classList.add('dark');
+        if (icon) icon.textContent = 'light_mode';
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (icon) icon.textContent = 'dark_mode';
+      }
+    });
+}
+</script>
 <script src="/js/main.js"></script>
 <script>
 // Auto-add CSRF token to all forms

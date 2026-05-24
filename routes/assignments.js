@@ -3,6 +3,8 @@ const path = require('path');
 const multer = require('multer');
 const { getDb } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { sendMail } = require('../config/mail');
+const { createNotification } = require('../config/notifications');
 
 const router = express.Router();
 
@@ -165,7 +167,7 @@ router.post('/:id/delete', isInstructor, (req, res) => {
 
 // Submit assignment
 router.post('/:id/submit', isAuthenticated, function(req, res) {
-  uploadAssignment.single('file')(req, res, function(err) {
+  uploadAssignment.single('file')(req, res, async function(err) {
     if (err) {
       req.session.flash = { type: 'error', message: err.message };
       return res.redirect('/assignments/' + req.params.id);
@@ -173,7 +175,7 @@ router.post('/:id/submit', isAuthenticated, function(req, res) {
 
     const db = getDb();
     const assignment = db.prepare(`
-      SELECT a.*, l.course_id, c.instructor_id
+      SELECT a.*, l.course_id, c.instructor_id, c.title as course_title
       FROM assignments a
       JOIN lessons l ON a.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
@@ -214,15 +216,27 @@ router.post('/:id/submit', isAuthenticated, function(req, res) {
         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
       `).run(assignment.id, req.session.userId, content || '', filePath);
     }
+    try {
+      const instructor = db.prepare('SELECT email FROM users WHERE id = ?').get(assignment.instructor_id);
+      if (instructor && instructor.email) {
+        await sendMail({
+          to: instructor.email,
+          subject: 'تقديم واجب جديد: ' + assignment.title,
+          html: '<p>قام الطالب ' + req.session.userName + ' بتقديم واجب ' + assignment.title + ' في دورة ' + assignment.course_title + '</p>',
+        });
+      }
+    } catch (err) {
+      console.error('فشل إرسال إشعار البريد الإلكتروني:', err);
+    }
     res.redirect('/assignments/' + assignment.id);
   });
 });
 
 // Grade submission (instructor only)
-router.post('/submissions/:id/grade', isInstructor, (req, res) => {
+router.post('/submissions/:id/grade', isInstructor, async (req, res) => {
   const db = getDb();
   const submission = db.prepare(`
-    SELECT s.*, a.lesson_id, a.title as assignment_title, c.instructor_id
+    SELECT s.*, a.lesson_id, a.title as assignment_title, a.max_points, c.instructor_id, c.title as course_title
     FROM assignment_submissions s
     JOIN assignments a ON s.assignment_id = a.id
     JOIN lessons l ON a.lesson_id = l.id
@@ -233,9 +247,23 @@ router.post('/submissions/:id/grade', isInstructor, (req, res) => {
     return res.redirect('/courses/my-courses');
   }
   const { score, feedback } = req.body;
+  const finalScore = parseInt(score) || 0;
   db.prepare(`
     UPDATE assignment_submissions SET score = ?, feedback = ?, graded_at = CURRENT_TIMESTAMP WHERE id = ?
-  `).run(parseInt(score) || 0, feedback || '', submission.id);
+  `).run(finalScore, feedback || '', submission.id);
+  try {
+    const student = db.prepare('SELECT name, email FROM users WHERE id = ?').get(submission.user_id);
+    if (student && student.email) {
+      await sendMail({
+        to: student.email,
+        subject: 'تصحيح الواجب: ' + submission.assignment_title,
+        html: '<p>تم تصحيح واجبك ' + submission.assignment_title + '. الدرجة: ' + finalScore + '/' + submission.max_points + '</p>',
+      });
+    }
+    createNotification(submission.user_id, 'grade', 'تصحيح الواجب: ' + submission.assignment_title, 'تم تصحيح واجبك ' + submission.assignment_title + '. الدرجة: ' + finalScore + '/' + submission.max_points, submission.assignment_id, 'assignment');
+  } catch (err) {
+    console.error('فشل إرسال إشعار التصحيح:', err);
+  }
   res.redirect('/assignments/' + submission.assignment_id);
 });
 

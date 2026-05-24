@@ -11,24 +11,30 @@
 
 <div class="flex-grow flex flex-col md:flex-row relative">
   <main class="flex-grow flex flex-col md:mr-64 w-full md:w-auto p-margin-mobile md:p-margin-desktop gap-gutter relative z-10">
-    <div class="w-full aspect-video bg-on-secondary-fixed rounded-xl overflow-hidden relative shadow-[0_2px_0_0_rgba(26,28,30,0.1)] border border-outline-variant flex items-center justify-center">
-      <div class="absolute inset-0 sadu-pattern"></div>
-      <% if (lesson.video_url) { %>
-        <% if (lesson.video_url.startsWith('http')) { %>
-        <iframe src="<%= lesson.video_url %>" class="absolute inset-0 w-full h-full border-none" allowfullscreen></iframe>
-        <% } else { %>
-        <video class="absolute inset-0 w-full h-full" controls>
-          <source src="<%= lesson.video_url %>" type="video/mp4"/>
-          المتصفح لا يدعم تشغيل الفيديو
-        </video>
-        <% } %>
-      <% } else { %>
-      <div class="relative z-10 flex flex-col items-center justify-center text-surface-container-lowest">
-        <span class="material-symbols-outlined text-6xl">play_circle</span>
-        <p class="font-headline-sm text-headline-sm mt-4">تشغيل المحاضرة</p>
-      </div>
-      <% } %>
+  <div class="w-full aspect-video bg-on-secondary-fixed rounded-xl overflow-hidden relative shadow-[0_2px_0_0_rgba(26,28,30,0.1)] border border-outline-variant flex items-center justify-center">
+    <div class="absolute inset-0 sadu-pattern"></div>
+    <% if (typeof isLocked !== 'undefined' && isLocked) { %>
+    <div class="relative z-10 flex flex-col items-center justify-center text-surface-container-lowest">
+      <span class="material-symbols-outlined text-6xl">lock</span>
+      <p class="font-headline-sm text-headline-sm mt-4">الدرس مقفل</p>
+      <p class="font-body-md text-body-md mt-2">سيتم فتحه في <%= releaseDate.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
     </div>
+    <% } else if (lesson.video_url) { %>
+      <% if (lesson.video_url.startsWith('http')) { %>
+      <iframe src="<%= lesson.video_url %>" class="absolute inset-0 w-full h-full border-none" allowfullscreen></iframe>
+      <% } else { %>
+      <video class="absolute inset-0 w-full h-full" controls>
+        <source src="<%= lesson.video_url %>" type="video/mp4"/>
+        المتصفح لا يدعم تشغيل الفيديو
+      </video>
+      <% } %>
+    <% } else { %>
+    <div class="relative z-10 flex flex-col items-center justify-center text-surface-container-lowest">
+      <span class="material-symbols-outlined text-6xl">play_circle</span>
+      <p class="font-headline-sm text-headline-sm mt-4">تشغيل المحاضرة</p>
+    </div>
+    <% } %>
+  </div>
 
     <div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-[0_2px_0_0_rgba(26,28,30,0.1)]">
       <div class="flex items-center gap-2 mb-3 flex-wrap">
@@ -40,8 +46,22 @@
           <%= lesson.duration %> دقيقة
         </span>
         <% } %>
+        <% if (lesson.release_date) { %>
+        <span class="bg-surface-container text-secondary font-label-lg text-label-lg px-3 py-1 rounded flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">calendar_today</span>
+          <%= new Date(lesson.release_date).toLocaleDateString('ar-SA') %>
+        </span>
+        <% } %>
       </div>
       <h1 class="font-headline-lg text-headline-lg text-primary mb-4"><%= lesson.title %></h1>
+
+      <% if (typeof isLocked !== 'undefined' && isLocked) { %>
+      <div class="bg-surface-container border border-outline-variant rounded-xl p-8 text-center">
+        <span class="material-symbols-outlined text-6xl text-secondary">lock</span>
+        <h2 class="font-headline-md text-headline-md text-on-surface mt-4">هذا الدرس مقفل حالياً</h2>
+        <p class="font-body-md text-body-md text-secondary mt-2">سيتم فتحه في تاريخ <%= releaseDate.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
+      </div>
+      <% } else { %>
 
       <div class="flex gap-4 border-b border-surface-variant pb-4 mb-4">
         <button class="text-primary font-bold border-b-2 border-primary pb-1 font-label-lg text-label-lg" onclick="showTab('summary')">ملخص المحاضرة</button>
@@ -128,6 +148,7 @@
           <% } %>
         </div>
       </div>
+      <% } %>
     </div>
 
     <div class="flex items-center justify-between">
@@ -140,10 +161,12 @@
         <% } %>
       </div>
       <div class="flex items-center gap-2">
+        <% if (typeof isLocked === 'undefined' || !isLocked) { %>
         <button onclick="markComplete(<%= lesson.id %>)" id="completeBtn" class="inline-flex items-center gap-1 bg-primary text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">
           <span class="material-symbols-outlined text-sm">check</span>
           وضع كمكتمل
         </button>
+        <% } %>
         <% if (nextLesson) { %>
         <a href="/lessons/<%= nextLesson.id %>" class="inline-flex items-center gap-1 bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity">
           الدرس التالي
@@ -166,7 +189,7 @@
           <a href="/lessons/<%= l.id %>" class="flex flex-row-reverse justify-between items-center <%= l.id === lesson.id ? 'bg-primary-container text-on-primary-container' : 'text-secondary hover:bg-surface-container-high' %> rounded-lg px-4 py-3 transition-all duration-200">
             <div class="flex flex-row-reverse items-center gap-unit">
               <span class="material-symbols-outlined" style="<%= l.is_completed ? 'font-variation-settings: \"FILL\" 1;' : '' %>">
-                <%= l.is_completed ? 'check_circle' : (l.id === lesson.id ? 'play_circle' : 'lock') %>
+                <%= l.is_completed ? 'check_circle' : (l.id === lesson.id ? 'play_circle' : (l.release_date && new Date(l.release_date) > new Date() ? 'lock' : 'play_lesson')) %>
               </span>
               <span class="font-label-lg text-label-lg"><%= l.title %></span>
             </div>

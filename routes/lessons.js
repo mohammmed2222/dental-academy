@@ -80,7 +80,7 @@ router.post('/create/:courseId', isInstructor, handleUpload, (req, res) => {
 
   if (!course) return res.redirect('/courses/my-courses');
 
-  const { title, content, video_url, duration, type, quiz_title, quiz_passing_score, quiz_time_limit, questions } = req.body;
+  const { title, content, video_url, duration, type, release_date, quiz_title, quiz_passing_score, quiz_time_limit, questions } = req.body;
 
   if (!title) {
     const errLessonCount = db.prepare('SELECT COUNT(*) as count FROM lessons WHERE course_id = ?')
@@ -105,9 +105,9 @@ router.post('/create/:courseId', isInstructor, handleUpload, (req, res) => {
     .get(course.id).count;
 
   const lessonResult = db.prepare(`
-    INSERT INTO lessons (course_id, title, content, video_url, duration, order_index, type)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(course.id, title, content || '', finalVideoUrl, parseInt(duration) || 0, lessonCount + 1, type || 'text');
+    INSERT INTO lessons (course_id, title, content, video_url, duration, order_index, type, release_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(course.id, title, content || '', finalVideoUrl, parseInt(duration) || 0, lessonCount + 1, type || 'text', release_date || null);
 
   if (questions && Array.isArray(questions) && questions.some(function(q) { return q.question_text && q.correct_answer; })) {
     const quizResult = db.prepare('INSERT INTO quizzes (lesson_id, title, passing_score, time_limit) VALUES (?, ?, ?, ?)')
@@ -184,6 +184,10 @@ router.get('/:id', isAuthenticated, (req, res) => {
     ORDER BY lc.created_at ASC
   `).all(lesson.id);
 
+  const now = new Date();
+  const releaseDate = lesson.release_date ? new Date(lesson.release_date) : null;
+  const isLocked = releaseDate && releaseDate > now && !isOwner && req.session.role !== 'admin';
+
   res.render('lessons/view', {
     title: lesson.title,
     lesson,
@@ -194,6 +198,8 @@ router.get('/:id', isAuthenticated, (req, res) => {
     quiz,
     totalLessons: allLessons.length,
     isOwner,
+    isLocked,
+    releaseDate,
     comments,
     currentUserId: req.session.userId
   });
@@ -267,7 +273,7 @@ router.post('/:id/edit', isInstructor, handleUpload, (req, res) => {
     return res.redirect('/courses/my-courses');
   }
 
-  const { title, content, video_url, duration, type, quiz_title, quiz_passing_score, quiz_time_limit, questions } = req.body;
+  const { title, content, video_url, duration, type, release_date, quiz_title, quiz_passing_score, quiz_time_limit, questions } = req.body;
 
   if (!title) {
     const existingQuiz = db.prepare('SELECT * FROM quizzes WHERE lesson_id = ?').get(lesson.id);
@@ -285,9 +291,9 @@ router.post('/:id/edit', isInstructor, handleUpload, (req, res) => {
   }
 
   db.prepare(`
-    UPDATE lessons SET title = ?, content = ?, video_url = ?, duration = ?, type = ?, updated_at = CURRENT_TIMESTAMP
+    UPDATE lessons SET title = ?, content = ?, video_url = ?, duration = ?, type = ?, release_date = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(title, content || '', finalVideoUrl, parseInt(duration) || 0, type || 'text', lesson.id);
+  `).run(title, content || '', finalVideoUrl, parseInt(duration) || 0, type || 'text', release_date || null, lesson.id);
 
   const hasQuestions = questions && Array.isArray(questions) && questions.some(function(q) { return q.question_text && q.correct_answer; });
   const existingQuiz = db.prepare('SELECT * FROM quizzes WHERE lesson_id = ?').get(lesson.id);

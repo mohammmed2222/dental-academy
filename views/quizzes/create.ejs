@@ -32,10 +32,16 @@
         <div class="border-t border-outline-variant pt-6 mt-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-headline-md text-headline-md text-on-surface">الأسئلة</h2>
-            <button type="button" onclick="addQuestion()" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
-              <span class="material-symbols-outlined text-[18px]">add</span>
-              إضافة سؤال
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="importFromBank()" class="border border-primary text-primary font-label-lg text-label-lg py-2 px-4 rounded hover:bg-primary-fixed transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">database</span>
+                استيراد من بنك الأسئلة
+              </button>
+              <button type="button" onclick="addQuestion()" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-2 px-4 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                إضافة سؤال
+              </button>
+            </div>
           </div>
           <div id="questionsContainer" class="space-y-4"></div>
           <p id="noQuestions" class="font-body-md text-body-md text-on-surface-variant text-center py-8">لم يتم إضافة أي أسئلة بعد. اضغط على "إضافة سؤال" للبدء.</p>
@@ -165,5 +171,33 @@ function removeQuestion(btn) {
     card.querySelector('.w-8').textContent = i + 1;
     card.querySelector('.font-headline-sm').textContent = 'سؤال ' + (i + 1);
   });
+}
+
+function importFromBank() {
+  fetch('/question-bank/select/0')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.questions || data.questions.length === 0) {
+        alert('لا توجد أسئلة في بنك الأسئلة. أضف أسئلة أولاً من صفحة بنك الأسئلة.');
+        return;
+      }
+      var list = data.questions.map(function(q, i) {
+        return (i + 1) + '. ' + q.question_text.substring(0, 60) + (q.question_text.length > 60 ? '...' : '');
+      }).join('\n');
+      var result = prompt('الأسئلة المتاحة:\n' + list + '\n\nأدخل أرقام الأسئلة التي تريد استيرادها (مفصولة بفواصل):');
+      if (!result) return;
+      var indices = result.split(',').map(function(s) { return parseInt(s.trim()) - 1; }).filter(function(n) { return n >= 0 && n < data.questions.length; });
+      indices.forEach(function(idx) {
+        var q = data.questions[idx];
+        addQuestion({
+          question_text: q.question_text,
+          question_type: q.question_type,
+          options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
+          correct_answer: q.correct_answer,
+          points: q.points
+        });
+      });
+    })
+    .catch(function() { alert('حدث خطأ أثناء تحميل الأسئلة من بنك الأسئلة'); });
 }
 </script>

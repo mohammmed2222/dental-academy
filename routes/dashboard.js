@@ -260,4 +260,254 @@ router.get('/certificate/:courseId', isAuthenticated, (req, res) => {
   });
 });
 
+router.get('/analytics', isAuthenticated, (req, res) => {
+  const db = getDb();
+  const userId = req.session.userId;
+
+  const totalQuizzes = db.prepare(`
+    SELECT COUNT(*) as count, COALESCE(AVG(score), 0) as avg_score,
+      SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as passed_count
+    FROM quiz_attempts WHERE user_id = ?
+  `).get(userId);
+
+  const examStats = db.prepare(`
+    SELECT COUNT(*) as count, COALESCE(AVG(score), 0) as avg_score,
+      SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as passed_count
+    FROM exam_attempts WHERE user_id = ?
+  `).get(userId);
+
+  const totalAttempts = totalQuizzes.count + examStats.count;
+  const totalAvgScore = totalAttempts > 0
+    ? Math.round(((totalQuizzes.avg_score * totalQuizzes.count) + (examStats.avg_score * examStats.count)) / totalAttempts)
+    : 0;
+  const totalPassed = totalQuizzes.passed_count + examStats.passed_count;
+  const passRate = totalAttempts > 0 ? Math.round((totalPassed / totalAttempts) * 100) : 0;
+
+  const coursesCompleted = db.prepare(`
+    SELECT COUNT(*) as count FROM enrollments WHERE user_id = ? AND completed_at IS NOT NULL
+  `).get(userId).count;
+
+  const scoresOverTime = db.prepare(`
+    SELECT score, passed, attempted_at, 'quiz' as type, q.title as activity_name
+    FROM quiz_attempts qa
+    JOIN quizzes q ON qa.quiz_id = q.id
+    WHERE qa.user_id = ?
+    UNION ALL
+    SELECT score, passed, attempted_at, 'exam' as type, e.title as activity_name
+    FROM exam_attempts ea
+    JOIN course_exams e ON ea.exam_id = e.id
+    WHERE ea.user_id = ?
+    ORDER BY attempted_at DESC LIMIT 10
+  `).all(userId, userId).reverse();
+
+  const perfByCourse = db.prepare(`
+    SELECT c.title, c.id,
+      COUNT(qa.id) as attempts,
+      COALESCE(AVG(qa.score), 0) as avg_score
+    FROM courses c
+    JOIN lessons l ON l.course_id = c.id
+    JOIN quizzes q ON q.lesson_id = l.id
+    JOIN quiz_attempts qa ON qa.quiz_id = q.id
+    WHERE qa.user_id = ?
+    GROUP BY c.id
+    UNION ALL
+    SELECT c.title, c.id,
+      COUNT(ea.id) as attempts,
+      COALESCE(AVG(ea.score), 0) as avg_score
+    FROM courses c
+    JOIN course_exams ce ON ce.course_id = c.id
+    JOIN exam_attempts ea ON ea.exam_id = ce.id
+    WHERE ea.user_id = ?
+    GROUP BY c.id
+  `).all(userId, userId);
+
+  const mergedPerf = {};
+  perfByCourse.forEach(function(row) {
+    if (!mergedPerf[row.id]) {
+      mergedPerf[row.id] = { title: row.title, attempts: 0, totalScore: 0, count: 0 };
+    }
+    mergedPerf[row.id].attempts += row.attempts;
+    mergedPerf[row.id].totalScore += row.avg_score * row.attempts;
+    mergedPerf[row.id].count += row.attempts;
+  });
+  var coursePerformance = Object.values(mergedPerf).map(function(c) {
+    return { title: c.title, avg_score: c.count > 0 ? Math.round(c.totalScore / c.count) : 0, attempts: c.attempts };
+  });
+
+  const weakAreas = db.prepare(`
+    SELECT qq.question_text, q.title as quiz_title, COUNT(*) as wrong_count
+    FROM quiz_answers qa
+    JOIN quiz_attempts qat ON qa.attempt_id = qat.id
+    JOIN quiz_questions qq ON qa.question_id = qq.id
+    JOIN quizzes q ON qq.quiz_id = q.id
+    WHERE qat.user_id = ? AND qa.is_correct = 0
+    GROUP BY qq.id
+    ORDER BY wrong_count DESC LIMIT 10
+  `).all(userId);
+
+  const examWeakAreas = db.prepare(`
+    SELECT eq.question_text, ce.title as quiz_title, COUNT(*) as wrong_count
+    FROM exam_answers ea
+    JOIN exam_attempts eat ON ea.attempt_id = eat.id
+    JOIN exam_questions eq ON ea.question_id = eq.id
+    JOIN course_exams ce ON eq.exam_id = ce.id
+    WHERE eat.user_id = ? AND ea.is_correct = 0
+    GROUP BY eq.id
+    ORDER BY wrong_count DESC LIMIT 10
+  `).all(userId);
+
+  var allWeak = weakAreas.concat(examWeakAreas);
+  allWeak.sort(function(a, b) { return b.wrong_count - a.wrong_count; });
+  allWeak = allWeak.slice(0, 10);
+
+  const recentLessons = db.prepare(`
+    SELECT lp.completed_at, l.title as item_title, c.title as parent_title, 'lesson' as type
+    FROM lesson_progress lp
+    JOIN lessons l ON lp.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE lp.user_id = ? AND lp.completed = 1
+    ORDER BY lp.completed_at DESC LIMIT 5
+  `).all(userId);
+
+  const recentQuiz = db.prepare(`
+    SELECT qa.attempted_at, q.title as item_title, c.title as parent_title, 'quiz' as type
+    FROM quiz_attempts qa
+    JOIN quizzes q ON qa.quiz_id = q.id
+    JOIN lessons l ON q.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE qa.user_id = ?
+    ORDER BY qa.attempted_at DESC LIMIT 5
+  `).all(userId);
+
+  const recentAssignments = db.prepare(`
+    SELECT s.submitted_at as completed_at, a.title as item_title, c.title as parent_title, 'assignment' as type
+    FROM assignment_submissions s
+    JOIN assignments a ON s.assignment_id = a.id
+    JOIN lessons l ON a.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE s.user_id = ?
+    ORDER BY s.submitted_at DESC LIMIT 5
+  `).all(userId);
+
+  var recentActivity = [];
+  recentLessons.forEach(function(r) { recentActivity.push(r); });
+  recentQuiz.forEach(function(r) { recentActivity.push({ completed_at: r.attempted_at, item_title: r.item_title, parent_title: r.parent_title, type: r.type }); });
+  recentAssignments.forEach(function(r) { recentActivity.push(r); });
+  recentActivity.sort(function(a, b) { return new Date(b.completed_at) - new Date(a.completed_at); });
+  recentActivity = recentActivity.slice(0, 5);
+
+  res.render('dashboard/analytics', {
+    title: 'تحليلات الأداء',
+    totalAttempts, totalAvgScore, passRate, coursesCompleted,
+    scoresOverTime, coursePerformance, weakAreas: allWeak, recentActivity
+  });
+});
+
+router.get('/report', isAuthenticated, (req, res) => {
+  const db = getDb();
+  const userId = req.session.userId;
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+
+  const PDFDocument = require('pdfkit');
+  const doc = new PDFDocument({ layout: 'portrait', size: 'A4', margin: 50 });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="student-report-' + userId + '.pdf"');
+  doc.pipe(res);
+
+  var fontPath = path.join(__dirname, '..', 'public', 'fonts');
+  doc.registerFont('Arabic', path.join(fontPath, 'Amiri-Regular.ttf'));
+  doc.registerFont('Arabic-Bold', path.join(fontPath, 'Amiri-Bold.ttf'));
+
+  doc.font('Arabic-Bold');
+  doc.fontSize(26).fillColor('#a30019').text('أكاديمية طب الأسنان', { align: 'center' });
+  doc.moveDown(0.5);
+  doc.font('Arabic').fontSize(16).fillColor('#333').text('تقرير الطالب', { align: 'center' });
+  doc.moveDown(1.5);
+
+  doc.fontSize(14).fillColor('#333').text('الاسم: ' + user.name, { align: 'right' });
+  doc.text('البريد الإلكتروني: ' + user.email, { align: 'right' });
+  doc.text('تاريخ التقرير: ' + new Date().toLocaleDateString('ar-EG'), { align: 'right' });
+  doc.moveDown(1.5);
+
+  const enrollments = db.prepare(`
+    SELECT e.*, c.title, c.slug,
+      (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
+      (SELECT COUNT(*) FROM lesson_progress lp
+        JOIN lessons l ON lp.lesson_id = l.id
+        WHERE l.course_id = c.id AND lp.user_id = ? AND lp.completed = 1) as completed_lessons
+    FROM enrollments e
+    JOIN courses c ON e.course_id = c.id
+    WHERE e.user_id = ?
+    ORDER BY e.enrolled_at DESC
+  `).all(userId, userId);
+
+  doc.font('Arabic-Bold').fontSize(14).fillColor('#a30019').text('الدورات المسجلة', { align: 'right' });
+  doc.moveDown(0.5);
+  doc.font('Arabic').fontSize(11).fillColor('#333');
+
+  if (enrollments.length === 0) {
+    doc.text('لا توجد دورات مسجلة', { align: 'right' });
+  } else {
+    enrollments.forEach(function(enr) {
+      var progress = enr.lesson_count > 0 ? Math.round((enr.completed_lessons / enr.lesson_count) * 100) : 0;
+      doc.text('• ' + enr.title + ' - ' + progress + '%', { align: 'right' });
+    });
+  }
+  doc.moveDown(1.5);
+
+  doc.font('Arabic-Bold').fontSize(14).fillColor('#a30019').text('ملخص نتائج الاختبارات', { align: 'right' });
+  doc.moveDown(0.5);
+  doc.font('Arabic').fontSize(11).fillColor('#333');
+
+  const quizResults = db.prepare(`
+    SELECT qa.score, qa.passed, qa.attempted_at, q.title as quiz_title
+    FROM quiz_attempts qa
+    JOIN quizzes q ON qa.quiz_id = q.id
+    WHERE qa.user_id = ?
+    ORDER BY qa.attempted_at DESC LIMIT 10
+  `).all(userId);
+
+  if (quizResults.length === 0) {
+    doc.text('لا توجد نتائج اختبارات', { align: 'right' });
+  } else {
+    quizResults.forEach(function(qr) {
+      doc.text('• ' + qr.quiz_title + ': ' + qr.score + '% - ' + (qr.passed ? 'ناجح' : 'راسب') + ' - ' + new Date(qr.attempted_at).toLocaleDateString('ar-EG'), { align: 'right' });
+    });
+  }
+  doc.moveDown(1.5);
+
+  doc.font('Arabic-Bold').fontSize(14).fillColor('#a30019').text('آخر الأنشطة', { align: 'right' });
+  doc.moveDown(0.5);
+  doc.font('Arabic').fontSize(11).fillColor('#333');
+
+  const recentLessonsReport = db.prepare(`
+    SELECT lp.completed_at, l.title as lesson_title, c.title as course_title
+    FROM lesson_progress lp
+    JOIN lessons l ON lp.lesson_id = l.id
+    JOIN courses c ON l.course_id = c.id
+    WHERE lp.user_id = ? AND lp.completed = 1
+    ORDER BY lp.completed_at DESC LIMIT 5
+  `).all(userId);
+
+  if (recentLessonsReport.length === 0) {
+    doc.text('لا توجد أنشطة حديثة', { align: 'right' });
+  } else {
+    recentLessonsReport.forEach(function(rl) {
+      doc.text('• أكملت درس "' + rl.lesson_title + '" في "' + rl.course_title + '" - ' + new Date(rl.completed_at).toLocaleDateString('ar-EG'), { align: 'right' });
+    });
+  }
+
+  doc.end();
+});
+
+router.post('/toggle-dark-mode', isAuthenticated, (req, res) => {
+  const db = getDb();
+  var user = db.prepare('SELECT dark_mode FROM users WHERE id = ?').get(req.session.userId);
+  var newVal = user.dark_mode ? 0 : 1;
+  db.prepare('UPDATE users SET dark_mode = ? WHERE id = ?').run(newVal, req.session.userId);
+  req.session.darkMode = newVal;
+  res.json({ darkMode: newVal });
+});
+
 module.exports = router;
