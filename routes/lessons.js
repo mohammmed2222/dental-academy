@@ -88,8 +88,8 @@ router.post('/create/:courseId', isInstructor, handleUpload, async (req, res, ne
     const { title, content, video_url, duration, type, release_date, quiz_title, quiz_passing_score, quiz_time_limit, questions } = req.body;
 
     if (!title) {
-      const errLessonCount = await db.prepare('SELECT COUNT(*) as count FROM lessons WHERE course_id = ?')
-        .get(course.id).count;
+      const errLessonCount = Number(await db.prepare('SELECT COUNT(*) as count FROM lessons WHERE course_id = ?')
+        .get(course.id).count);
       return res.render('lessons/create', {
         title: 'إضافة درس جديد',
         course,
@@ -106,8 +106,8 @@ router.post('/create/:courseId', isInstructor, handleUpload, async (req, res, ne
       finalVideoUrl = convertYouTubeUrl(finalVideoUrl);
     }
 
-    const lessonCount = await db.prepare('SELECT COUNT(*) as count FROM lessons WHERE course_id = ?')
-      .get(course.id).count;
+    const lessonCount = Number(await db.prepare('SELECT COUNT(*) as count FROM lessons WHERE course_id = ?')
+      .get(course.id).count);
 
     const lessonResult = await db.prepare(`
       INSERT INTO lessons (course_id, title, content, video_url, duration, order_index, type, release_date)

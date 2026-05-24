@@ -43,19 +43,20 @@ function pgWrap(pool) {
   }
   function prepare(sql) {
     const pgSql = convertSql(sql);
+    function clean(arr) { return arr.map(v => (typeof v === 'number' && isNaN(v)) ? null : v); }
     return {
       async get(...params) {
-        const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+        const flat = clean(params.length === 1 && Array.isArray(params[0]) ? params[0] : params);
         const res = await pool.query(pgSql, flat);
         return res.rows[0] || undefined;
       },
       async all(...params) {
-        const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+        const flat = clean(params.length === 1 && Array.isArray(params[0]) ? params[0] : params);
         const res = await pool.query(pgSql, flat);
         return res.rows;
       },
       async run(...params) {
-        const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+        const flat = clean(params.length === 1 && Array.isArray(params[0]) ? params[0] : params);
         const isInsert = /^\s*INSERT/i.test(pgSql);
         const query = isInsert ? pgSql.replace(/;\s*$/, '') + ' RETURNING id' : pgSql;
         const res = await pool.query(query, flat);
