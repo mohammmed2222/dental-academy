@@ -302,11 +302,13 @@ router.get('/analytics', isAuthenticated, async (req, res, next) => {
       FROM exam_attempts WHERE user_id = ?
     `).get(userId);
 
-    const totalAttempts = totalQuizzes.count + examStats.count;
+    const qCount = Number(totalQuizzes.count), eCount = Number(examStats.count);
+    const totalAttempts = qCount + eCount;
     const totalAvgScore = totalAttempts > 0
-      ? Math.round(((totalQuizzes.avg_score * totalQuizzes.count) + (examStats.avg_score * examStats.count)) / totalAttempts)
+      ? Math.round(((Number(totalQuizzes.avg_score) * qCount) + (Number(examStats.avg_score) * eCount)) / totalAttempts)
       : 0;
-    const totalPassed = totalQuizzes.passed_count + examStats.passed_count;
+    const qPassed = Number(totalQuizzes.passed_count), ePassed = Number(examStats.passed_count);
+    const totalPassed = qPassed + ePassed;
     const passRate = totalAttempts > 0 ? Math.round((totalPassed / totalAttempts) * 100) : 0;
 
     const coursesCompleted = (await db.prepare(`

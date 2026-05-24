@@ -77,7 +77,7 @@ router.post('/add/:courseId', isAuthenticated, async (req, res, next) => {
     }
     await db.prepare(`
       INSERT INTO course_reviews (course_id, user_id, rating, review_text, created_at, updated_at)
-      VALUES (?, ?, ?, ?, sqlNow(), sqlNow())
+      VALUES (?, ?, ?, ?, ${sqlNow()}, ${sqlNow()})
     `).run(course.id, req.session.userId, parseInt(rating), review_text || '');
     return res.redirect('/reviews/course/' + course.id);
   } catch(err) { next(err); }
