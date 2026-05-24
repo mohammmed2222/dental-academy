@@ -216,11 +216,11 @@ async function seedDataPg() {
     const hash = bcrypt.hashSync(adminPassword, 10);
     await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run(adminName, adminEmail, hash, 'admin');
   }
-  if ((await db.prepare('SELECT COUNT(*) as count FROM categories').get()).count === 0) {
+  if (Number((await db.prepare('SELECT COUNT(*) as count FROM categories').get()).count) === 0) {
     const cats = [['تطوير الويب','web-development',''],['علوم الحاسوب','computer-science',''],['تطوير التطبيقات','app-development',''],['تصميم الجرافيك','graphic-design',''],['تسويق إلكتروني','digital-marketing',''],['علوم البيانات','data-science',''],['الأمن السيبراني','cybersecurity',''],['لغات البرمجة','programming-languages','']];
     for (const c of cats) await db.prepare('INSERT INTO categories (name, slug, description) VALUES ($1, $2, $3)').run(c[0], c[1], c[2]);
   }
-  if ((await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count === 0) {
+  if (Number((await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count) === 0) {
     if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get('instructor@manassa.com'))) {
       await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run('مدرب تجريبي', 'instructor@manassa.com', bcrypt.hashSync('123456', 10), 'instructor');
     }
