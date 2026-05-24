@@ -141,9 +141,10 @@ async function initializeDatabase() {
   if (dbUrl) {
     // PostgreSQL mode
     const { Pool } = require('pg');
-    pgPool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+    pgPool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 });
     db = pgWrap(pgPool);
     usingPg = true;
+    console.log('Connecting to PostgreSQL...');
     const tableStatements = pgCreateTablesSql.split(';').filter(s => s.trim());
     for (const stmt of tableStatements) {
       try { await pgPool.query(stmt); } catch(e) { console.error('Table creation error:', e.message); }

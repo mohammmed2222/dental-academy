@@ -33,6 +33,10 @@ const learningPathRoutes = require('./routes/learningPaths');
 const { setUser } = require('./middleware/auth');
 const { getUnreadCount } = require('./config/notifications');
 
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err.message || err);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
