@@ -404,6 +404,25 @@ async function initializeDatabase() {
     }
   }
 
+  // Seed demo data if database is fresh (no courses exist)
+  const courseCount = db.prepare('SELECT COUNT(*) as count FROM courses').get();
+  if (courseCount.count === 0) {
+    const demoInstEmail = process.env.DEMO_INSTRUCTOR_EMAIL || 'instructor@manassa.com';
+    const demoInstPassword = process.env.DEMO_INSTRUCTOR_PASSWORD || '123456';
+    const demoInstExists = db.prepare('SELECT id FROM users WHERE email = ?').get(demoInstEmail);
+    if (!demoInstExists) {
+      const hashedPw = bcrypt.hashSync(demoInstPassword, 10);
+      db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('مدرب تجريبي', demoInstEmail, hashedPw, 'instructor');
+    }
+    const demoStudentEmail = process.env.DEMO_STUDENT_EMAIL || 'student@manassa.com';
+    const demoStudentPassword = process.env.DEMO_STUDENT_PASSWORD || '123456';
+    const demoStudentExists = db.prepare('SELECT id FROM users WHERE email = ?').get(demoStudentEmail);
+    if (!demoStudentExists) {
+      const hashedPw = bcrypt.hashSync(demoStudentPassword, 10);
+      db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('طالب تجريبي', demoStudentEmail, hashedPw, 'student');
+    }
+  }
+
   saveDatabase();
   return db;
 }
