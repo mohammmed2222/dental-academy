@@ -21,8 +21,15 @@
     </div>
     <% } else if (lesson.video_url) { %>
       <% var embedUrl = lesson.video_url.replace(/^(https?:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|https?:\/\/youtu\.be\/)([a-zA-Z0-9_-]{11})/, 'https://www.youtube-nocookie.com/embed/$2'); %>
+      <% var ytWatchUrl = lesson.video_url.replace(/^(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)|https?:\/\/youtube-nocookie\.com\/embed\/)([a-zA-Z0-9_-]{11})/, 'https://www.youtube.com/watch?v=$2'); %>
       <% if (embedUrl.startsWith('http')) { %>
       <iframe src="<%= embedUrl %>" class="absolute inset-0 w-full h-full border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      <div class="absolute bottom-4 left-4 z-20">
+        <a href="<%= ytWatchUrl %>" target="_blank" rel="noopener" class="bg-black/70 text-white flex items-center gap-2 font-label-sm text-label-sm py-2 px-4 rounded hover:bg-black/80 transition-colors backdrop-blur-sm">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+          <span>مشاهدة على YouTube</span>
+        </a>
+      </div>
       <% } else { %>
       <video class="absolute inset-0 w-full h-full" controls>
         <source src="<%= lesson.video_url %>" type="video/mp4"/>
