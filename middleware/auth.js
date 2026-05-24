@@ -22,7 +22,7 @@ function isAdmin(req, res, next) {
   res.redirect('/dashboard');
 }
 
-function setUser(req, res, next) {
+async function setUser(req, res, next) {
   res.locals.user = null;
   if (req.session && req.session.userId) {
     // Revalidate session from DB every 5 minutes
@@ -30,7 +30,7 @@ function setUser(req, res, next) {
     if (!req.session._lastRevalidated || now - req.session._lastRevalidated > 300000) {
       try {
         var db = require('../config/database').getDb();
-        var user = db.prepare('SELECT id, name, email, role, avatar FROM users WHERE id = ?').get(req.session.userId);
+        var user = await db.prepare('SELECT id, name, email, role, avatar FROM users WHERE id = ?').get(req.session.userId);
         if (user) {
           req.session.role = user.role;
           req.session.userName = user.name;

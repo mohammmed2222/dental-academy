@@ -56,106 +56,110 @@ function parseCsvLine(line) {
   return result;
 }
 
-router.get('/bulk-import', isAdmin, (req, res) => {
-  res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: null });
+router.get('/bulk-import', isAdmin, async (req, res, next) => {
+  try {
+    return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: null });
+  } catch(err) { next(err); }
 });
 
-router.post('/bulk-import', isAdmin, function (req, res) {
-  uploadCsv.single('csv_file')(req, res, function (err) {
-    if (err) {
-      return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: err.message });
-    }
+router.post('/bulk-import', isAdmin, async (req, res, next) => {
+  try {
+    uploadCsv.single('csv_file')(req, res, async function (err) {
+      try {
+        if (err) {
+          return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: err.message });
+        }
 
-    if (!req.file) {
-      return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'يرجى رفع ملف CSV' });
-    }
+        if (!req.file) {
+          return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'يرجى رفع ملف CSV' });
+        }
 
-    try {
-      const db = getDb();
-      var filePath = req.file.path;
-      var content = fs.readFileSync(filePath, 'utf-8');
-      var lines = content.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
+        const db = getDb();
+        var filePath = req.file.path;
+        var content = fs.readFileSync(filePath, 'utf-8');
+        var lines = content.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
 
-      if (lines.length < 2) {
+        if (lines.length < 2) {
+          fs.unlinkSync(filePath);
+          return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'الملف فارغ أو لا يحتوي على بيانات كافية' });
+        }
+
+        var headerLine = lines[0];
+        var headers = parseCsvLine(headerLine).map(function(h) { return h.toLowerCase().trim(); });
+
+        var nameIdx = headers.indexOf('name');
+        var emailIdx = headers.indexOf('email');
+        var passwordIdx = headers.indexOf('password');
+        var roleIdx = headers.indexOf('role');
+
+        if (nameIdx === -1 || emailIdx === -1 || passwordIdx === -1) {
+          fs.unlinkSync(filePath);
+          return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'تنسيق CSV غير صحيح. الأعمدة المطلوبة: name, email, password, role' });
+        }
+
+        var results = { succeeded: 0, failed: 0, errors: [] };
+        var allowedRoles = ['student', 'instructor'];
+
+        for (var i = 1; i < lines.length; i++) {
+          var fields = parseCsvLine(lines[i]);
+
+          var name = fields[nameIdx] ? fields[nameIdx].trim() : '';
+          var email = fields[emailIdx] ? fields[emailIdx].trim().toLowerCase() : '';
+          var password = fields[passwordIdx] ? fields[passwordIdx].trim() : '';
+          var role = roleIdx !== -1 && fields[roleIdx] ? fields[roleIdx].trim().toLowerCase() : 'student';
+
+          if (!name || !email || !password) {
+            results.failed++;
+            results.errors.push({ row: i + 1, error: 'الحقول المطلوبة مفقودة', name: name || '—' });
+            continue;
+          }
+
+          if (!email.includes('@')) {
+            results.failed++;
+            results.errors.push({ row: i + 1, error: 'بريد إلكتروني غير صالح', name: name });
+            continue;
+          }
+
+          if (password.length < 6) {
+            results.failed++;
+            results.errors.push({ row: i + 1, error: 'كلمة المرور أقل من 6 أحرف', name: name });
+            continue;
+          }
+
+          if (allowedRoles.indexOf(role) === -1) {
+            role = 'student';
+          }
+
+          var existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+          if (existing) {
+            results.failed++;
+            results.errors.push({ row: i + 1, error: 'البريد الإلكتروني موجود مسبقاً (تم تخطيه)', name: name });
+            continue;
+          }
+
+          try {
+            var hashedPassword = bcrypt.hashSync(password, 10);
+            await db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)')
+              .run(name, email, hashedPassword, role);
+            results.succeeded++;
+          } catch (insertErr) {
+            results.failed++;
+            results.errors.push({ row: i + 1, error: 'خطأ في الإدراج: ' + insertErr.message, name: name });
+          }
+        }
+
         fs.unlinkSync(filePath);
-        return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'الملف فارغ أو لا يحتوي على بيانات كافية' });
+
+        return res.render('admin/bulk-import', {
+          title: 'استيراد المستخدمين',
+          result: results,
+          error: null
+        });
+      } catch (cbErr) {
+        return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'خطأ في قراءة الملف: ' + cbErr.message });
       }
-
-      var headerLine = lines[0];
-      var headers = parseCsvLine(headerLine).map(function(h) { return h.toLowerCase().trim(); });
-
-      var nameIdx = headers.indexOf('name');
-      var emailIdx = headers.indexOf('email');
-      var passwordIdx = headers.indexOf('password');
-      var roleIdx = headers.indexOf('role');
-
-      if (nameIdx === -1 || emailIdx === -1 || passwordIdx === -1) {
-        fs.unlinkSync(filePath);
-        return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'تنسيق CSV غير صحيح. الأعمدة المطلوبة: name, email, password, role' });
-      }
-
-      var results = { succeeded: 0, failed: 0, errors: [] };
-      var allowedRoles = ['student', 'instructor'];
-
-      for (var i = 1; i < lines.length; i++) {
-        var fields = parseCsvLine(lines[i]);
-
-        var name = fields[nameIdx] ? fields[nameIdx].trim() : '';
-        var email = fields[emailIdx] ? fields[emailIdx].trim().toLowerCase() : '';
-        var password = fields[passwordIdx] ? fields[passwordIdx].trim() : '';
-        var role = roleIdx !== -1 && fields[roleIdx] ? fields[roleIdx].trim().toLowerCase() : 'student';
-
-        if (!name || !email || !password) {
-          results.failed++;
-          results.errors.push({ row: i + 1, error: 'الحقول المطلوبة مفقودة', name: name || '—' });
-          continue;
-        }
-
-        if (!email.includes('@')) {
-          results.failed++;
-          results.errors.push({ row: i + 1, error: 'بريد إلكتروني غير صالح', name: name });
-          continue;
-        }
-
-        if (password.length < 6) {
-          results.failed++;
-          results.errors.push({ row: i + 1, error: 'كلمة المرور أقل من 6 أحرف', name: name });
-          continue;
-        }
-
-        if (allowedRoles.indexOf(role) === -1) {
-          role = 'student';
-        }
-
-        var existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-        if (existing) {
-          results.failed++;
-          results.errors.push({ row: i + 1, error: 'البريد الإلكتروني موجود مسبقاً (تم تخطيه)', name: name });
-          continue;
-        }
-
-        try {
-          var hashedPassword = bcrypt.hashSync(password, 10);
-          db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)')
-            .run(name, email, hashedPassword, role);
-          results.succeeded++;
-        } catch (insertErr) {
-          results.failed++;
-          results.errors.push({ row: i + 1, error: 'خطأ في الإدراج: ' + insertErr.message, name: name });
-        }
-      }
-
-      fs.unlinkSync(filePath);
-
-      res.render('admin/bulk-import', {
-        title: 'استيراد المستخدمين',
-        result: results,
-        error: null
-      });
-    } catch (parseErr) {
-      res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'خطأ في قراءة الملف: ' + parseErr.message });
-    }
-  });
+    });
+  } catch(err) { next(err); }
 });
 
 module.exports = router;

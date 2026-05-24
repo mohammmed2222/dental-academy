@@ -4,64 +4,72 @@ const { isInstructor } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/create/:courseId', isInstructor, (req, res) => {
-  const db = getDb();
-  const course = db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?')
-    .get(parseInt(req.params.courseId), req.session.userId);
-  if (!course) return res.redirect('/courses/my-courses');
+router.post('/create/:courseId', isInstructor, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?')
+      .get(parseInt(req.params.courseId), req.session.userId);
+    if (!course) return res.redirect('/courses/my-courses');
 
-  var maxOrder = db.prepare('SELECT COALESCE(MAX(order_index), 0) as max FROM course_sections WHERE course_id = ?')
-    .get(course.id).max;
+    var maxOrder = await db.prepare('SELECT COALESCE(MAX(order_index), 0) as max FROM course_sections WHERE course_id = ?')
+      .get(course.id);
 
-  db.prepare('INSERT INTO course_sections (course_id, title, order_index) VALUES (?, ?, ?)')
-    .run(course.id, req.body.title || 'قسم جديد', maxOrder + 1);
+    await db.prepare('INSERT INTO course_sections (course_id, title, order_index) VALUES (?, ?, ?)')
+      .run(course.id, req.body.title || 'قسم جديد', maxOrder.max + 1);
 
-  res.redirect('/courses/' + course.slug + '/edit');
+    return res.redirect('/courses/' + course.slug + '/edit');
+  } catch(err) { next(err); }
 });
 
-router.post('/:id/rename', isInstructor, (req, res) => {
-  const db = getDb();
-  var section = db.prepare(`
-    SELECT s.*, c.instructor_id, c.slug FROM course_sections s
-    JOIN courses c ON s.course_id = c.id WHERE s.id = ?
-  `).get(parseInt(req.params.id));
-  if (!section || section.instructor_id !== req.session.userId) return res.redirect('/courses/my-courses');
+router.post('/:id/rename', isInstructor, async (req, res, next) => {
+  try {
+    const db = getDb();
+    var section = await db.prepare(`
+      SELECT s.*, c.instructor_id, c.slug FROM course_sections s
+      JOIN courses c ON s.course_id = c.id WHERE s.id = ?
+    `).get(parseInt(req.params.id));
+    if (!section || section.instructor_id !== req.session.userId) return res.redirect('/courses/my-courses');
 
-  db.prepare('UPDATE course_sections SET title = ? WHERE id = ?')
-    .run(req.body.title || 'قسم جديد', section.id);
+    await db.prepare('UPDATE course_sections SET title = ? WHERE id = ?')
+      .run(req.body.title || 'قسم جديد', section.id);
 
-  res.redirect('/courses/' + section.slug + '/edit');
+    return res.redirect('/courses/' + section.slug + '/edit');
+  } catch(err) { next(err); }
 });
 
-router.post('/:id/delete', isInstructor, (req, res) => {
-  const db = getDb();
-  var section = db.prepare(`
-    SELECT s.*, c.instructor_id, c.slug FROM course_sections s
-    JOIN courses c ON s.course_id = c.id WHERE s.id = ?
-  `).get(parseInt(req.params.id));
-  if (!section || section.instructor_id !== req.session.userId) return res.redirect('/courses/my-courses');
+router.post('/:id/delete', isInstructor, async (req, res, next) => {
+  try {
+    const db = getDb();
+    var section = await db.prepare(`
+      SELECT s.*, c.instructor_id, c.slug FROM course_sections s
+      JOIN courses c ON s.course_id = c.id WHERE s.id = ?
+    `).get(parseInt(req.params.id));
+    if (!section || section.instructor_id !== req.session.userId) return res.redirect('/courses/my-courses');
 
-  db.prepare('UPDATE lessons SET section_id = NULL WHERE section_id = ?').run(section.id);
-  db.prepare('DELETE FROM course_sections WHERE id = ?').run(section.id);
+    await db.prepare('UPDATE lessons SET section_id = NULL WHERE section_id = ?').run(section.id);
+    await db.prepare('DELETE FROM course_sections WHERE id = ?').run(section.id);
 
-  res.redirect('/courses/' + section.slug + '/edit');
+    return res.redirect('/courses/' + section.slug + '/edit');
+  } catch(err) { next(err); }
 });
 
-router.post('/reorder/:courseId', isInstructor, (req, res) => {
-  const db = getDb();
-  const course = db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?')
-    .get(parseInt(req.params.courseId), req.session.userId);
-  if (!course) return res.status(403).json({ error: 'غير مصرح' });
+router.post('/reorder/:courseId', isInstructor, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?')
+      .get(parseInt(req.params.courseId), req.session.userId);
+    if (!course) return res.status(403).json({ error: 'غير مصرح' });
 
-  var order = req.body.order;
-  if (Array.isArray(order)) {
-    order.forEach(function(id, index) {
-      db.prepare('UPDATE course_sections SET order_index = ? WHERE id = ? AND course_id = ?')
-        .run(index + 1, parseInt(id), course.id);
-    });
-  }
+    var order = req.body.order;
+    if (Array.isArray(order)) {
+      for (var i = 0; i < order.length; i++) {
+        await db.prepare('UPDATE course_sections SET order_index = ? WHERE id = ? AND course_id = ?')
+          .run(i + 1, parseInt(order[i]), course.id);
+      }
+    }
 
-  res.json({ success: true });
+    return res.json({ success: true });
+  } catch(err) { next(err); }
 });
 
 module.exports = router;

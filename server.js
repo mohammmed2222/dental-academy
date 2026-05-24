@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-const { initializeDatabase, saveDatabase } = require('./config/database');
+const { initializeDatabase, saveDatabase, sqlNow } = require('./config/database');
 const { initializeMail } = require('./config/mail');
 const { startScheduler } = require('./config/scheduler');
 const helmet = require('helmet');
@@ -63,9 +63,9 @@ var generalLimiter = rateLimit({
 app.use(generalLimiter);
 app.use(setUser);
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   res.locals.currentPath = req.path;
-  try { res.locals.unreadNotifications = req.session.userId ? getUnreadCount(req.session.userId) : 0; } catch (e) { res.locals.unreadNotifications = 0; }
+  try { res.locals.unreadNotifications = req.session.userId ? await getUnreadCount(req.session.userId) : 0; } catch (e) { res.locals.unreadNotifications = 0; }
   res.locals.csrfToken = generateCsrfToken(req.session);
   res.locals.escapeHtml = escapeHtml;
   next();
@@ -82,30 +82,32 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
-  const { getDb } = require('./config/database');
-  const db = getDb();
-  const courses = db.prepare(`
-    SELECT c.*, u.name as instructor_name, cat.name as category_name,
-      (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count
-    FROM courses c
-    JOIN users u ON c.instructor_id = u.id
-    LEFT JOIN categories cat ON c.category_id = cat.id
-    WHERE c.status = 'published'
-    ORDER BY c.created_at DESC
-    LIMIT 9
-  `).all();
-  
-  const stats = {
-    courses: db.prepare("SELECT COUNT(*) as count FROM courses WHERE status = 'published'").get().count,
-    students: db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'student'").get().count,
-    instructors: db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'instructor'").get().count,
-    lessons: db.prepare('SELECT COUNT(*) as count FROM lessons').get().count
-  };
+app.get('/', async (req, res, next) => {
+  try {
+    const { getDb } = require('./config/database');
+    const db = getDb();
+    const courses = await db.prepare(`
+      SELECT c.*, u.name as instructor_name, cat.name as category_name,
+        (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count
+      FROM courses c
+      JOIN users u ON c.instructor_id = u.id
+      LEFT JOIN categories cat ON c.category_id = cat.id
+      WHERE c.status = 'published'
+      ORDER BY c.created_at DESC
+      LIMIT 9
+    `).all();
+    
+    const stats = {
+      courses: (await db.prepare("SELECT COUNT(*) as count FROM courses WHERE status = 'published'").get()).count,
+      students: (await db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'student'").get()).count,
+      instructors: (await db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'instructor'").get()).count,
+      lessons: (await db.prepare('SELECT COUNT(*) as count FROM lessons').get()).count
+    };
 
-  const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
+    const categories = await db.prepare('SELECT * FROM categories ORDER BY name').all();
 
-  res.render('index', { courses, stats, categories, title: 'الرئيسية' });
+    return res.render('index', { courses, stats, categories, title: 'الرئيسية' });
+  } catch(err) { next(err); }
 });
 
 app.use('/auth', authRoutes);
@@ -129,26 +131,28 @@ app.use('/coupons', couponRoutes);
 app.use('/admin', bulkImportRoutes);
 app.use('/learning-paths', learningPathRoutes);
 
-app.get('/instructor/:id', (req, res) => {
-  const { getDb } = require('./config/database');
-  const db = getDb();
-  const instructor = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'instructor'").get(parseInt(req.params.id));
-  if (!instructor) {
-    return res.status(404).render('error', { title: 'غير موجود', message: 'المدرس غير موجود', error: null });
-  }
-  const courses = db.prepare(`
-    SELECT c.*,
-      (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
-      (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
-      (SELECT COALESCE(AVG(rating), 0) FROM course_reviews WHERE course_id = c.id) as avg_rating,
-      (SELECT COUNT(*) FROM course_reviews WHERE course_id = c.id) as total_reviews
-    FROM courses c WHERE c.instructor_id = ? AND c.status = 'published'
-    ORDER BY c.created_at DESC
-  `).all(instructor.id);
-  const totalStudents = db.prepare(`
-    SELECT COUNT(*) as count FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE c.instructor_id = ?
-  `).get(instructor.id).count;
-  res.render('instructor/profile', { title: instructor.name, instructor, courses, totalStudents });
+app.get('/instructor/:id', async (req, res, next) => {
+  try {
+    const { getDb } = require('./config/database');
+    const db = getDb();
+    const instructor = await db.prepare("SELECT * FROM users WHERE id = ? AND role = 'instructor'").get(parseInt(req.params.id));
+    if (!instructor) {
+      return res.status(404).render('error', { title: 'غير موجود', message: 'المدرس غير موجود', error: null });
+    }
+    const courses = await db.prepare(`
+      SELECT c.*,
+        (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
+        (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
+        (SELECT COALESCE(AVG(rating), 0) FROM course_reviews WHERE course_id = c.id) as avg_rating,
+        (SELECT COUNT(*) FROM course_reviews WHERE course_id = c.id) as total_reviews
+      FROM courses c WHERE c.instructor_id = ? AND c.status = 'published'
+      ORDER BY c.created_at DESC
+    `).all(instructor.id);
+    const totalStudents = (await db.prepare(`
+      SELECT COUNT(*) as count FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE c.instructor_id = ?
+    `).get(instructor.id)).count;
+    return res.render('instructor/profile', { title: instructor.name, instructor, courses, totalStudents });
+  } catch(err) { next(err); }
 });
 
 app.get('/faq', (req, res) => {
@@ -163,19 +167,21 @@ app.get('/contact', (req, res) => {
   res.render('pages/contact', { title: 'تواصل معنا', error: null, success: null, currentPath: '/contact' });
 });
 
-app.post('/contact', (req, res) => {
-  const { getDb } = require('./config/database');
-  const db = getDb();
-  const { name, email, phone, subject, message } = req.body;
-  if (!name || !email || !subject || !message) {
-    return res.render('pages/contact', { title: 'تواصل معنا', error: 'يرجى ملء جميع الحقول المطلوبة', success: null, currentPath: '/contact' });
-  }
+app.post('/contact', async (req, res, next) => {
   try {
-    db.prepare('INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)').run(name, email, phone || '', subject, message);
-  } catch (e) {
-    console.error('Failed to save contact message:', e);
-  }
-  return res.render('pages/contact', { title: 'تواصل معنا', success: 'تم إرسال رسالتك بنجاح، سنتواصل معك قريباً', error: null, currentPath: '/contact' });
+    const { getDb } = require('./config/database');
+    const db = getDb();
+    const { name, email, phone, subject, message } = req.body;
+    if (!name || !email || !subject || !message) {
+      return res.render('pages/contact', { title: 'تواصل معنا', error: 'يرجى ملء جميع الحقول المطلوبة', success: null, currentPath: '/contact' });
+    }
+    try {
+      await db.prepare('INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)').run(name, email, phone || '', subject, message);
+    } catch (e) {
+      console.error('Failed to save contact message:', e);
+    }
+    return res.render('pages/contact', { title: 'تواصل معنا', success: 'تم إرسال رسالتك بنجاح، سنتواصل معك قريباً', error: null, currentPath: '/contact' });
+  } catch(err) { next(err); }
 });
 
 app.get('/privacy', (req, res) => {

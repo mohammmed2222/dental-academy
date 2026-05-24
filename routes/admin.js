@@ -2,179 +2,232 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const slugify = require('slugify');
 const { getDb } = require('../config/database');
+const { sqlNow } = require('../config/database');
 const { isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', isAdmin, (req, res) => {
-  const db = getDb();
-  const stats = {
-    users: db.prepare('SELECT COUNT(*) as count FROM users').get().count,
-    students: db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'student'").get().count,
-    instructors: db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'instructor'").get().count,
-    courses: db.prepare('SELECT COUNT(*) as count FROM courses').get().count,
-    published: db.prepare("SELECT COUNT(*) as count FROM courses WHERE status = 'published'").get().count,
-    enrollments: db.prepare('SELECT COUNT(*) as count FROM enrollments').get().count,
-    lessons: db.prepare('SELECT COUNT(*) as count FROM lessons').get().count,
-  };
-
-  const recentUsers = db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT 5').all();
-  const recentCourses = db.prepare(`
-    SELECT c.*, u.name as instructor_name FROM courses c
-    JOIN users u ON c.instructor_id = u.id
-    ORDER BY c.created_at DESC LIMIT 5
-  `).all();
-
-  res.render('admin/index', { title: 'لوحة المشرف', stats, recentUsers, recentCourses });
-});
-
-router.get('/users', isAdmin, (req, res) => {
-  const db = getDb();
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = 20;
-  const offset = (page - 1) * limit;
-  const total = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-  const totalPages = Math.ceil(total / limit);
-  const users = db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
-  res.render('admin/users', { title: 'إدارة المستخدمين', users, page, totalPages });
-});
-
-router.post('/users/create', isAdmin, (req, res) => {
-  const db = getDb();
-  const { name, email, password, role } = req.body;
-
-  if (!name || !email || !password) {
-    return res.redirect('/admin/users');
-  }
-
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existing) return res.redirect('/admin/users');
-
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)')
-    .run(name, email, hashedPassword, role || 'student');
-
-  res.redirect('/admin/users');
-});
-
-router.post('/users/:id/delete', isAdmin, (req, res) => {
-  const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
-  if (user && user.role !== 'admin') {
-    db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
-  }
-  res.redirect('/admin/users');
-});
-
-router.post('/users/:id/role', isAdmin, (req, res) => {
-  const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
-  if (user && user.role !== 'admin') {
-    var allowedRoles = ['student', 'instructor', 'admin'];
-    var newRole = allowedRoles.indexOf(req.body.role) !== -1 ? req.body.role : user.role;
-    db.prepare('UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run(newRole, user.id);
-  }
-  res.redirect('/admin/users');
-});
-
-router.get('/courses', isAdmin, (req, res) => {
-  const db = getDb();
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = 20;
-  const offset = (page - 1) * limit;
-  const total = db.prepare('SELECT COUNT(*) as count FROM courses').get().count;
-  const totalPages = Math.ceil(total / limit);
-  const courses = db.prepare(`
-    SELECT c.*, u.name as instructor_name, cat.name as category_name,
-      (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
-      (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count
-    FROM courses c
-    JOIN users u ON c.instructor_id = u.id
-    LEFT JOIN categories cat ON c.category_id = cat.id
-    ORDER BY c.created_at DESC
-    LIMIT ? OFFSET ?
-  `).all(limit, offset);
-
-  res.render('admin/courses', { title: 'إدارة الكورسات', courses, page, totalPages });
-});
-
-router.get('/courses/:id/edit', isAdmin, (req, res) => {
-  const db = getDb();
-  const course = db.prepare('SELECT c.*, u.name as instructor_name FROM courses c JOIN users u ON c.instructor_id = u.id WHERE c.id = ?').get(parseInt(req.params.id));
-  if (!course) return res.redirect('/admin/courses');
-  const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
-  res.render('admin/course-edit', { title: 'تعديل الدورة', course, categories, error: null });
-});
-
-router.post('/courses/:id/edit', isAdmin, (req, res) => {
-  const db = getDb();
-  const course = db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
-  if (!course) return res.redirect('/admin/courses');
-
-  const { title, description, short_description, category_id, level, price, status } = req.body;
-  if (!title) return res.redirect('/admin/courses/' + req.params.id + '/edit');
-
-  db.prepare(`
-    UPDATE courses SET title = ?, description = ?, short_description = ?,
-      category_id = ?, level = ?, price = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(title, description || '', short_description || '', category_id || null, level || 'beginner', parseFloat(price) || 0, status || 'draft', course.id);
-
-  res.redirect('/admin/courses');
-});
-
-router.post('/courses/:id/delete', isAdmin, (req, res) => {
-  const db = getDb();
-  const course = db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
-  if (course) {
-    db.prepare('DELETE FROM courses WHERE id = ?').run(course.id);
-  }
-  res.redirect('/admin/courses');
-});
-
-router.post('/courses/:id/toggle-status', isAdmin, (req, res) => {
-  const db = getDb();
-  const course = db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
-  if (course) {
-    const newStatus = course.status === 'published' ? 'draft' : 'published';
-    db.prepare('UPDATE courses SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, course.id);
-  }
-  res.redirect('/admin/courses');
-});
-
-router.get('/categories', isAdmin, (req, res) => {
-  const db = getDb();
-  const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
-  res.render('admin/categories', { title: 'التصنيفات', categories, error: null });
-});
-
-router.post('/categories/create', isAdmin, (req, res) => {
-  const db = getDb();
-  const { name, description } = req.body;
-  if (!name) return res.redirect('/admin/categories');
-
-  const slug = slugify(name, { lower: true, replacement: '-' });
-  
-  const existing = db.prepare('SELECT id FROM categories WHERE slug = ?').get(slug);
-  if (existing) {
-    const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
-    return res.render('admin/categories', { title: 'التصنيفات', categories, error: 'التصنيف موجود بالفعل' });
-  }
-  
+router.get('/', isAdmin, async (req, res, next) => {
   try {
-    db.prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)').run(name, slug, description || '');
-  } catch (e) {
-    req.session.flash = { type: 'error', message: 'فشل إنشاء التصنيف' };
+    const db = getDb();
+    const stats = {
+      users: (await db.prepare('SELECT COUNT(*) as count FROM users').get()).count,
+      students: (await db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'student'").get()).count,
+      instructors: (await db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'instructor'").get()).count,
+      courses: (await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count,
+      published: (await db.prepare("SELECT COUNT(*) as count FROM courses WHERE status = 'published'").get()).count,
+      enrollments: (await db.prepare('SELECT COUNT(*) as count FROM enrollments').get()).count,
+      lessons: (await db.prepare('SELECT COUNT(*) as count FROM lessons').get()).count,
+    };
+
+    const recentUsers = await db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT 5').all();
+    const recentCourses = await db.prepare(`
+      SELECT c.*, u.name as instructor_name FROM courses c
+      JOIN users u ON c.instructor_id = u.id
+      ORDER BY c.created_at DESC LIMIT 5
+    `).all();
+
+    return res.render('admin/index', { title: 'لوحة المشرف', stats, recentUsers, recentCourses });
+  } catch(err) {
+    next(err);
   }
-  
-  res.redirect('/admin/categories');
 });
 
-router.post('/categories/:id/delete', isAdmin, (req, res) => {
-  const db = getDb();
-  db.prepare('DELETE FROM categories WHERE id = ?').run(parseInt(req.params.id));
-  res.redirect('/admin/categories');
+router.get('/users', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = 20;
+    const offset = (page - 1) * limit;
+    const total = (await db.prepare('SELECT COUNT(*) as count FROM users').get()).count;
+    const totalPages = Math.ceil(total / limit);
+    const users = await db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
+    return res.render('admin/users', { title: 'إدارة المستخدمين', users, page, totalPages });
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/users/create', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password) {
+      return res.redirect('/admin/users');
+    }
+
+    const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existing) return res.redirect('/admin/users');
+
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    await db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)')
+      .run(name, email, hashedPassword, role || 'student');
+
+    return res.redirect('/admin/users');
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/users/:id/delete', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
+    if (user && user.role !== 'admin') {
+      await db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+    }
+    return res.redirect('/admin/users');
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/users/:id/role', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
+    if (user && user.role !== 'admin') {
+      var allowedRoles = ['student', 'instructor', 'admin'];
+      var newRole = allowedRoles.indexOf(req.body.role) !== -1 ? req.body.role : user.role;
+      await db.prepare(`UPDATE users SET role = ?, updated_at = ${sqlNow()} WHERE id = ?`)
+        .run(newRole, user.id);
+    }
+    return res.redirect('/admin/users');
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.get('/courses', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = 20;
+    const offset = (page - 1) * limit;
+    const total = (await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count;
+    const totalPages = Math.ceil(total / limit);
+    const courses = await db.prepare(`
+      SELECT c.*, u.name as instructor_name, cat.name as category_name,
+        (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
+        (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count
+      FROM courses c
+      JOIN users u ON c.instructor_id = u.id
+      LEFT JOIN categories cat ON c.category_id = cat.id
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
+
+    return res.render('admin/courses', { title: 'إدارة الكورسات', courses, page, totalPages });
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.get('/courses/:id/edit', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const course = await db.prepare('SELECT c.*, u.name as instructor_name FROM courses c JOIN users u ON c.instructor_id = u.id WHERE c.id = ?').get(parseInt(req.params.id));
+    if (!course) return res.redirect('/admin/courses');
+    const categories = await db.prepare('SELECT * FROM categories ORDER BY name').all();
+    return res.render('admin/course-edit', { title: 'تعديل الدورة', course, categories, error: null });
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/courses/:id/edit', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
+    if (!course) return res.redirect('/admin/courses');
+
+    const { title, description, short_description, category_id, level, price, status } = req.body;
+    if (!title) return res.redirect('/admin/courses/' + req.params.id + '/edit');
+
+    await db.prepare(`
+      UPDATE courses SET title = ?, description = ?, short_description = ?,
+        category_id = ?, level = ?, price = ?, status = ?, updated_at = ${sqlNow()}
+      WHERE id = ?
+    `).run(title, description || '', short_description || '', category_id || null, level || 'beginner', parseFloat(price) || 0, status || 'draft', course.id);
+
+    return res.redirect('/admin/courses');
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/courses/:id/delete', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
+    if (course) {
+      await db.prepare('DELETE FROM courses WHERE id = ?').run(course.id);
+    }
+    return res.redirect('/admin/courses');
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/courses/:id/toggle-status', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
+    if (course) {
+      const newStatus = course.status === 'published' ? 'draft' : 'published';
+      await db.prepare(`UPDATE courses SET status = ?, updated_at = ${sqlNow()} WHERE id = ?`).run(newStatus, course.id);
+    }
+    return res.redirect('/admin/courses');
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.get('/categories', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const categories = await db.prepare('SELECT * FROM categories ORDER BY name').all();
+    return res.render('admin/categories', { title: 'التصنيفات', categories, error: null });
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/categories/create', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const { name, description } = req.body;
+    if (!name) return res.redirect('/admin/categories');
+
+    const slug = slugify(name, { lower: true, replacement: '-' });
+    
+    const existing = await db.prepare('SELECT id FROM categories WHERE slug = ?').get(slug);
+    if (existing) {
+      const categories = await db.prepare('SELECT * FROM categories ORDER BY name').all();
+      return res.render('admin/categories', { title: 'التصنيفات', categories, error: 'التصنيف موجود بالفعل' });
+    }
+    
+    try {
+      await db.prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)').run(name, slug, description || '');
+    } catch (e) {
+      req.session.flash = { type: 'error', message: 'فشل إنشاء التصنيف' };
+    }
+    
+    return res.redirect('/admin/categories');
+  } catch(err) {
+    next(err);
+  }
+});
+
+router.post('/categories/:id/delete', isAdmin, async (req, res, next) => {
+  try {
+    const db = getDb();
+    await db.prepare('DELETE FROM categories WHERE id = ?').run(parseInt(req.params.id));
+    return res.redirect('/admin/categories');
+  } catch(err) {
+    next(err);
+  }
 });
 
 module.exports = router;
