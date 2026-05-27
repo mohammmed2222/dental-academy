@@ -232,8 +232,8 @@ app.use((err, req, res, next) => {
   try { fs.mkdirSync(fullPath, { recursive: true }); } catch (e) { console.error('خطأ في إنشاء مجلد ' + dir + ':', e.message); }
 });
 
-Promise.all([initializeDatabase(), initializeMail()]).then(() => {
-  setupAiTable().catch(() => {});
+Promise.all([initializeDatabase(), initializeMail()]).then(async () => {
+  await setupAiTable().catch(function(e) { console.error('AI table error (non-fatal):', e.message); });
   console.log('✓ قاعدة البيانات جاهزة');
   console.log('✓ البريد الإلكتروني جاهز');
   startScheduler();

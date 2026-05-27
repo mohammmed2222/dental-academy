@@ -10,7 +10,7 @@ router.get('/', isAuthenticated, async function(req, res, next) {
   try {
     var settings = await getSettings();
     var db = getDb();
-    var history = db.prepare('SELECT * FROM ai_chat_history WHERE user_id = ? ORDER BY created_at ASC LIMIT 50').all(req.session.userId);
+    var history = await db.prepare('SELECT * FROM ai_chat_history WHERE user_id = ? ORDER BY created_at ASC LIMIT 50').all(req.session.userId);
     return res.render('ai/index', { title: 'الذكاء الاصطناعي', settings, history, error: null, result: null });
   } catch (err) { next(err); }
 });
@@ -23,13 +23,13 @@ router.post('/chat', isAuthenticated, async function(req, res, next) {
     if (!message) return res.json({ error: 'الرجاء كتابة رسالة' });
     var settings = await getSettings();
     if (!settings.is_active) return res.json({ error: 'الذكاء الاصطناعي غير مفعل. يرجى تفعيله من الإعدادات.' });
-    db.prepare('INSERT INTO ai_chat_history (user_id, role, content) VALUES (?, ?, ?)').run(req.session.userId, 'user', message);
-    var history = db.prepare('SELECT role, content FROM ai_chat_history WHERE user_id = ? ORDER BY created_at ASC LIMIT 20').all(req.session.userId);
+    await db.prepare('INSERT INTO ai_chat_history (user_id, role, content) VALUES (?, ?, ?)').run(req.session.userId, 'user', message);
+    var history = await db.prepare('SELECT role, content FROM ai_chat_history WHERE user_id = ? ORDER BY created_at ASC LIMIT 20').all(req.session.userId);
     var messages = history.map(function(h) { return { role: h.role, content: h.content }; });
     var sysPrompt = settings.system_prompt || 'أنت مساعد ذكي متخصص في طب الأسنان. أجب باللغة العربية الفصحى البسيطة. اسمك "مساعد الأكاديمية". كن مفيداً ودقيقاً.';
     var result = await chat(messages, { systemPrompt: sysPrompt });
     if (result.error) return res.json({ error: result.error });
-    db.prepare('INSERT INTO ai_chat_history (user_id, role, content) VALUES (?, ?, ?)').run(req.session.userId, 'assistant', result.text);
+    await db.prepare('INSERT INTO ai_chat_history (user_id, role, content) VALUES (?, ?, ?)').run(req.session.userId, 'assistant', result.text);
     return res.json({ text: result.text });
   } catch (err) { next(err); }
 });
@@ -79,8 +79,8 @@ router.post('/search', isAuthenticated, async function(req, res, next) {
     var query = (req.body.query || '').trim();
     if (!query) return res.json({ results: [] });
     var db = getDb();
-    var courses = db.prepare("SELECT id, title, description, slug FROM courses WHERE status = 'published' ORDER BY title LIMIT 30").all();
-    var lessons = db.prepare('SELECT l.id, l.title, l.content, c.title as course_title FROM lessons l JOIN courses c ON l.course_id = c.id WHERE c.status = ? ORDER BY l.title LIMIT 30').all('published');
+    var courses = await db.prepare("SELECT id, title, description, slug FROM courses WHERE status = 'published' ORDER BY title LIMIT 30").all();
+    var lessons = await db.prepare('SELECT l.id, l.title, l.content, c.title as course_title FROM lessons l JOIN courses c ON l.course_id = c.id WHERE c.status = ? ORDER BY l.title LIMIT 30').all('published');
     var courseContext = courses.map(function(c) { return 'دورة: ' + c.title + ' - ' + (c.description || '').slice(0, 200); }).join('\n');
     var lessonContext = lessons.map(function(l) { return 'درس: ' + l.title + ' (في: ' + l.course_title + ') - ' + (l.content || '').slice(0, 200); }).join('\n');
     var prompt = 'محتوى المنصة:\n' + courseContext + '\n' + lessonContext + '\n\nسؤال المستخدم: ' + query + '\n\nأجب على السؤال بناءً على المحتوى أعلاه فقط. إذا لم تجد إجابة، قل "لم أجد معلومات عن هذا في المنصة". كن دقيقاً ومختصراً.';
@@ -93,7 +93,7 @@ router.post('/search', isAuthenticated, async function(req, res, next) {
 router.post('/clear-history', isAuthenticated, async function(req, res, next) {
   try {
     var db = getDb();
-    db.prepare('DELETE FROM ai_chat_history WHERE user_id = ?').run(req.session.userId);
+    await db.prepare('DELETE FROM ai_chat_history WHERE user_id = ?').run(req.session.userId);
     return res.json({ success: true });
   } catch (err) { next(err); }
 });
