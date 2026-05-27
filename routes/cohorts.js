@@ -1,5 +1,5 @@
 const express = require('express');
-const { getDb, sqlNow } = require('../config/database');
+const { getDb, sqlNow, isUsingPg } = require('../config/database');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -40,16 +40,18 @@ router.post('/create', isAdmin, async (req, res, next) => {
     }
     const result = await db.prepare('INSERT INTO cohorts (name, description, start_date, end_date, created_by) VALUES (?, ?, ?, ?, ?)').run(name, description || '', start_date || null, end_date || null, req.session.userId);
     const cohortId = result.lastInsertRowid;
+    var insertStudent = isUsingPg() ? 'INSERT INTO cohort_students (cohort_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING' : 'INSERT OR IGNORE INTO cohort_students (cohort_id, user_id) VALUES (?, ?)';
+    var insertCourse = isUsingPg() ? 'INSERT INTO cohort_courses (cohort_id, course_id) VALUES ($1, $2) ON CONFLICT DO NOTHING' : 'INSERT OR IGNORE INTO cohort_courses (cohort_id, course_id) VALUES (?, ?)';
     if (student_ids) {
       const ids = Array.isArray(student_ids) ? student_ids : [student_ids];
       for (const sid of ids) {
-        await db.prepare('INSERT OR IGNORE INTO cohort_students (cohort_id, user_id) VALUES (?, ?)').run(cohortId, parseInt(sid));
+        await db.prepare(insertStudent).run(cohortId, parseInt(sid));
       }
     }
     if (course_ids) {
       const ids = Array.isArray(course_ids) ? course_ids : [course_ids];
       for (const cid of ids) {
-        await db.prepare('INSERT OR IGNORE INTO cohort_courses (cohort_id, course_id) VALUES (?, ?)').run(cohortId, parseInt(cid));
+        await db.prepare(insertCourse).run(cohortId, parseInt(cid));
       }
     }
     req.session.flash = { type: 'success', message: 'تم إنشاء المجموعة' };

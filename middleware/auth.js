@@ -37,8 +37,8 @@ async function setUser(req, res, next) {
           req.session.userEmail = user.email;
           req.session.userAvatar = user.avatar || '/images/default-avatar.png';
         } else {
-          // User was deleted - destroy session
-          return req.session.destroy(function() { res.redirect('/auth/login'); });
+          req.session.destroy();
+          return res.redirect('/auth/login');
         }
       } catch (e) {}
       req.session._lastRevalidated = now;

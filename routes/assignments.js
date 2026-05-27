@@ -230,21 +230,20 @@ router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
           return res.status(403).json({ error: 'غير مصرح بالتسجيل في هذا الواجب' });
         }
 
-        const content = req.body.notes || req.body.content || '';
-        const filePath = req.file ? '/uploads/assignments/' + req.file.filename : '';
+        const notes = req.body.notes || '';
+        const fileUrl = req.file ? '/uploads/assignments/' + req.file.filename : '';
 
-        // Check if already submitted
         const existing = await db.prepare('SELECT id FROM assignment_submissions WHERE assignment_id = ? AND user_id = ?').get(assignment.id, req.session.userId);
         if (existing) {
           await db.prepare(`
-            UPDATE assignment_submissions SET content = ?, file_path = ?, submitted_at = ${sqlNow()}, score = NULL, feedback = NULL, graded_at = NULL
+            UPDATE assignment_submissions SET notes = ?, file_url = ?, submitted_at = ${sqlNow()}, grade = NULL, feedback = NULL, graded_at = NULL
             WHERE assignment_id = ? AND user_id = ?
-          `).run(content || '', filePath, assignment.id, req.session.userId);
+          `).run(notes, fileUrl, assignment.id, req.session.userId);
         } else {
           await db.prepare(`
-            INSERT INTO assignment_submissions (assignment_id, user_id, content, file_path, submitted_at)
+            INSERT INTO assignment_submissions (assignment_id, user_id, notes, file_url, submitted_at)
             VALUES (?, ?, ?, ?, ${sqlNow()})
-          `).run(assignment.id, req.session.userId, content || '', filePath);
+          `).run(assignment.id, req.session.userId, notes, fileUrl);
         }
         try {
           const instructor = await db.prepare('SELECT email FROM users WHERE id = ?').get(assignment.instructor_id);
@@ -286,7 +285,7 @@ router.post('/submissions/:id/grade', isInstructor, async (req, res, next) => {
     const { score, feedback } = req.body;
     const finalScore = parseInt(score) || 0;
     await db.prepare(`
-      UPDATE assignment_submissions SET score = ?, feedback = ?, graded_at = ${sqlNow()} WHERE id = ?
+      UPDATE assignment_submissions SET grade = ?, feedback = ?, graded_at = ${sqlNow()} WHERE id = ?
     `).run(finalScore, feedback || '', submission.id);
     try {
       const student = await db.prepare('SELECT name, email FROM users WHERE id = ?').get(submission.user_id);
