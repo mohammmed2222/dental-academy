@@ -87,7 +87,7 @@ providers.openai = {
 
 async function getSettings() {
   var db = getDb();
-  var row = db && db.prepare ? db.prepare('SELECT * FROM ai_settings ORDER BY id DESC LIMIT 1').get() : null;
+  var row = db && db.prepare ? await db.prepare('SELECT * FROM ai_settings ORDER BY id DESC LIMIT 1').get() : null;
   if (!row) return { provider: 'gemini', ai_model: 'gemini-2.0-flash', gemini_api_key: '', openai_api_key: '', openai_base_url: '', system_prompt: '', is_active: 0 };
   return row;
 }
@@ -158,8 +158,8 @@ async function gradeAssignment(question, answer, maxPoints) {
 
 async function recommend(userId, limit) {
   var db = getDb();
-  var courses = db.prepare('SELECT c.id, c.title, c.description, c.level, cat.name as category_name FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id WHERE c.status = ? ORDER BY RANDOM() LIMIT 20').all('published');
-  var enrollments = db.prepare('SELECT c.id, c.title, c.level FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE e.user_id = ?').all(userId);
+  var courses = await db.prepare('SELECT c.id, c.title, c.description, c.level, cat.name as category_name FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id WHERE c.status = ? ORDER BY RANDOM() LIMIT 20').all('published');
+  var enrollments = await db.prepare('SELECT c.id, c.title, c.level FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE e.user_id = ?').all(userId);
   if (courses.length === 0) return { courses: [] };
   if (enrollments.length === 0) {
     return { courses: courses.slice(0, (limit || 6)) };
@@ -176,18 +176,4 @@ async function recommend(userId, limit) {
   return { courses: recommended.slice(0, (limit || 6)) };
 }
 
-async function setupAiTable() {
-  var db = getDb();
-  var pg = isUsingPg();
-  try {
-    if (pg) {
-      await db.prepare('CREATE TABLE IF NOT EXISTS ai_settings (id SERIAL PRIMARY KEY, provider TEXT DEFAULT \'gemini\', ai_model TEXT DEFAULT \'gemini-2.0-flash\', gemini_api_key TEXT DEFAULT \'\', openai_api_key TEXT DEFAULT \'\', openai_base_url TEXT DEFAULT \'\', system_prompt TEXT DEFAULT \'\', is_active INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)').run();
-      await db.prepare('CREATE TABLE IF NOT EXISTS ai_chat_history (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, role TEXT NOT NULL, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)').run();
-    } else {
-      db.prepare('CREATE TABLE IF NOT EXISTS ai_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT DEFAULT \'gemini\', ai_model TEXT DEFAULT \'gemini-2.0-flash\', gemini_api_key TEXT DEFAULT \'\', openai_api_key TEXT DEFAULT \'\', openai_base_url TEXT DEFAULT \'\', system_prompt TEXT DEFAULT \'\', is_active INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
-      db.prepare('CREATE TABLE IF NOT EXISTS ai_chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)').run();
-    }
-  } catch (e) { console.error('AI table creation error:', e.message); }
-}
-
-module.exports = { generate, chat, generateQuiz, summarize, gradeAssignment, recommend, getSettings, saveSettings, setupAiTable, providers };
+module.exports = { generate, chat, generateQuiz, summarize, gradeAssignment, recommend, getSettings, saveSettings, providers };

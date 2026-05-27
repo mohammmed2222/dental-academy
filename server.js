@@ -6,7 +6,6 @@ require('dotenv').config();
 
 const { initializeDatabase, saveDatabase, sqlNow } = require('./config/database');
 const { initializeMail } = require('./config/mail');
-const { setupAiTable } = require('./config/ai');
 const { startScheduler } = require('./config/scheduler');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -233,7 +232,6 @@ app.use((err, req, res, next) => {
 });
 
 Promise.all([initializeDatabase(), initializeMail()]).then(async () => {
-  await setupAiTable().catch(function(e) { console.error('AI table error (non-fatal):', e.message); });
   console.log('✓ قاعدة البيانات جاهزة');
   console.log('✓ البريد الإلكتروني جاهز');
   startScheduler();
