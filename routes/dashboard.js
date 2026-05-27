@@ -150,7 +150,7 @@ router.get('/grades', isAuthenticated, async (req, res, next) => {
       JOIN assignments a ON s.assignment_id = a.id
       JOIN lessons l ON a.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
-      WHERE s.user_id = ? AND s.score IS NOT NULL
+      WHERE s.user_id = ? AND s.grade IS NOT NULL
       ORDER BY s.graded_at DESC
     `).all(userId);
 

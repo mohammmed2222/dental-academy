@@ -37,8 +37,8 @@ router.get('/course/:courseId', isAuthenticated, async (req, res, next) => {
     return res.render('announcements/list', {
       title: 'الإعلانات',
       announcements,
-      courseId,
-      courseTitle
+      course,
+      isOwner: isOwner
     });
   } catch(err) { next(err); }
 });
