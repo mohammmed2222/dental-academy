@@ -32,6 +32,10 @@
           <input type="email" id="email" name="email" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left" dir="ltr" value="<%= user.email %>" required/>
         </div>
         <div>
+          <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="phone">رقم الجوال <span class="text-on-surface-variant">(لإشعارات واتساب)</span></label>
+          <input type="text" id="phone" name="phone" dir="ltr" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left" value="<%= typeof user.phone !== 'undefined' ? user.phone : '' %>" placeholder="966501234567"/>
+        </div>
+        <div>
           <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="bio">السيرة الذاتية</label>
           <textarea id="bio" name="bio" rows="4" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="نبذة عنك (اختياري)"><%= typeof user.bio !== 'undefined' ? user.bio : '' %></textarea>
         </div>

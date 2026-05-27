@@ -184,7 +184,7 @@ router.post('/profile', isAuthenticated, async (req, res, next) => {
           return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: err.message, success: null });
         }
 
-        const { name, bio, password } = req.body;
+        const { name, bio, phone, password } = req.body;
 
         if (!name) {
           return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'الاسم مطلوب', success: null });
@@ -198,11 +198,11 @@ router.post('/profile', isAuthenticated, async (req, res, next) => {
         if (password && password.length >= 6) {
           const bcrypt = require('bcryptjs');
           const hashedPassword = bcrypt.hashSync(password, 10);
-          await db.prepare(`UPDATE users SET name = ?, bio = ?, avatar = ?, password = ?, updated_at = ${sqlNow()} WHERE id = ?`)
-            .run(name, bio || '', avatarPath, hashedPassword, req.session.userId);
+          await db.prepare(`UPDATE users SET name = ?, bio = ?, phone = ?, avatar = ?, password = ?, updated_at = ${sqlNow()} WHERE id = ?`)
+            .run(name, bio || '', phone || '', avatarPath, hashedPassword, req.session.userId);
         } else {
-          await db.prepare(`UPDATE users SET name = ?, bio = ?, avatar = ?, updated_at = ${sqlNow()} WHERE id = ?`)
-            .run(name, bio || '', avatarPath, req.session.userId);
+          await db.prepare(`UPDATE users SET name = ?, bio = ?, phone = ?, avatar = ?, updated_at = ${sqlNow()} WHERE id = ?`)
+            .run(name, bio || '', phone || '', avatarPath, req.session.userId);
         }
 
         req.session.userName = name;

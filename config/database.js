@@ -70,7 +70,7 @@ function pgWrap(pool) {
 }
 
 const createTablesSql = `
-CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', phone TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS courses (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', short_description TEXT DEFAULT '', instructor_id INTEGER NOT NULL, category_id INTEGER, image TEXT DEFAULT '/images/default-course.png', level TEXT DEFAULT 'beginner', price REAL DEFAULT 0, total_lessons INTEGER DEFAULT 0, total_duration INTEGER DEFAULT 0, sections_order TEXT DEFAULT '[]', status TEXT DEFAULT 'draft', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL);
 CREATE TABLE IF NOT EXISTS course_sections (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id INTEGER NOT NULL, title TEXT NOT NULL, order_index INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE);
@@ -104,10 +104,11 @@ CREATE TABLE IF NOT EXISTS live_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, 
 CREATE TABLE IF NOT EXISTS cohorts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT DEFAULT '', start_date DATE, end_date DATE, created_by INTEGER NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS cohort_students (id INTEGER PRIMARY KEY AUTOINCREMENT, cohort_id INTEGER NOT NULL, user_id INTEGER NOT NULL, enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (cohort_id) REFERENCES cohorts(id) ON DELETE CASCADE, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, UNIQUE(cohort_id, user_id));
 CREATE TABLE IF NOT EXISTS cohort_courses (id INTEGER PRIMARY KEY AUTOINCREMENT, cohort_id INTEGER NOT NULL, course_id INTEGER NOT NULL, FOREIGN KEY (cohort_id) REFERENCES cohorts(id) ON DELETE CASCADE, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE, UNIQUE(cohort_id, course_id));
+CREATE TABLE IF NOT EXISTS whatsapp_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT DEFAULT 'direct', api_key TEXT DEFAULT '', api_url TEXT DEFAULT '', sender_name TEXT DEFAULT '', is_active INTEGER DEFAULT 0, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
 `;
 
 const pgCreateTablesSql = `
-CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', phone TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, name TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS courses (id SERIAL PRIMARY KEY, title TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', short_description TEXT DEFAULT '', instructor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL, image TEXT DEFAULT '/images/default-course.png', level TEXT DEFAULT 'beginner', price REAL DEFAULT 0, total_lessons INTEGER DEFAULT 0, total_duration INTEGER DEFAULT 0, sections_order TEXT DEFAULT '[]', status TEXT DEFAULT 'draft', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS course_sections (id SERIAL PRIMARY KEY, course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, title TEXT NOT NULL, order_index INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
@@ -141,6 +142,7 @@ CREATE TABLE IF NOT EXISTS live_sessions (id SERIAL PRIMARY KEY, course_id INTEG
 CREATE TABLE IF NOT EXISTS cohorts (id SERIAL PRIMARY KEY, name TEXT NOT NULL, description TEXT DEFAULT '', start_date DATE, end_date DATE, created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS cohort_students (id SERIAL PRIMARY KEY, cohort_id INTEGER NOT NULL REFERENCES cohorts(id) ON DELETE CASCADE, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(cohort_id, user_id));
 CREATE TABLE IF NOT EXISTS cohort_courses (id SERIAL PRIMARY KEY, cohort_id INTEGER NOT NULL REFERENCES cohorts(id) ON DELETE CASCADE, course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, UNIQUE(cohort_id, course_id));
+CREATE TABLE IF NOT EXISTS whatsapp_settings (id SERIAL PRIMARY KEY, provider TEXT DEFAULT 'direct', api_key TEXT DEFAULT '', api_url TEXT DEFAULT '', sender_name TEXT DEFAULT '', is_active INTEGER DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 `;
 
 async function initializeDatabase() {
@@ -188,7 +190,8 @@ async function initializeDatabase() {
     "ALTER TABLE payments ADD COLUMN discount_amount REAL DEFAULT 0",
     "ALTER TABLE payments ADD COLUMN stripe_session_id TEXT",
     "ALTER TABLE payments ADD COLUMN receipt_image TEXT DEFAULT ''",
-    "ALTER TABLE lessons ADD COLUMN release_date DATETIME"
+    "ALTER TABLE lessons ADD COLUMN release_date DATETIME",
+    "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''"
   ];
   for (const stmt of alterStmts) { try { dbRaw.run(stmt); } catch(e) {} }
   db = sqliteWrap(dbRaw);

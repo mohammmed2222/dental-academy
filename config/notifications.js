@@ -4,6 +4,16 @@ async function createNotification(userId, type, title, message, relatedId, relat
   const db = getDb();
   await db.prepare('INSERT INTO notifications (user_id, type, title, message, related_id, related_type) VALUES (?, ?, ?, ?, ?, ?)')
     .run(userId, type, title, message || '', relatedId || null, relatedType || null);
+  // Send WhatsApp if user has phone
+  try {
+    var user = await db.prepare('SELECT phone FROM users WHERE id = ? AND phone != ?').get(userId, '');
+    if (user) {
+      const { sendWhatsApp } = require('./whatsapp');
+      var waMsg = '🔔 ' + title;
+      if (message) waMsg += '\n' + message;
+      sendWhatsApp(user.phone, waMsg);
+    }
+  } catch(e) {}
 }
 
 async function getUnreadCount(userId) {

@@ -142,6 +142,7 @@ app.use('/admin', bulkImportRoutes);
 app.use('/learning-paths', learningPathRoutes);
 app.use('/live', require('./routes/live'));
 app.use('/cohorts', require('./routes/cohorts'));
+app.use('/whatsapp', require('./routes/whatsapp'));
 
 app.get('/instructor/:id', async (req, res, next) => {
   try {

@@ -1,0 +1,32 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">أرقام المستخدمين</h1>
+    <p class="font-body-lg text-body-lg text-on-surface-variant">إرسال رسائل واتساب جماعية</p>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+    <h2 class="font-label-lg text-label-lg text-on-surface mb-4">إرسال رسالة جماعية</h2>
+    <form action="/whatsapp/broadcast" method="POST" class="flex flex-col gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto bg-surface border border-outline-variant rounded p-3">
+        <% users.forEach(function(u) { %>
+        <label class="flex items-center gap-2 cursor-pointer font-body-md text-body-md text-on-surface hover:bg-surface-container-high p-1 rounded">
+          <input type="checkbox" name="user_ids" value="<%= u.id %>"/>
+          <span class="truncate"><%= u.name %> (<%= u.phone %>)</span>
+        </label>
+        <% }) %>
+        <% if (users.length === 0) { %>
+        <p class="text-on-surface-variant font-body-md text-body-md col-span-full text-center py-8">لا يوجد مستخدمين بأرقام هواتف</p>
+        <% } %>
+      </div>
+      <textarea name="message" rows="3" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" dir="rtl" placeholder="نص الرسالة..." required></textarea>
+      <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex items-center gap-2 self-start">
+        <span class="material-symbols-outlined text-sm">send</span>
+        <span>إرسال</span>
+      </button>
+    </form>
+  </div>
+</main>
+<%- include('../partials/footer') %>

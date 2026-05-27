@@ -30,7 +30,7 @@ router.get('/register', async (req, res, next) => {
 router.post('/register', registerLimiter, async (req, res, next) => {
   try {
     const db = getDb();
-    const { email, password, confirmPassword, role } = req.body;
+    const { email, password, confirmPassword, role, phone } = req.body;
     var name = String(req.body.name || '').trim();
     var mail = String(email || '').trim();
 
@@ -55,8 +55,8 @@ router.post('/register', registerLimiter, async (req, res, next) => {
     const userRole = role === 'instructor' ? 'instructor' : 'student';
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    const result = await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, ?)').run(
-      name, mail, hashedPassword, userRole, 1
+    const result = await db.prepare('INSERT INTO users (name, email, password, role, email_verified, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
+      name, mail, hashedPassword, userRole, 1, phone || ''
     );
 
     req.session.userId = result.lastInsertRowid;

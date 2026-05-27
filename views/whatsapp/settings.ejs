@@ -1,0 +1,75 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">إعدادات واتساب</h1>
+    <p class="font-body-lg text-body-lg text-on-surface-variant">ربط المنصة بإشعارات الواتساب</p>
+  </div>
+
+  <% if (typeof success !== 'undefined' && success) { %>
+  <div class="flex items-center gap-2 bg-primary-fixed-dim text-primary p-3 rounded font-body-md text-body-md"><%= success %></div>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="flex items-center gap-2 bg-error-container text-on-error-container p-3 rounded font-body-md text-body-md"><%= error %></div>
+  <% } %>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col gap-6">
+    <div class="bg-surface-container rounded-lg p-4 flex flex-col gap-2">
+      <h3 class="font-label-lg text-label-lg text-on-surface">💡 بدون إعدادات</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant">تقدر تستخدم روابط واتساب المباشرة (<code class="bg-surface-container-high px-1 rounded">wa.me</code>) بدون أي إعدادات. تفعيل الخدمة يتطلب حساب Twilio أو أي مزود واتساب API.</p>
+    </div>
+
+    <form action="/whatsapp/settings" method="POST" class="flex flex-col gap-5">
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" name="is_active" <%= settings.is_active ? 'checked' : '' %> class="accent-primary w-5 h-5"/>
+        <span class="font-label-lg text-label-lg text-on-surface">تفعيل إشعارات واتساب</span>
+      </label>
+
+      <div class="flex flex-col gap-1">
+        <label class="font-label-lg text-label-lg text-on-surface" for="provider">مزود الخدمة</label>
+        <select id="provider" name="provider" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+          <option value="direct" <%= settings.provider === 'direct' ? 'selected' : '' %>>رابط مباشر (wa.me)</option>
+          <option value="twilio" <%= settings.provider === 'twilio' ? 'selected' : '' %>>Twilio</option>
+        </select>
+      </div>
+
+      <div id="twilioFields" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="font-label-lg text-label-lg text-on-surface" for="api_url">Account SID <span class="text-on-surface-variant">(لـ Twilio)</span></label>
+          <input class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" dir="ltr" id="api_url" name="api_url" value="<%= settings.api_url %>"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-lg text-label-lg text-on-surface" for="api_key">Auth Token</label>
+          <input class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" dir="ltr" id="api_key" name="api_key" value="<%= settings.api_key %>" type="password"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-lg text-label-lg text-on-surface" for="sender_name">رقم المرسل <span class="text-on-surface-variant">(مثال: +14155238886)</span></label>
+          <input class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" dir="ltr" id="sender_name" name="sender_name" value="<%= settings.sender_name %>"/>
+        </div>
+      </div>
+
+      <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex items-center gap-2 self-start">
+        <span class="material-symbols-outlined text-sm">save</span>
+        <span>حفظ الإعدادات</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col gap-4">
+    <h2 class="font-headline-sm text-headline-sm text-on-surface">اختبار الإرسال</h2>
+    <form action="/whatsapp/test" method="POST" class="flex flex-col md:flex-row gap-3">
+      <input type="text" name="phone" placeholder="رقم الهاتف (مثال: 966501234567)" class="bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary flex-1" dir="ltr" required/>
+      <input type="text" name="message" placeholder="نص الرسالة" class="bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary flex-1" dir="rtl"/>
+      <button type="submit" class="bg-surface-container-high text-on-surface font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity">إرسال اختبار</button>
+    </form>
+  </div>
+</main>
+
+<script>
+document.getElementById('provider').addEventListener('change', function() {
+  document.getElementById('twilioFields').style.display = this.value === 'twilio' ? 'flex' : 'none';
+});
+document.getElementById('twilioFields').style.display = document.getElementById('provider').value === 'twilio' ? 'flex' : 'none';
+</script>
+<%- include('../partials/footer') %>
