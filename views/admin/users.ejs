@@ -40,6 +40,18 @@
   </div>
 
   <div class="bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-surface-variant">
+      <form method="GET" class="flex gap-3">
+        <input type="text" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>" placeholder="بحث باسم أو بريد..." class="bg-surface border border-outline-variant rounded py-2 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary flex-1 min-w-0" dir="rtl"/>
+        <button type="submit" class="bg-surface-container-high text-on-surface font-label-lg text-label-lg px-4 py-2 rounded hover:opacity-90 transition-opacity flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">search</span>
+          بحث
+        </button>
+        <% if (typeof search !== 'undefined' && search) { %>
+        <a href="/admin/users" class="bg-surface-container text-on-surface-variant font-label-lg text-label-lg px-4 py-2 rounded hover:opacity-90 transition-opacity">إلغاء</a>
+        <% } %>
+      </form>
+    </div>
     <div class="overflow-x-auto">
       <table class="w-full text-right">
         <thead class="bg-surface-container border-b border-surface-variant">
@@ -95,6 +107,14 @@
       </table>
     </div>
   </div>
+
+  <% if (totalPages > 1) { %>
+  <div class="flex items-center justify-center gap-2 mt-6">
+    <% for (var i = 1; i <= totalPages; i++) { %>
+    <a href="/admin/users?page=<%= i %><%= typeof search !== 'undefined' && search ? '&search=' + encodeURIComponent(search) : '' %>" class="px-3 py-1 rounded font-label-lg text-label-lg <%= page === i ? 'bg-primary-container text-on-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container-high' %>"><%= i %></a>
+    <% } %>
+  </div>
+  <% } %>
 </main>
 
 <%- include('../partials/footer') %>

@@ -15,7 +15,7 @@
     <div class="lg:col-span-2 space-y-6">
       <div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 hard-shadow">
         <div class="flex items-center gap-2 mb-3">
-          <span class="bg-surface-container text-secondary font-label-lg text-label-lg px-3 py-1 rounded"><%= course.category_name || 'عام' %></span>
+          <span class="bg-surface-container text-secondary font-label-lg text-label-lg px-3 py-1 rounded"><%= typeof course.category_name !== 'undefined' && course.category_name ? course.category_name : 'عام' %></span>
           <span class="<%= course.level === 'beginner' ? 'bg-surface-container text-secondary' : course.level === 'intermediate' ? 'bg-surface-container text-secondary' : 'bg-primary-fixed text-on-primary-fixed' %> font-label-lg text-label-lg px-3 py-1 rounded">
             <%= course.level === 'beginner' ? 'مبتدئ' : course.level === 'intermediate' ? 'متوسط' : 'متقدم' %>
           </span>

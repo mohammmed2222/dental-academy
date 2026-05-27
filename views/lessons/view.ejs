@@ -17,7 +17,7 @@
     <div class="relative z-10 flex flex-col items-center justify-center text-surface-container-lowest">
       <span class="material-symbols-outlined text-6xl">lock</span>
       <p class="font-headline-sm text-headline-sm mt-4">الدرس مقفل</p>
-      <p class="font-body-md text-body-md mt-2">سيتم فتحه في <%= releaseDate.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
+      <p class="font-body-md text-body-md mt-2">سيتم فتحه في <%= typeof releaseDate !== 'undefined' && releaseDate ? releaseDate.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '' %></p>
     </div>
     <% } else if (lesson.video_url) { %>
       <% var embedUrl = lesson.video_url.replace(/^(https?:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|https?:\/\/youtu\.be\/)([a-zA-Z0-9_-]{11})/, 'https://www.youtube-nocookie.com/embed/$2'); %>

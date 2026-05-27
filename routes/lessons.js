@@ -237,16 +237,16 @@ router.post('/:id/complete', isAuthenticated, async (req, res, next) => {
         .run(req.session.userId, lesson.id);
     }
 
-    const allLessons = await db.prepare('SELECT COUNT(*) as count FROM lessons WHERE course_id = ?')
-      .get(lesson.course_id).count;
-    const completedLessons = await db.prepare(`
+    const allLessons = Number(await db.prepare('SELECT COUNT(*) as count FROM lessons WHERE course_id = ?')
+      .get(lesson.course_id).count);
+    const completedLessons = Number(await db.prepare(`
       SELECT COUNT(*) as count FROM lesson_progress lp
       JOIN lessons l ON lp.lesson_id = l.id
       WHERE l.course_id = ? AND lp.user_id = ? AND lp.completed = 1
-    `).get(lesson.course_id, req.session.userId).count;
+    `).get(lesson.course_id, req.session.userId).count);
 
     let completed = false;
-    if (allLessons === completedLessons) {
+    if (allLessons > 0 && allLessons === completedLessons) {
       await db.prepare('UPDATE enrollments SET completed_at = ' + sqlNow() + ' WHERE user_id = ? AND course_id = ? AND completed_at IS NULL')
         .run(req.session.userId, lesson.course_id);
       completed = true;

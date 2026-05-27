@@ -1,8 +1,10 @@
 node_modules/
 .env
 database.sqlite
+database.sqlite.tmp
 public/uploads/videos/*
 public/uploads/avatars/*
 public/uploads/assignments/*
+public/uploads/payments/*
 .DS_Store
 Thumbs.db

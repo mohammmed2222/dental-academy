@@ -58,7 +58,7 @@ router.get('/', async (req, res, next) => {
     }
 
     const totalResult = await db.prepare('SELECT COUNT(*) as total FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id JOIN users u ON c.instructor_id = u.id' + where).get(...countParams);
-    const total = totalResult.total;
+    const total = Number(totalResult.total);
     const totalPages = Math.ceil(total / limit);
 
     let orderBy;

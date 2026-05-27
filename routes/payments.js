@@ -3,6 +3,7 @@ const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const router = express.Router();
 const multer = require('multer');
@@ -10,7 +11,10 @@ const multer = require('multer');
 const uploadReceipt = multer({
   storage: multer.diskStorage({
     destination: function(req, file, cb) { cb(null, path.join(__dirname, '..', 'public', 'uploads', 'payments')); },
-    filename: function(req, file, cb) { cb(null, Date.now() + '-' + file.originalname); }
+    filename: function(req, file, cb) {
+      const safeExt = path.extname(file.originalname).replace(/[^a-zA-Z0-9.]/g, '');
+      cb(null, crypto.randomBytes(16).toString('hex') + safeExt);
+    }
   }),
   fileFilter: function(req, file, cb) {
     if (file.mimetype.startsWith('image/')) { cb(null, true); } else { cb(new Error('فقط الصور مسموحة'), false); }
@@ -81,7 +85,7 @@ router.post('/request/:courseId', isAuthenticated, async (req, res, next) => {
       discountAmount = Math.round(course.price * coupon.discount_percent / 100);
       finalAmount = course.price - discountAmount;
       couponId = coupon.id;
-      await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(coupon.id);
+      // لا نحتسب الكوبون هنا — يُحتسب فقط بعد تأكيد الدفع
     }
 
     var method = String(req.body.method || 'cash');
@@ -135,7 +139,7 @@ router.get('/success/:id', isAuthenticated, async (req, res, next) => {
         const stripeSession = await stripe.checkout.sessions.retrieve(payment.stripe_session_id);
         if (stripeSession.payment_status === 'paid') {
           await db.prepare(`UPDATE payments SET status = 'paid', paid_at = ${sqlNow()} WHERE id = ?`).run(payment.id);
-          await db.prepare('INSERT OR IGNORE INTO enrollments (user_id, course_id) VALUES (?, ?)').run(payment.user_id, payment.course_id);
+      await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING').run(payment.user_id, payment.course_id);
           const { createNotification } = require('../config/notifications');
           const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
           await createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعك الإلكتروني لمادة ' + (course ? course.title : '') + ' بنجاح');
@@ -173,8 +177,12 @@ router.post('/admin/:id/confirm', isAdmin, async (req, res, next) => {
     const payment = await db.prepare('SELECT * FROM payments WHERE id = ?').get(parseInt(req.params.id));
     if (payment && payment.status === 'pending') {
       await db.prepare(`UPDATE payments SET status = 'paid', paid_at = ${sqlNow()} WHERE id = ?`).run(payment.id);
+      // احتساب الكوبون عند تأكيد الدفع فعلياً
+      if (payment.coupon_id) {
+        await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(payment.coupon_id);
+      }
       const existing = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(payment.user_id, payment.course_id);
-      if (!existing) await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)').run(payment.user_id, payment.course_id);
+      if (!existing) await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING').run(payment.user_id, payment.course_id);
       const { createNotification } = require('../config/notifications');
       const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
       await createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعة مادة ' + (course ? course.title : '') + ' بنجاح');

@@ -1,0 +1,79 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8">
+  <div class="flex items-center justify-between flex-wrap gap-4 mb-8">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface">إدارة التسجيلات</h1>
+      <p class="font-body-lg text-body-lg text-on-surface-variant">تسجيل الطلاب في الكورسات</p>
+    </div>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 mb-8">
+    <h2 class="font-label-lg text-label-lg text-on-surface mb-4">تسجيل طالب جديد</h2>
+    <form action="/admin/enrollments/create" method="POST" class="flex flex-col md:flex-row gap-4">
+      <select name="user_id" class="bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary flex-1" required>
+        <option value="">اختر الطالب</option>
+        <% students.forEach(function(s) { %>
+        <option value="<%= s.id %>"><%= s.name %> (<%= s.email %>)</option>
+        <% }); %>
+      </select>
+      <select name="course_id" class="bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary flex-1" required>
+        <option value="">اختر الكورس</option>
+        <% courses.forEach(function(c) { %>
+        <option value="<%= c.id %>"><%= c.title %></option>
+        <% }); %>
+      </select>
+      <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex-shrink-0">تسجيل</button>
+    </form>
+  </div>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right">
+        <thead class="bg-surface-container border-b border-outline-variant">
+          <tr>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-on-surface">الطالب</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-on-surface">الكورس</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-on-surface">تاريخ التسجيل</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-on-surface">الإكمال</th>
+            <th class="px-4 py-3 font-label-lg text-label-lg text-on-surface">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          <% enrollments.forEach(function(e) { %>
+          <tr class="hover:bg-surface-container-low transition-colors">
+            <td class="px-4 py-3 font-label-lg text-label-lg text-on-surface"><%= e.user_name %></td>
+            <td class="px-4 py-3 text-on-surface-variant font-body-md text-body-md"><%= e.course_title %></td>
+            <td class="px-4 py-3 text-on-surface-variant font-body-md text-body-md"><%= new Date(e.enrolled_at).toLocaleDateString('ar-SA') %></td>
+            <td class="px-4 py-3">
+              <% if (e.completed_at) { %>
+              <span class="bg-primary-fixed-dim text-primary font-label-lg text-label-lg px-3 py-1 rounded">مكتمل</span>
+              <% } else { %>
+              <span class="bg-surface-container text-on-surface-variant font-label-lg text-label-lg px-3 py-1 rounded">قيد التقدم</span>
+              <% } %>
+            </td>
+            <td class="px-4 py-3">
+              <form action="/admin/enrollments/<%= e.id %>/delete" method="POST" onsubmit="return confirm('إلغاء تسجيل الطالب؟')">
+                <button type="submit" class="bg-error-container text-on-error-container font-label-lg text-label-lg px-3 py-1 rounded hover:opacity-80 transition-opacity">إلغاء</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+          <% if (enrollments.length === 0) { %>
+          <tr><td colspan="5" class="px-4 py-8 text-center text-on-surface-variant font-body-md text-body-md">لا توجد تسجيلات</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (totalPages > 1) { %>
+  <div class="flex items-center justify-center gap-2 mt-6">
+    <% for (var i = 1; i <= totalPages; i++) { %>
+    <a href="/admin/enrollments?page=<%= i %>" class="px-3 py-1 rounded font-label-lg text-label-lg <%= page === i ? 'bg-primary-container text-on-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container-high' %>"><%= i %></a>
+    <% } %>
+  </div>
+  <% } %>
+</main>
+<%- include('../partials/footer') %>

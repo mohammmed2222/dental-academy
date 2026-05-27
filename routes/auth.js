@@ -122,7 +122,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res, next) => {
     const user = await db.prepare('SELECT id, name FROM users WHERE email = ?').get(email);
     if (user) {
       const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
       await db.prepare('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expiresAt);
 

@@ -36,9 +36,8 @@ function sqliteWrap(dbRaw) {
 
 // PostgreSQL async wrapper
 function pgWrap(pool) {
-  let paramCounter = 0;
   function convertSql(sql) {
-    paramCounter = 0;
+    let paramCounter = 0;
     return sql.replace(/\?/g, () => `$${++paramCounter}`);
   }
   function prepare(sql) {
@@ -206,15 +205,27 @@ async function seedDataSqlite() {
     db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run(adminName, adminEmail, bcrypt.hashSync(adminPassword, 10), 'admin');
   }
   if (db.prepare('SELECT COUNT(*) as count FROM categories').get().count === 0) {
-    const cats = [['تطوير الويب','web-development',''],['علوم الحاسوب','computer-science',''],['تطوير التطبيقات','app-development',''],['تصميم الجرافيك','graphic-design',''],['تسويق إلكتروني','digital-marketing',''],['علوم البيانات','data-science',''],['الأمن السيبراني','cybersecurity',''],['لغات البرمجة','programming-languages','']];
+    const cats = [
+      ['تشريح الفم والأسنان','oral-anatomy','دراسة تشريح الفم والأسنان والهياكل المحيطة'],
+      ['تركيبات الأسنان','dental-prosthetics','التركيبات الثابتة والمتحركة وزراعة الأسنان'],
+      ['جراحة الفم والوجه والفكين','oral-surgery','جراحة الأسنان والأنسجة الرخوة والصلبة'],
+      ['تقويم الأسنان','orthodontics','تشخيص وعلاج تشوهات الأسنان والفكين'],
+      ['طب الأسنان التحفظي','restorative-dentistry','الحشوات والتيجان والتعويضات التحفظية'],
+      ['أمراض اللثة والأنسجة الداعمة','periodontics','تشخيص وعلاج أمراض اللثة'],
+      ['طب أسنان الأطفال','pediatric-dentistry','رعاية أسنان الأطفال والمراهقين'],
+      ['التشخيص والأشعة','oral-radiology','الأشعة السينية والتشخيص الإشعاعي الفموي']
+    ];
     for (const c of cats) db.prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)').run(c[0], c[1], c[2]);
   }
-  if (db.prepare('SELECT COUNT(*) as count FROM courses').get().count === 0) {
-    if (!db.prepare('SELECT id FROM users WHERE email = ?').get('instructor@manassa.com')) {
-      db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('مدرب تجريبي', 'instructor@manassa.com', bcrypt.hashSync('123456', 10), 'instructor');
-    }
-    if (!db.prepare('SELECT id FROM users WHERE email = ?').get('student@manassa.com')) {
-      db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('طالب تجريبي', 'student@manassa.com', bcrypt.hashSync('123456', 10), 'student');
+  // حسابات تجريبية للتطوير فقط — لا تُنشأ في الإنتاج
+  if (process.env.NODE_ENV !== 'production') {
+    if (db.prepare('SELECT COUNT(*) as count FROM courses').get().count === 0) {
+      if (!db.prepare('SELECT id FROM users WHERE email = ?').get('instructor@manassa.com')) {
+        db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('مدرب تجريبي', 'instructor@manassa.com', bcrypt.hashSync('123456', 10), 'instructor');
+      }
+      if (!db.prepare('SELECT id FROM users WHERE email = ?').get('student@manassa.com')) {
+        db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('طالب تجريبي', 'student@manassa.com', bcrypt.hashSync('123456', 10), 'student');
+      }
     }
   }
 }
@@ -228,15 +239,27 @@ async function seedDataPg() {
     await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run(adminName, adminEmail, hash, 'admin');
   }
   if (Number((await db.prepare('SELECT COUNT(*) as count FROM categories').get()).count) === 0) {
-    const cats = [['تطوير الويب','web-development',''],['علوم الحاسوب','computer-science',''],['تطوير التطبيقات','app-development',''],['تصميم الجرافيك','graphic-design',''],['تسويق إلكتروني','digital-marketing',''],['علوم البيانات','data-science',''],['الأمن السيبراني','cybersecurity',''],['لغات البرمجة','programming-languages','']];
+    const cats = [
+      ['تشريح الفم والأسنان','oral-anatomy','دراسة تشريح الفم والأسنان والهياكل المحيطة'],
+      ['تركيبات الأسنان','dental-prosthetics','التركيبات الثابتة والمتحركة وزراعة الأسنان'],
+      ['جراحة الفم والوجه والفكين','oral-surgery','جراحة الأسنان والأنسجة الرخوة والصلبة'],
+      ['تقويم الأسنان','orthodontics','تشخيص وعلاج تشوهات الأسنان والفكين'],
+      ['طب الأسنان التحفظي','restorative-dentistry','الحشوات والتيجان والتعويضات التحفظية'],
+      ['أمراض اللثة والأنسجة الداعمة','periodontics','تشخيص وعلاج أمراض اللثة'],
+      ['طب أسنان الأطفال','pediatric-dentistry','رعاية أسنان الأطفال والمراهقين'],
+      ['التشخيص والأشعة','oral-radiology','الأشعة السينية والتشخيص الإشعاعي الفموي']
+    ];
     for (const c of cats) await db.prepare('INSERT INTO categories (name, slug, description) VALUES ($1, $2, $3)').run(c[0], c[1], c[2]);
   }
-  if (Number((await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count) === 0) {
-    if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get('instructor@manassa.com'))) {
-      await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run('مدرب تجريبي', 'instructor@manassa.com', bcrypt.hashSync('123456', 10), 'instructor');
-    }
-    if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get('student@manassa.com'))) {
-      await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run('طالب تجريبي', 'student@manassa.com', bcrypt.hashSync('123456', 10), 'student');
+  // حسابات تجريبية للتطوير فقط — لا تُنشأ في الإنتاج
+  if (process.env.NODE_ENV !== 'production') {
+    if (Number((await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count) === 0) {
+      if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get('instructor@manassa.com'))) {
+        await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run('مدرب تجريبي', 'instructor@manassa.com', bcrypt.hashSync('123456', 10), 'instructor');
+      }
+      if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get('student@manassa.com'))) {
+        await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run('طالب تجريبي', 'student@manassa.com', bcrypt.hashSync('123456', 10), 'student');
+      }
     }
   }
 }

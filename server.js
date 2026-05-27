@@ -52,7 +52,12 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'manassa_secret_key_2024',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
 }));
 
 app.use(helmet({
@@ -117,6 +122,7 @@ app.get('/', async (req, res, next) => {
 
 app.use('/auth', authRoutes);
 app.use('/courses', courseRoutes);
+app.use('/courses', examRoutes);
 app.use('/lessons', lessonRoutes);
 app.use('/quizzes', quizRoutes);
 app.use('/dashboard', dashboardRoutes);
@@ -130,7 +136,6 @@ app.use('/notifications', notificationRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/sections', sectionRoutes);
 app.use('/messages', messageRoutes);
-app.use('/courses', examRoutes);
 app.use('/question-bank', questionBankRoutes);
 app.use('/coupons', couponRoutes);
 app.use('/admin', bulkImportRoutes);
