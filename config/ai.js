@@ -1,4 +1,4 @@
-const { getDb } = require('./database');
+const { getDb, isUsingPg } = require('./database');
 
 var providers = {};
 
@@ -178,12 +178,16 @@ async function recommend(userId, limit) {
 
 async function setupAiTable() {
   var db = getDb();
+  var pg = isUsingPg();
   try {
-    db.prepare('CREATE TABLE IF NOT EXISTS ai_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT DEFAULT \'gemini\', ai_model TEXT DEFAULT \'gemini-2.0-flash\', gemini_api_key TEXT DEFAULT \'\', openai_api_key TEXT DEFAULT \'\', openai_base_url TEXT DEFAULT \'\', system_prompt TEXT DEFAULT \'\', is_active INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
-  } catch (e) {}
-  try {
-    db.prepare('CREATE TABLE IF NOT EXISTS ai_chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)').run();
-  } catch (e) {}
+    if (pg) {
+      await db.prepare('CREATE TABLE IF NOT EXISTS ai_settings (id SERIAL PRIMARY KEY, provider TEXT DEFAULT \'gemini\', ai_model TEXT DEFAULT \'gemini-2.0-flash\', gemini_api_key TEXT DEFAULT \'\', openai_api_key TEXT DEFAULT \'\', openai_base_url TEXT DEFAULT \'\', system_prompt TEXT DEFAULT \'\', is_active INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)').run();
+      await db.prepare('CREATE TABLE IF NOT EXISTS ai_chat_history (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, role TEXT NOT NULL, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)').run();
+    } else {
+      db.prepare('CREATE TABLE IF NOT EXISTS ai_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT DEFAULT \'gemini\', ai_model TEXT DEFAULT \'gemini-2.0-flash\', gemini_api_key TEXT DEFAULT \'\', openai_api_key TEXT DEFAULT \'\', openai_base_url TEXT DEFAULT \'\', system_prompt TEXT DEFAULT \'\', is_active INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
+      db.prepare('CREATE TABLE IF NOT EXISTS ai_chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)').run();
+    }
+  } catch (e) { console.error('AI table creation error:', e.message); }
 }
 
 module.exports = { generate, chat, generateQuiz, summarize, gradeAssignment, recommend, getSettings, saveSettings, setupAiTable, providers };
