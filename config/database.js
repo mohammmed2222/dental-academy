@@ -231,19 +231,7 @@ async function seedDataSqlite() {
   if (!db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail)) {
     db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run(adminName, adminEmail, bcrypt.hashSync(adminPassword, 10), 'admin');
   }
-  if (db.prepare('SELECT COUNT(*) as count FROM categories').get().count === 0) {
-    const cats = [
-      ['تشريح الفم والأسنان','oral-anatomy','دراسة تشريح الفم والأسنان والهياكل المحيطة'],
-      ['تركيبات الأسنان','dental-prosthetics','التركيبات الثابتة والمتحركة وزراعة الأسنان'],
-      ['جراحة الفم والوجه والفكين','oral-surgery','جراحة الأسنان والأنسجة الرخوة والصلبة'],
-      ['تقويم الأسنان','orthodontics','تشخيص وعلاج تشوهات الأسنان والفكين'],
-      ['طب الأسنان التحفظي','restorative-dentistry','الحشوات والتيجان والتعويضات التحفظية'],
-      ['أمراض اللثة والأنسجة الداعمة','periodontics','تشخيص وعلاج أمراض اللثة'],
-      ['طب أسنان الأطفال','pediatric-dentistry','رعاية أسنان الأطفال والمراهقين'],
-      ['التشخيص والأشعة','oral-radiology','الأشعة السينية والتشخيص الإشعاعي الفموي']
-    ];
-    for (const c of cats) db.prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)').run(c[0], c[1], c[2]);
-  }
+  db.prepare('DELETE FROM categories').run();
   // حسابات تجريبية للتطوير فقط — لا تُنشأ في الإنتاج
   if (process.env.NODE_ENV !== 'production') {
     if (db.prepare('SELECT COUNT(*) as count FROM courses').get().count === 0) {
@@ -265,19 +253,7 @@ async function seedDataPg() {
     const hash = bcrypt.hashSync(adminPassword, 10);
     await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run(adminName, adminEmail, hash, 'admin');
   }
-  if (Number((await db.prepare('SELECT COUNT(*) as count FROM categories').get()).count) === 0) {
-    const cats = [
-      ['تشريح الفم والأسنان','oral-anatomy','دراسة تشريح الفم والأسنان والهياكل المحيطة'],
-      ['تركيبات الأسنان','dental-prosthetics','التركيبات الثابتة والمتحركة وزراعة الأسنان'],
-      ['جراحة الفم والوجه والفكين','oral-surgery','جراحة الأسنان والأنسجة الرخوة والصلبة'],
-      ['تقويم الأسنان','orthodontics','تشخيص وعلاج تشوهات الأسنان والفكين'],
-      ['طب الأسنان التحفظي','restorative-dentistry','الحشوات والتيجان والتعويضات التحفظية'],
-      ['أمراض اللثة والأنسجة الداعمة','periodontics','تشخيص وعلاج أمراض اللثة'],
-      ['طب أسنان الأطفال','pediatric-dentistry','رعاية أسنان الأطفال والمراهقين'],
-      ['التشخيص والأشعة','oral-radiology','الأشعة السينية والتشخيص الإشعاعي الفموي']
-    ];
-    for (const c of cats) await db.prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)').run(c[0], c[1], c[2]);
-  }
+  await db.prepare('DELETE FROM categories').run();
   // حسابات تجريبية للتطوير فقط — لا تُنشأ في الإنتاج
   if (process.env.NODE_ENV !== 'production') {
     if (Number((await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count) === 0) {
