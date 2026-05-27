@@ -182,6 +182,9 @@
               <button onclick="toggleDarkMode()" class="text-secondary hover:text-primary transition-colors flex items-center justify-center" title="الوضع الليلي">
                 <span class="material-symbols-outlined text-[24px]"><%= typeof darkMode !== 'undefined' && darkMode ? 'light_mode' : 'dark_mode' %></span>
               </button>
+              <a href="/ai" class="text-secondary hover:text-primary transition-colors flex items-center justify-center" title="الذكاء الاصطناعي">
+                <span class="material-symbols-outlined text-[24px]">psychology</span>
+              </a>
               <a href="/notifications" class="text-secondary hover:text-primary transition-colors flex items-center justify-center relative">
                 <span class="material-symbols-outlined text-[24px]">notifications</span>
                 <% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %>
@@ -224,6 +227,7 @@
         <a href="/dashboard" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/dashboard') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">لوحة التحكم</a>
         <a href="/messages" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/messages') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الرسائل</a>
         <a href="/notifications" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/notifications') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الإشعارات<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
+        <a href="/ai" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/ai') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">AI مساعد</a>
         <% if (user.role === 'admin' || user.role === 'instructor') { %>
         <a href="/question-bank" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/question-bank') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">بنك الأسئلة</a>
         <% } %>

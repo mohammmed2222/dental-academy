@@ -1,0 +1,94 @@
+﻿<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-3">
+      <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">psychology</span>
+      إعدادات الذكاء الاصطناعي
+    </h1>
+    <p class="font-body-lg text-body-lg text-secondary">ربط المنصة بخدمات الذكاء الاصطناعي</p>
+  </div>
+
+  <% if (typeof success !== 'undefined' && success) { %>
+  <div class="bg-primary-fixed-dim text-primary p-4 rounded-xl font-body-md text-body-md flex items-center gap-2"><%= success %></div>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="bg-error-container text-on-error-container p-4 rounded-xl font-body-md text-body-md"><%= error %></div>
+  <% } %>
+
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+    <div class="bg-surface-container rounded-lg p-4 mb-6 flex flex-col gap-2">
+      <h3 class="font-label-lg text-label-lg text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm text-primary">info</span>
+        كيف تحصل على مفتاح API مجاني؟
+      </h3>
+      <p class="font-body-md text-body-md text-secondary">
+        1. اذهب إلى <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-primary hover:underline">Google AI Studio</a><br/>
+        2. انقر "Get API Key" ← "Create API Key"<br/>
+        3. انسخ المفتاح والصقه في الحقل أدناه<br/>
+        4. اختر الموديل "gemini-2.0-flash" (مجاني بالكامل)<br/>
+        5. فعّل الذكاء الاصطناعي واستمتع!
+      </p>
+    </div>
+
+    <form action="/ai/settings" method="POST" class="flex flex-col gap-5">
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" name="is_active" <%- settings.is_active ? 'checked' : '' %> class="accent-primary w-5 h-5"/>
+        <span class="font-label-lg text-label-lg text-on-surface">تفعيل الذكاء الاصطناعي</span>
+      </label>
+
+      <div class="flex flex-col gap-1">
+        <label class="font-label-lg text-label-lg text-on-surface" for="provider">مزود الخدمة</label>
+        <select id="provider" name="provider" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md focus:outline-none focus:border-primary">
+          <option value="gemini" <%- settings.provider === 'gemini' ? 'selected' : '' %>>Google Gemini (مجاني)</option>
+          <option value="openai" <%- settings.provider === 'openai' ? 'selected' : '' %>>OpenAI / متوافق</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="font-label-lg text-label-lg text-on-surface" for="ai_model">الموديل</label>
+        <input id="ai_model" name="ai_model" value="<%- settings.ai_model %>" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md focus:outline-none focus:border-primary" dir="ltr"/>
+      </div>
+
+      <div id="geminiFields">
+        <div class="flex flex-col gap-1">
+          <label class="font-label-lg text-label-lg text-on-surface" for="gemini_api_key">مفتاح Gemini API</label>
+          <input id="gemini_api_key" name="gemini_api_key" value="<%- settings.gemini_api_key %>" type="password" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md focus:outline-none focus:border-primary" dir="ltr" placeholder="AIzaSy..."/>
+        </div>
+      </div>
+
+      <div id="openaiFields" class="flex-col gap-4" style="display:none">
+        <div class="flex flex-col gap-1">
+          <label class="font-label-lg text-label-lg text-on-surface" for="openai_api_key">مفتاح OpenAI API</label>
+          <input id="openai_api_key" name="openai_api_key" value="<%- settings.openai_api_key %>" type="password" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md focus:outline-none focus:border-primary" dir="ltr"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-lg text-label-lg text-on-surface" for="openai_base_url">رابط API (اختياري)</label>
+          <input id="openai_base_url" name="openai_base_url" value="<%- settings.openai_base_url %>" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md focus:outline-none focus:border-primary" dir="ltr" placeholder="https://api.openai.com/v1"/>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="font-label-lg text-label-lg text-on-surface" for="system_prompt">تعليمات النظام</label>
+        <textarea id="system_prompt" name="system_prompt" rows="4" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md focus:outline-none focus:border-primary" dir="rtl"><%- settings.system_prompt %></textarea>
+      </div>
+
+      <button type="submit" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex items-center gap-2 self-start">
+        <span class="material-symbols-outlined text-sm">save</span>
+        حفظ الإعدادات
+      </button>
+    </form>
+  </div>
+</main>
+
+<script>
+document.getElementById('provider').addEventListener('change', function() {
+  document.getElementById('geminiFields').style.display = this.value === 'gemini' ? 'block' : 'none';
+  document.getElementById('openaiFields').style.display = this.value === 'openai' ? 'flex' : 'none';
+});
+var pv = document.getElementById('provider').value;
+document.getElementById('geminiFields').style.display = pv === 'gemini' ? 'block' : 'none';
+document.getElementById('openaiFields').style.display = pv === 'openai' ? 'flex' : 'none';
+</script>
+<%- include('../partials/footer') %>

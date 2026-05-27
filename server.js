@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const { initializeDatabase, saveDatabase, sqlNow } = require('./config/database');
 const { initializeMail } = require('./config/mail');
+const { setupAiTable } = require('./config/ai');
 const { startScheduler } = require('./config/scheduler');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -30,6 +31,7 @@ const questionBankRoutes = require('./routes/questionBank');
 const couponRoutes = require('./routes/coupons');
 const bulkImportRoutes = require('./routes/bulkImport');
 const learningPathRoutes = require('./routes/learningPaths');
+const aiRoutes = require('./routes/ai');
 const { setUser, noCache } = require('./middleware/auth');
 const { getUnreadCount } = require('./config/notifications');
 
@@ -141,6 +143,7 @@ app.use('/question-bank', questionBankRoutes);
 app.use('/coupons', couponRoutes);
 app.use('/admin', bulkImportRoutes);
 app.use('/learning-paths', learningPathRoutes);
+app.use('/ai', aiRoutes);
 app.use('/live', require('./routes/live'));
 app.use('/cohorts', require('./routes/cohorts'));
 app.use('/whatsapp', require('./routes/whatsapp'));
@@ -230,6 +233,7 @@ app.use((err, req, res, next) => {
 });
 
 Promise.all([initializeDatabase(), initializeMail()]).then(() => {
+  setupAiTable().catch(() => {});
   console.log('✓ قاعدة البيانات جاهزة');
   console.log('✓ البريد الإلكتروني جاهز');
   startScheduler();

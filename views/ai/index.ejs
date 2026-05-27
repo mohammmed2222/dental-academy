@@ -1,0 +1,256 @@
+<%- include('../partials/header', { dashboardHeader: true }) %>
+<%- include('../partials/back-button') %>
+
+<main class="flex-1 mx-auto w-full max-w-container-max px-margin-mobile md:px-margin-desktop py-8 flex flex-col gap-8">
+  <div class="flex flex-wrap justify-between items-end gap-4">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">psychology</span>
+        الذكاء الاصطناعي
+      </h1>
+      <p class="font-body-lg text-body-lg text-secondary">مساعد ذكي لتوليد الأسئلة، تلخيص الدروس، والإجابة عن استفساراتك</p>
+    </div>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="bg-error-container text-on-error-container p-4 rounded-xl font-body-md text-body-md"><%= error %></div>
+  <% } %>
+
+  <% if (typeof result !== 'undefined' && result) { %>
+  <div class="bg-primary-fixed-dim text-primary p-4 rounded-xl font-body-md text-body-md whitespace-pre-wrap"><%= result %></div>
+  <% } %>
+
+  <% if (!settings.is_active) { %>
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 text-center">
+    <span class="material-symbols-outlined text-5xl text-secondary mb-3" style="font-variation-settings:'FILL' 1;">psychology_off</span>
+    <h2 class="font-headline-sm text-headline-sm text-on-surface mb-2">الذكاء الاصطناعي غير مفعل</h2>
+    <p class="font-body-md text-body-md text-secondary mb-4">يجب على المشرف تفعيل الذكاء الاصطناعي من الإعدادات وإضافة مفتاح API</p>
+    <% if (user && user.role === 'admin') { %>
+    <a href="/ai/settings" class="bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity inline-flex items-center gap-2">
+      <span class="material-symbols-outlined text-sm">settings</span>
+      إعدادات الذكاء الاصطناعي
+    </a>
+    <% } %>
+  </div>
+  <% } else { %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- الشات -->
+    <div class="lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col" style="height:500px;">
+      <div class="bg-surface-container border-b border-outline-variant px-6 py-4 flex items-center justify-between">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">smart_toy</span>
+          المحادثة
+        </h2>
+        <button onclick="clearChat()" class="text-secondary hover:text-error transition-colors font-label-sm text-label-sm flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">delete_sweep</span>
+          مسح المحادثة
+        </button>
+      </div>
+      <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-sm text-primary">smart_toy</span>
+          </div>
+          <div class="bg-surface-container-high rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]">
+            <p class="font-body-md text-body-md text-on-surface">مرحباً! أنا مساعد الأكاديمية الذكي. كيف يمكنني مساعدتك اليوم؟ يمكنني:</p>
+            <ul class="font-body-md text-body-md text-secondary mt-2 list-disc list-inside">
+              <li>الإجابة عن أسئلة طب الأسنان</li>
+              <li>توليد أسئلة اختبارات</li>
+              <li>تلخيص الدروس والمحاضرات</li>
+              <li>تقديم توصيات للدورات</li>
+            </ul>
+          </div>
+        </div>
+        <% if (typeof history !== 'undefined' && history) { history.forEach(function(h) { %>
+        <div class="flex items-start gap-3 <%= h.role === 'user' ? 'flex-row-reverse' : '' %>">
+          <div class="w-8 h-8 rounded-full <%= h.role === 'user' ? 'bg-secondary-container' : 'bg-primary-container' %> flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-sm <%= h.role === 'user' ? 'text-secondary' : 'text-primary' %>"><%= h.role === 'user' ? 'person' : 'smart_toy' %></span>
+          </div>
+          <div class="<%= h.role === 'user' ? 'bg-primary-container text-on-primary-container rounded-2xl rounded-tl-sm' : 'bg-surface-container-high rounded-2xl rounded-tr-sm' %> px-4 py-3 max-w-[80%]">
+            <p class="font-body-md text-body-md text-on-surface whitespace-pre-wrap"><%= h.content %></p>
+          </div>
+        </div>
+        <% }); } %>
+        <div id="chatLoading" class="hidden flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-sm text-primary">smart_toy</span>
+          </div>
+          <div class="bg-surface-container-high rounded-2xl rounded-tr-sm px-4 py-3">
+            <div class="flex gap-1">
+              <span class="w-2 h-2 bg-secondary rounded-full animate-bounce" style="animation-delay:0ms"></span>
+              <span class="w-2 h-2 bg-secondary rounded-full animate-bounce" style="animation-delay:150ms"></span>
+              <span class="w-2 h-2 bg-secondary rounded-full animate-bounce" style="animation-delay:300ms"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-outline-variant p-4">
+        <form id="chatForm" onsubmit="sendChat(event)" class="flex gap-2">
+          <input type="text" id="chatInput" placeholder="اكتب سؤالك هنا..." class="flex-1 bg-surface border border-outline-variant rounded-xl px-4 py-3 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" autocomplete="off" required/>
+          <button type="submit" class="bg-primary-container text-on-primary rounded-xl px-4 hover:opacity-90 transition-opacity flex items-center justify-center">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- الأدوات -->
+    <div class="flex flex-col gap-4">
+      <!-- توليد أسئلة -->
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 mb-4">
+          <span class="material-symbols-outlined text-primary">quiz</span>
+          توليد أسئلة
+        </h2>
+        <form id="quizForm" onsubmit="generateQuiz(event)" class="flex flex-col gap-3">
+          <input type="text" name="topic" placeholder="أدخل الموضوع (مثال: تشريح الأسنان)" class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary" required/>
+          <div class="flex gap-2">
+            <input type="number" name="count" value="5" min="1" max="20" class="w-20 bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary text-center"/>
+            <button type="submit" class="flex-1 bg-secondary-container text-on-secondary-container font-label-lg text-label-lg py-2 rounded hover:opacity-90 transition-opacity">توليد</button>
+          </div>
+        </form>
+        <div id="quizResult" class="mt-4 hidden"></div>
+      </div>
+
+      <!-- تلخيص -->
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 mb-4">
+          <span class="material-symbols-outlined text-primary">summarize</span>
+          تلخيص
+        </h2>
+        <form id="summarizeForm" onsubmit="summarizeContent(event)" class="flex flex-col gap-3">
+          <textarea name="content" rows="4" placeholder="الصق المحتوى هنا..." class="w-full bg-surface border border-outline-variant rounded py-2 px-3 text-on-surface font-body-md focus:outline-none focus:border-primary" required></textarea>
+          <button type="submit" class="bg-secondary-container text-on-secondary-container font-label-lg text-label-lg py-2 rounded hover:opacity-90 transition-opacity">تلخيص</button>
+        </form>
+        <div id="summarizeResult" class="mt-4 hidden"></div>
+      </div>
+
+      <!-- توصيات -->
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 mb-4">
+          <span class="material-symbols-outlined text-primary">recommend</span>
+          التوصيات
+        </h2>
+        <p class="font-body-md text-body-md text-secondary mb-3">توصيات ذكية لدورات قد تهمك بناءً على اهتماماتك</p>
+        <button onclick="getRecommendations()" class="w-full bg-secondary-container text-on-secondary-container font-label-lg text-label-lg py-2 rounded hover:opacity-90 transition-opacity">عرض التوصيات</button>
+        <div id="recommendResult" class="mt-4 hidden"></div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+</main>
+
+<script>
+var chatEl = document.getElementById('chatMessages');
+
+function scrollChat() { chatEl.scrollTop = chatEl.scrollHeight; }
+
+function sendChat(e) {
+  e.preventDefault();
+  var input = document.getElementById('chatInput');
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  var userDiv = document.createElement('div');
+  userDiv.className = 'flex items-start gap-3 flex-row-reverse';
+  userDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-sm text-secondary">person</span></div><div class="bg-primary-container text-on-primary-container rounded-2xl rounded-tl-sm px-4 py-3 max-w-[80%]"><p class="font-body-md text-body-md whitespace-pre-wrap">' + escapeHtml(msg) + '</p></div>';
+  chatEl.appendChild(userDiv);
+  var loading = document.getElementById('chatLoading');
+  loading.classList.remove('hidden');
+  scrollChat();
+  fetch('/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= csrfToken %>' }, body: JSON.stringify({ message: msg }) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      loading.classList.add('hidden');
+      if (data.error) {
+        var errDiv = document.createElement('div');
+        errDiv.className = 'flex items-start gap-3';
+        errDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-error-container flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-sm text-error">error</span></div><div class="bg-error-container text-on-error-container rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]"><p class="font-body-md text-body-md">' + escapeHtml(data.error) + '</p></div>';
+        chatEl.appendChild(errDiv);
+      } else {
+        var aiDiv = document.createElement('div');
+        aiDiv.className = 'flex items-start gap-3';
+        aiDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-sm text-primary">smart_toy</span></div><div class="bg-surface-container-high rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]"><p class="font-body-md text-body-md whitespace-pre-wrap">' + escapeHtml(data.text) + '</p></div>';
+        chatEl.appendChild(aiDiv);
+      }
+      scrollChat();
+    }).catch(function() {
+      loading.classList.add('hidden');
+    });
+}
+
+function clearChat() {
+  if (!confirm('مسح كل المحادثة؟')) return;
+  fetch('/ai/clear-history', { method: 'POST', headers: { 'X-CSRF-Token': '<%= csrfToken %>' } })
+    .then(function(r) { return r.json(); })
+    .then(function() { window.location.reload(); });
+}
+
+function generateQuiz(e) {
+  e.preventDefault();
+  var form = e.target;
+  var topic = form.topic.value.trim();
+  var count = form.count.value;
+  var resultDiv = document.getElementById('quizResult');
+  resultDiv.className = 'mt-4';
+  resultDiv.innerHTML = '<div class="flex items-center gap-2 text-secondary font-body-md"><span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري توليد الأسئلة...</div>';
+  fetch('/ai/generate-quiz', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= csrfToken %>' }, body: JSON.stringify({ topic: topic, count: count }) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { resultDiv.innerHTML = '<div class="bg-error-container text-on-error-container p-3 rounded-lg font-body-md">' + escapeHtml(data.error) + '</div>'; return; }
+      var html = '<div class="flex flex-col gap-3">';
+      data.questions.forEach(function(q, i) {
+        html += '<div class="bg-surface-container-low rounded-lg p-3 border border-outline-variant"><p class="font-label-lg text-label-lg text-on-surface mb-2">' + (i+1) + '. ' + escapeHtml(q.question) + '</p><div class="flex flex-col gap-1">';
+        q.options.forEach(function(o, oi) {
+          html += '<label class="flex items-center gap-2 font-body-md text-body-md text-secondary"><input type="radio" disabled ' + (oi === q.correctAnswer ? 'checked' : '') + '/> ' + escapeHtml(o) + '</label>';
+        });
+        html += '</div></div>';
+      });
+      html += '</div>';
+      resultDiv.innerHTML = html;
+    }).catch(function() { resultDiv.innerHTML = '<div class="bg-error-container text-on-error-container p-3 rounded-lg">حدث خطأ</div>'; });
+}
+
+function summarizeContent(e) {
+  e.preventDefault();
+  var form = e.target;
+  var content = form.content.value.trim();
+  var resultDiv = document.getElementById('summarizeResult');
+  resultDiv.className = 'mt-4';
+  resultDiv.innerHTML = '<div class="flex items-center gap-2 text-secondary font-body-md"><span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري التلخيص...</div>';
+  fetch('/ai/summarize', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= csrfToken %>' }, body: JSON.stringify({ content: content }) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { resultDiv.innerHTML = '<div class="bg-error-container text-on-error-container p-3 rounded-lg font-body-md">' + escapeHtml(data.error) + '</div>'; return; }
+      resultDiv.innerHTML = '<div class="bg-primary-fixed-dim text-on-primary-fixed-variant p-4 rounded-lg font-body-md text-body-md whitespace-pre-wrap">' + escapeHtml(data.text) + '</div>';
+    }).catch(function() { resultDiv.innerHTML = '<div class="bg-error-container text-on-error-container p-3 rounded-lg">حدث خطأ</div>'; });
+}
+
+function getRecommendations() {
+  var resultDiv = document.getElementById('recommendResult');
+  resultDiv.className = 'mt-4';
+  resultDiv.innerHTML = '<div class="flex items-center gap-2 text-secondary font-body-md"><span class="material-symbols-outlined animate-spin text-sm">sync</span> جاري تحليل اهتماماتك...</div>';
+  fetch('/ai/recommendations')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.courses && data.courses.length > 0) {
+        var html = '<div class="flex flex-col gap-2">';
+        data.courses.forEach(function(c) {
+          html += '<a href="/courses/' + c.id + '" class="bg-surface-container-low hover:bg-surface-container-high transition-colors p-3 rounded-lg border border-outline-variant block"><p class="font-label-lg text-label-lg text-primary">' + escapeHtml(c.title) + '</p><p class="font-body-md text-body-md text-secondary text-sm">' + (c.level || '') + '</p></a>';
+        });
+        html += '</div>';
+        resultDiv.innerHTML = html;
+      } else {
+        resultDiv.innerHTML = '<div class="bg-surface-container-low p-3 rounded-lg text-secondary font-body-md">لا توجد توصيات متاحة حالياً</div>';
+      }
+    }).catch(function() { resultDiv.innerHTML = '<div class="bg-error-container p-3 rounded-lg text-on-error-container">حدث خطأ</div>'; });
+}
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(text || ''));
+  return div.innerHTML;
+}
+</script>
+<%- include('../partials/footer') %>
