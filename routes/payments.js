@@ -1,10 +1,13 @@
 const express = require('express');
-const { getDb, sqlNow } = require('../config/database');
+const { getDb, sqlNow, isUsingPg } = require('../config/database');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
+function enrollSql() {
+  return isUsingPg() ? 'INSERT INTO enrollments (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING' : 'INSERT OR IGNORE INTO enrollments (user_id, course_id) VALUES (?, ?)';
+}
 const router = express.Router();
 const multer = require('multer');
 
@@ -139,7 +142,7 @@ router.get('/success/:id', isAuthenticated, async (req, res, next) => {
         const stripeSession = await stripe.checkout.sessions.retrieve(payment.stripe_session_id);
         if (stripeSession.payment_status === 'paid') {
           await db.prepare(`UPDATE payments SET status = 'paid', paid_at = ${sqlNow()} WHERE id = ?`).run(payment.id);
-      await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING').run(payment.user_id, payment.course_id);
+      await db.prepare(enrollSql()).run(payment.user_id, payment.course_id);
           const { createNotification } = require('../config/notifications');
           const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
           await createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعك الإلكتروني لمادة ' + (course ? course.title : '') + ' بنجاح');
@@ -182,7 +185,7 @@ router.post('/admin/:id/confirm', isAdmin, async (req, res, next) => {
         await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(payment.coupon_id);
       }
       const existing = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(payment.user_id, payment.course_id);
-      if (!existing) await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING').run(payment.user_id, payment.course_id);
+      if (!existing) await db.prepare(enrollSql()).run(payment.user_id, payment.course_id);
       const { createNotification } = require('../config/notifications');
       const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
       await createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعة مادة ' + (course ? course.title : '') + ' بنجاح');

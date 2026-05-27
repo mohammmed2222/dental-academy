@@ -366,7 +366,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
 
     if (lesson && lesson.instructor_id === req.session.userId) {
       await db.prepare('DELETE FROM lessons WHERE id = ?').run(lesson.id);
-      await db.prepare('UPDATE courses SET total_lessons = (SELECT COUNT(*) FROM lessons WHERE course_id = ?) WHERE id = ?')
+      await db.prepare(`UPDATE courses SET total_lessons = (SELECT COUNT(*) FROM lessons WHERE course_id = ?), updated_at = ${sqlNow()} WHERE id = ?`)
         .run(lesson.course_id, lesson.course_id);
       return res.redirect('/courses/' + lesson.course_slug);
     } else {

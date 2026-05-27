@@ -185,7 +185,7 @@ router.get('/verify-email', async (req, res, next) => {
     if (token) {
       var user = await db.prepare('SELECT id FROM users WHERE verification_token = ? AND email_verified = 0').get(token);
       if (user) {
-        await db.prepare('UPDATE users SET email_verified = 1, verification_token = NULL WHERE id = ?').run(user.id);
+        await db.prepare(`UPDATE users SET email_verified = 1, verification_token = NULL, updated_at = ${sqlNow()} WHERE id = ?`).run(user.id);
         if (req.session.userId === user.id) {
           req.session.emailVerified = true;
         }
