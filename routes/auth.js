@@ -201,6 +201,7 @@ router.get('/logout', async (req, res, next) => {
   try {
     req.session.destroy(function(err) {
       if (err) { return next(err); }
+      res.clearCookie('connect.sid');
       res.redirect('/');
     });
   } catch(err) { next(err); }
