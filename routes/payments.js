@@ -40,7 +40,7 @@ router.get('/checkout/:courseId', isAuthenticated, async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-router.post('/request/:courseId', isAuthenticated, async (req, res, next) => {
+router.post('/request/:courseId', isAuthenticated, uploadReceipt.single('receipt_image'), async (req, res, next) => {
   try {
     const db = getDb();
     const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.courseId));

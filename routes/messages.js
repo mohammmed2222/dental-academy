@@ -27,7 +27,7 @@ router.get('/', isAuthenticated, async (req, res, next) => {
       ORDER BY last_message_at DESC
     `).all(userId, userId, userId, userId, userId, userId, userId, userId);
 
-    res.render('messages/inbox', { title: 'الرسائل', conversations });
+    return res.render('messages/inbox', { title: 'الرسائل', conversations });
   } catch(err) { next(err); }
 });
 
@@ -46,7 +46,7 @@ router.get('/inbox', isAuthenticated, async (req, res, next) => {
 
     const unreadCount = (await db.prepare('SELECT COUNT(*) as count FROM messages WHERE receiver_id = ? AND is_read = 0').get(userId)).count;
 
-    res.render('messages/inbox', { title: 'الرسائل الواردة', messages, unreadCount, inboxMode: true });
+    return res.render('messages/inbox', { title: 'الرسائل الواردة', messages, unreadCount, inboxMode: true });
   } catch(err) { next(err); }
 });
 
@@ -63,7 +63,7 @@ router.get('/sent', isAuthenticated, async (req, res, next) => {
       ORDER BY m.created_at DESC
     `).all(userId);
 
-    res.render('messages/sent', { title: 'الرسائل المرسلة', messages });
+    return res.render('messages/sent', { title: 'الرسائل المرسلة', messages });
   } catch(err) { next(err); }
 });
 
@@ -91,7 +91,7 @@ router.get('/conversation/:userId', isAuthenticated, async (req, res, next) => {
       ORDER BY m.created_at ASC
     `).all(currentUserId, otherUserId, otherUserId, currentUserId);
 
-    res.render('messages/conversation', { title: 'الرسائل مع ' + otherUser.name, messages, otherUser });
+    return res.render('messages/conversation', { title: 'الرسائل مع ' + otherUser.name, messages, otherUser });
   } catch(err) { next(err); }
 });
 
@@ -109,7 +109,7 @@ router.get('/compose', isAuthenticated, async (req, res, next) => {
       parentMessage = await db.prepare('SELECT * FROM messages WHERE id = ?').get(parseInt(req.query.reply));
     }
 
-    res.render('messages/compose', { title: 'رسالة جديدة', users, preselectedUser, parentMessage });
+    return res.render('messages/compose', { title: 'رسالة جديدة', users, preselectedUser, parentMessage });
   } catch(err) { next(err); }
 });
 
@@ -140,7 +140,7 @@ router.post('/send', isAuthenticated, async (req, res, next) => {
     }
 
     req.session.flash = { type: 'success', message: 'تم إرسال الرسالة بنجاح' };
-    res.redirect('/messages/conversation/' + receiverId);
+    return res.redirect('/messages/conversation/' + receiverId);
   } catch(err) { next(err); }
 });
 
@@ -156,7 +156,7 @@ router.post('/:id/read', isAuthenticated, async (req, res, next) => {
     }
 
     await db.prepare('UPDATE messages SET is_read = 1 WHERE id = ?').run(messageId);
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch(err) { next(err); }
 });
 
@@ -174,7 +174,7 @@ router.post('/:id/delete', isAuthenticated, async (req, res, next) => {
 
     await db.prepare('DELETE FROM messages WHERE id = ?').run(messageId);
     req.session.flash = { type: 'success', message: 'تم حذف الرسالة بنجاح' };
-    res.redirect('/messages');
+    return res.redirect('/messages');
   } catch(err) { next(err); }
 });
 

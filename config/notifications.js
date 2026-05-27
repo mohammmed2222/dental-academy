@@ -7,11 +7,11 @@ async function createNotification(userId, type, title, message, relatedId, relat
   // Send WhatsApp if user has phone
   try {
     var user = await db.prepare('SELECT phone FROM users WHERE id = ? AND phone != ?').get(userId, '');
-    if (user) {
+    if (user && user.phone) {
       const { sendWhatsApp } = require('./whatsapp');
-      var waMsg = '🔔 ' + title;
+      var waMsg = title;
       if (message) waMsg += '\n' + message;
-      sendWhatsApp(user.phone, waMsg);
+      await sendWhatsApp(user.phone, waMsg);
     }
   } catch(e) {}
 }

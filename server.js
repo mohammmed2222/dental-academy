@@ -237,4 +237,5 @@ Promise.all([initializeDatabase(), initializeMail()]).then(() => {
   });
 }).catch(err => {
   console.error('خطأ في تشغيل المنصة:', err);
+  process.exit(1);
 });

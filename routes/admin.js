@@ -96,7 +96,7 @@ router.post('/users/:id/role', isAdmin, async (req, res, next) => {
     const db = getDb();
     const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
     if (user && user.role !== 'admin') {
-      var allowedRoles = ['student', 'instructor', 'admin'];
+      var allowedRoles = ['student', 'instructor'];
       var newRole = allowedRoles.indexOf(req.body.role) !== -1 ? req.body.role : user.role;
       await db.prepare(`UPDATE users SET role = ?, updated_at = ${sqlNow()} WHERE id = ?`)
         .run(newRole, user.id);

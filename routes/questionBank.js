@@ -29,13 +29,13 @@ router.get('/', isInstructor, async (req, res, next) => {
       'SELECT DISTINCT category FROM question_bank WHERE instructor_id = ? AND category != "" ORDER BY category'
     ).all(req.session.userId);
 
-    res.render('questionBank/list', { title: 'بنك الأسئلة', questions, categories, search, category });
+    return res.render('questionBank/list', { title: 'بنك الأسئلة', questions, categories, search, category });
   } catch(err) { next(err); }
 });
 
 router.get('/create', isInstructor, async (req, res, next) => {
   try {
-    res.render('questionBank/create', { title: 'إضافة سؤال', question: null, error: null });
+    return res.render('questionBank/create', { title: 'إضافة سؤال', question: null, error: null });
   } catch(err) { next(err); }
 });
 
@@ -67,7 +67,7 @@ router.post('/create', isInstructor, async (req, res, next) => {
     );
 
     req.session.flash = { type: 'success', message: 'تم إضافة السؤال إلى بنك الأسئلة' };
-    res.redirect('/question-bank');
+    return res.redirect('/question-bank');
   } catch(err) { next(err); }
 });
 
@@ -82,7 +82,7 @@ router.get('/:id/edit', isInstructor, async (req, res, next) => {
       return res.redirect('/question-bank');
     }
 
-    res.render('questionBank/create', { title: 'تعديل السؤال', question, error: null });
+    return res.render('questionBank/create', { title: 'تعديل السؤال', question, error: null });
   } catch(err) { next(err); }
 });
 
@@ -123,7 +123,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
     );
 
     req.session.flash = { type: 'success', message: 'تم تحديث السؤال' };
-    res.redirect('/question-bank');
+    return res.redirect('/question-bank');
   } catch(err) { next(err); }
 });
 
@@ -134,7 +134,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
       .run(parseInt(req.params.id), req.session.userId);
 
     req.session.flash = { type: 'success', message: 'تم حذف السؤال' };
-    res.redirect('/question-bank');
+    return res.redirect('/question-bank');
   } catch(err) { next(err); }
 });
 
@@ -145,7 +145,7 @@ router.get('/select/:quizId', isInstructor, async (req, res, next) => {
       'SELECT * FROM question_bank WHERE instructor_id = ? ORDER BY created_at DESC'
     ).all(req.session.userId);
 
-    res.json({ questions });
+    return res.json({ questions });
   } catch(err) { next(err); }
 });
 

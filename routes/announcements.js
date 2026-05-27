@@ -34,11 +34,11 @@ router.get('/course/:courseId', isAuthenticated, async (req, res, next) => {
       ORDER BY ca.created_at DESC
     `).all(courseId);
 
-    res.render('announcements/list', {
-      title: 'الإعلانات - ' + course.title,
-      course,
+    return res.render('announcements/list', {
+      title: 'الإعلانات',
       announcements,
-      isOwner
+      courseId,
+      courseTitle
     });
   } catch(err) { next(err); }
 });
@@ -65,7 +65,7 @@ router.post('/create/:courseId', isInstructor, async (req, res, next) => {
     `).run(courseId, req.session.userId, title, content);
 
     req.session.flash = { type: 'success', message: 'تم إنشاء الإعلان بنجاح' };
-    res.redirect('/announcements/course/' + courseId);
+    return res.redirect('/announcements/course/' + courseId);
   } catch(err) { next(err); }
 });
 
@@ -87,7 +87,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
 
     await db.prepare('DELETE FROM course_announcements WHERE id = ?').run(id);
     req.session.flash = { type: 'success', message: 'تم حذف الإعلان بنجاح' };
-    res.redirect('/announcements/course/' + announcement.course_id);
+    return res.redirect('/announcements/course/' + announcement.course_id);
   } catch(err) { next(err); }
 });
 

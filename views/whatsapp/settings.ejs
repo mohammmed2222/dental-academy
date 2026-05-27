@@ -8,7 +8,12 @@
   </div>
 
   <% if (typeof success !== 'undefined' && success) { %>
-  <div class="flex items-center gap-2 bg-primary-fixed-dim text-primary p-3 rounded font-body-md text-body-md"><%= success %></div>
+  <div class="flex items-center gap-2 bg-primary-fixed-dim text-primary p-3 rounded font-body-md text-body-md">
+    <%= success %>
+    <% if (typeof waLink !== 'undefined' && waLink) { %>
+    &nbsp;- <a href="<%= waLink %>" target="_blank" class="hover:underline font-label-lg">اضغط هنا للرابط البديل</a>
+    <% } %>
+  </div>
   <% } %>
   <% if (typeof error !== 'undefined' && error) { %>
   <div class="flex items-center gap-2 bg-error-container text-on-error-container p-3 rounded font-body-md text-body-md"><%= error %></div>

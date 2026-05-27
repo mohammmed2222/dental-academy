@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_
 CREATE TABLE IF NOT EXISTS enrollments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, course_id INTEGER NOT NULL, completed_at DATETIME, enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, course_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS lesson_progress (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, lesson_id INTEGER NOT NULL, completed INTEGER DEFAULT 0, completed_at DATETIME, UNIQUE(user_id, lesson_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS course_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, course_id INTEGER NOT NULL, rating INTEGER NOT NULL, review TEXT DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, course_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE);
-CREATE TABLE IF NOT EXISTS assignments (id INTEGER PRIMARY KEY AUTOINCREMENT, lesson_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT DEFAULT '', due_date DATETIME, max_points INTEGER DEFAULT 100, file_allowed INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS assignments (id INTEGER PRIMARY KEY AUTOINCREMENT, lesson_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT DEFAULT '', due_date DATETIME, max_points INTEGER DEFAULT 100, file_allowed INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS assignment_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, assignment_id INTEGER NOT NULL, user_id INTEGER NOT NULL, file_url TEXT DEFAULT '', notes TEXT DEFAULT '', grade INTEGER, feedback TEXT DEFAULT '', submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP, graded_at DATETIME, UNIQUE(assignment_id, user_id), FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS course_prerequisites (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id INTEGER NOT NULL, prerequisite_course_id INTEGER NOT NULL, UNIQUE(course_id, prerequisite_course_id), FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE, FOREIGN KEY (prerequisite_course_id) REFERENCES courses(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS contact_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, subject TEXT NOT NULL, message TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id INTEGER NOT 
 CREATE TABLE IF NOT EXISTS enrollments (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, completed_at TIMESTAMP, enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, course_id));
 CREATE TABLE IF NOT EXISTS lesson_progress (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, lesson_id INTEGER NOT NULL REFERENCES lessons(id) ON DELETE CASCADE, completed INTEGER DEFAULT 0, completed_at TIMESTAMP, UNIQUE(user_id, lesson_id));
 CREATE TABLE IF NOT EXISTS course_reviews (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, rating INTEGER NOT NULL, review TEXT DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, course_id));
-CREATE TABLE IF NOT EXISTS assignments (id SERIAL PRIMARY KEY, lesson_id INTEGER NOT NULL REFERENCES lessons(id) ON DELETE CASCADE, title TEXT NOT NULL, description TEXT DEFAULT '', due_date TIMESTAMP, max_points INTEGER DEFAULT 100, file_allowed INTEGER DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS assignments (id SERIAL PRIMARY KEY, lesson_id INTEGER NOT NULL REFERENCES lessons(id) ON DELETE CASCADE, title TEXT NOT NULL, description TEXT DEFAULT '', due_date TIMESTAMP, max_points INTEGER DEFAULT 100, file_allowed INTEGER DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS assignment_submissions (id SERIAL PRIMARY KEY, assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, file_url TEXT DEFAULT '', notes TEXT DEFAULT '', grade INTEGER, feedback TEXT DEFAULT '', submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, graded_at TIMESTAMP, UNIQUE(assignment_id, user_id));
 CREATE TABLE IF NOT EXISTS course_prerequisites (id SERIAL PRIMARY KEY, course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, prerequisite_course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, UNIQUE(course_id, prerequisite_course_id));
 CREATE TABLE IF NOT EXISTS contact_messages (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, subject TEXT NOT NULL, message TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
@@ -178,7 +178,8 @@ async function initializeDatabase() {
       "ALTER TABLE quiz_attempts ADD COLUMN IF NOT EXISTS started_at TIMESTAMP",
       "ALTER TABLE exam_attempts ADD COLUMN IF NOT EXISTS started_at TIMESTAMP",
       "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS max_points INTEGER DEFAULT 100",
-      "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS file_allowed INTEGER DEFAULT 1"
+      "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS file_allowed INTEGER DEFAULT 1",
+      "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
     ];
     for (const stmt of pgAlterStmts) { try { await pgPool.query(stmt); } catch(e) { console.log('PG migration note:', e.message); } }
     await seedDataPg();
@@ -213,7 +214,8 @@ async function initializeDatabase() {
     "ALTER TABLE payments ADD COLUMN stripe_session_id TEXT",
     "ALTER TABLE payments ADD COLUMN receipt_image TEXT DEFAULT ''",
     "ALTER TABLE lessons ADD COLUMN release_date DATETIME",
-    "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''"
+    "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''",
+    "ALTER TABLE assignments ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"
   ];
   for (const stmt of alterStmts) { try { dbRaw.run(stmt); } catch(e) {} }
   db = sqliteWrap(dbRaw);
@@ -261,7 +263,7 @@ async function seedDataPg() {
   const adminName = process.env.ADMIN_NAME || 'المشرف العام';
   if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail))) {
     const hash = bcrypt.hashSync(adminPassword, 10);
-    await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run(adminName, adminEmail, hash, 'admin');
+    await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run(adminName, adminEmail, hash, 'admin');
   }
   if (Number((await db.prepare('SELECT COUNT(*) as count FROM categories').get()).count) === 0) {
     const cats = [
@@ -274,16 +276,16 @@ async function seedDataPg() {
       ['طب أسنان الأطفال','pediatric-dentistry','رعاية أسنان الأطفال والمراهقين'],
       ['التشخيص والأشعة','oral-radiology','الأشعة السينية والتشخيص الإشعاعي الفموي']
     ];
-    for (const c of cats) await db.prepare('INSERT INTO categories (name, slug, description) VALUES ($1, $2, $3)').run(c[0], c[1], c[2]);
+    for (const c of cats) await db.prepare('INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)').run(c[0], c[1], c[2]);
   }
   // حسابات تجريبية للتطوير فقط — لا تُنشأ في الإنتاج
   if (process.env.NODE_ENV !== 'production') {
     if (Number((await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count) === 0) {
       if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get('instructor@manassa.com'))) {
-        await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run('مدرب تجريبي', 'instructor@manassa.com', bcrypt.hashSync('123456', 10), 'instructor');
+        await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('مدرب تجريبي', 'instructor@manassa.com', bcrypt.hashSync('123456', 10), 'instructor');
       }
       if (!(await db.prepare('SELECT id FROM users WHERE email = ?').get('student@manassa.com'))) {
-        await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES ($1, $2, $3, $4, 1)').run('طالب تجريبي', 'student@manassa.com', bcrypt.hashSync('123456', 10), 'student');
+        await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run('طالب تجريبي', 'student@manassa.com', bcrypt.hashSync('123456', 10), 'student');
       }
     }
   }

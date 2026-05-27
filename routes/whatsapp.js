@@ -29,11 +29,13 @@ router.post('/test', isAdmin, async (req, res, next) => {
     }
     var sent = await sendWhatsApp(phone, message || 'رسالة اختبارية من أكاديمية طب الأسنان');
     var link = getWhatsAppLink(phone, message || 'رسالة اختبارية من أكاديمية طب الأسنان');
+    var waLink = sent ? '' : link;
     return res.render('whatsapp/settings', {
       title: 'إعدادات واتساب',
       settings: await getSettings(),
       error: null,
-      success: sent ? 'تم إرسال رسالة الاختبار' : 'لم يتم الإرسال (الواتساب غير مفعل). رابط بديل: <a href="' + link + '" target="_blank" class="text-primary hover:underline">اضغط هنا</a>'
+      success: sent ? 'تم إرسال رسالة الاختبار' : 'لم يتم الإرسال (الواتساب غير مفعل)',
+      waLink: waLink
     });
   } catch(err) { next(err); }
 });

@@ -36,7 +36,7 @@ function shareCourse() {
 }
 function toggleDarkMode() {
   var icon = event.currentTarget.querySelector('.material-symbols-outlined');
-  fetch('/dashboard/toggle-dark-mode', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+  fetch('/dashboard/toggle-dark-mode', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= csrfToken %>' } })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.darkMode) {
