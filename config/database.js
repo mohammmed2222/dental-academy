@@ -159,6 +159,24 @@ async function initializeDatabase() {
     for (const stmt of tableStatements) {
       try { await pgPool.query(stmt); } catch(e) { console.error('Table creation error:', e.message); }
     }
+    const pgAlterStmts = [
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS dark_mode INTEGER DEFAULT 0",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INTEGER DEFAULT 0",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT",
+      "ALTER TABLE payments ADD COLUMN IF NOT EXISTS coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL",
+      "ALTER TABLE payments ADD COLUMN IF NOT EXISTS discount_amount REAL DEFAULT 0",
+      "ALTER TABLE payments ADD COLUMN IF NOT EXISTS stripe_session_id TEXT",
+      "ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_image TEXT DEFAULT ''",
+      "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS section_id INTEGER REFERENCES course_sections(id) ON DELETE SET NULL",
+      "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS release_date TIMESTAMP",
+      "ALTER TABLE courses ADD COLUMN IF NOT EXISTS sections_order TEXT DEFAULT '[]'",
+      "ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 0",
+      "ALTER TABLE course_exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 0",
+      "ALTER TABLE quiz_attempts ADD COLUMN IF NOT EXISTS started_at TIMESTAMP",
+      "ALTER TABLE exam_attempts ADD COLUMN IF NOT EXISTS started_at TIMESTAMP"
+    ];
+    for (const stmt of pgAlterStmts) { try { await pgPool.query(stmt); } catch(e) { console.log('PG migration note:', e.message); } }
     await seedDataPg();
     console.log('✓ PostgreSQL ready');
     return;
