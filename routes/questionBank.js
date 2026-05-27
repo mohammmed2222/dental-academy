@@ -26,7 +26,7 @@ router.get('/', isInstructor, async (req, res, next) => {
     const questions = await db.prepare(query).all(params);
 
     const categories = await db.prepare(
-      'SELECT DISTINCT category FROM question_bank WHERE instructor_id = ? AND category != "" ORDER BY category'
+      "SELECT DISTINCT category FROM question_bank WHERE instructor_id = ? AND category != '' ORDER BY category"
     ).all(req.session.userId);
 
     return res.render('questionBank/list', { title: 'بنك الأسئلة', questions, categories, search, category });
