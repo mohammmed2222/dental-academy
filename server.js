@@ -30,7 +30,7 @@ const questionBankRoutes = require('./routes/questionBank');
 const couponRoutes = require('./routes/coupons');
 const bulkImportRoutes = require('./routes/bulkImport');
 const learningPathRoutes = require('./routes/learningPaths');
-const { setUser } = require('./middleware/auth');
+const { setUser, noCache } = require('./middleware/auth');
 const { getUnreadCount } = require('./config/notifications');
 
 process.on('unhandledRejection', (err) => {
@@ -71,6 +71,7 @@ var generalLimiter = rateLimit({
   message: { error: 'طلبات كثيرة جداً، حاول بعد 15 دقيقة' }
 });
 app.use(generalLimiter);
+app.use(noCache);
 app.use(setUser);
 
 app.use(async (req, res, next) => {
