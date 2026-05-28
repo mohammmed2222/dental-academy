@@ -88,6 +88,11 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
 
     if (!quiz) return res.status(404).render('error', { title: 'غير موجود', message: 'الاختبار غير موجود', error: null });
 
+    if (req.session.role !== 'admin' && req.session.userId !== quiz.instructor_id) {
+      var enrollment = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, quiz.course_id);
+      if (!enrollment) return res.redirect('/courses/' + quiz.course_slug);
+    }
+
     const questions = await db.prepare('SELECT * FROM quiz_questions WHERE quiz_id = ? ORDER BY order_index ASC').all(quiz.id);
 
     const pastAttempts = await db.prepare(`
@@ -118,8 +123,19 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
 router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const quiz = await db.prepare('SELECT * FROM quizzes WHERE id = ?').get(parseInt(req.params.id));
+    const quiz = await db.prepare(`
+      SELECT q.*, l.course_id, c.instructor_id
+      FROM quizzes q
+      JOIN lessons l ON q.lesson_id = l.id
+      JOIN courses c ON l.course_id = c.id
+      WHERE q.id = ?
+    `).get(parseInt(req.params.id));
     if (!quiz) return res.status(404).json({ error: 'الاختبار غير موجود' });
+
+    if (req.session.role !== 'admin' && req.session.userId !== quiz.instructor_id) {
+      var submitEnroll = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, quiz.course_id);
+      if (!submitEnroll) return res.status(403).json({ error: 'غير مصرح' });
+    }
 
     // Check max attempts
     var maxAttempts = quiz.max_attempts || 0;

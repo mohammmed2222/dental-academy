@@ -59,7 +59,7 @@
 <%- include('../partials/footer') %>
 
 <script>
-var existingQuestions = <%- JSON.stringify(questions || []) %>;
+var existingQuestions = <%- JSON.stringify(questions || []).replace(/<\//g, '<\\/') %>;
 var questionCount = 0;
 
 function addQuestion(data) {

@@ -17,7 +17,8 @@ const uploadCsv = multer({
   storage: csvStorage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
-    if (!file.originalname.endsWith('.csv') && file.mimetype !== 'text/csv' && file.mimetype !== 'application/vnd.ms-excel') {
+    var ext = path.extname(file.originalname).toLowerCase();
+    if (ext !== '.csv' || (file.mimetype !== 'text/csv' && file.mimetype !== 'application/vnd.ms-excel')) {
       return cb(new Error('يُسمح فقط بملفات CSV'), false);
     }
     cb(null, true);

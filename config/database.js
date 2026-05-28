@@ -287,6 +287,8 @@ function saveDatabase() {
 function getDb() { return db; }
 
 function sqlNow(offset) {
+  var allowed = { '-7 days': 1, '-30 days': 1, '-1 days': 1, 'start of month': 1, 'start of day': 1 };
+  if (offset && !allowed[offset]) offset = null;
   if (usingPg) {
     if (offset === 'start of day') return "date_trunc('day', NOW())";
     if (offset) return `NOW() - INTERVAL '${offset}'`;

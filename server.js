@@ -48,21 +48,42 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+if (!process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET environment variable is not set!');
+  process.exit(1);
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'manassa_secret_key_2024',
+  secret: process.env.SESSION_SECRET,
+  name: 'dental_sid',
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+    secure: process.env.SESSION_SECURE === 'true' || process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
   }
 }));
 
 app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com"],
+      objectSrc: ["'none'"]
+    }
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true, preload: true }
 }));
 
 var generalLimiter = rateLimit({

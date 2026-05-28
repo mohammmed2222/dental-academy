@@ -199,8 +199,13 @@ router.get('/:slug/exams/:id', isAuthenticated, async (req, res, next) => {
 router.post('/:slug/exams/:id/submit', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const exam = await db.prepare('SELECT * FROM course_exams WHERE id = ?').get(parseInt(req.params.id));
+    const exam = await db.prepare('SELECT ce.*, c.instructor_id FROM course_exams ce JOIN courses c ON ce.course_id = c.id WHERE ce.id = ?').get(parseInt(req.params.id));
     if (!exam) return res.status(404).json({ error: 'الاختبار غير موجود' });
+
+    if (req.session.role !== 'admin' && req.session.userId !== exam.instructor_id) {
+      var submitExamEnroll = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, exam.course_id);
+      if (!submitExamEnroll) return res.status(403).json({ error: 'غير مصرح' });
+    }
 
     // Check max attempts
     var maxAttempts = exam.max_attempts || 0;

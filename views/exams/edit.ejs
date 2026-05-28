@@ -57,7 +57,7 @@ let questionCount = 0;
 
 <% if (questions && questions.length > 0) { %>
   <% questions.forEach(function(q) { %>
-    addQuestion(<%- JSON.stringify(q) %>);
+    addQuestion(<%- JSON.stringify(q).replace(/<\//g, '<\\/') %>);
   <% }) %>
 <% } %>
 

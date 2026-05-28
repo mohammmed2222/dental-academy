@@ -15,7 +15,7 @@ const assignmentStorage = multer.diskStorage({
 });
 const uploadAssignment = multer({
   storage: assignmentStorage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     var allowed = ['.pdf', '.doc', '.docx', '.zip', '.rar', '.png', '.jpg', '.jpeg', '.txt', '.ppt', '.pptx', '.xls', '.xlsx'];
     var ext = path.extname(file.originalname).toLowerCase();

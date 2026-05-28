@@ -87,7 +87,7 @@
 <%- include('../partials/footer') %>
 
 <script>
-var question = <%- JSON.stringify(question) %>;
+var question = <%- JSON.stringify(question).replace(/<\//g, '<\\/') %>;
 var options = (question && question.options) ? (typeof question.options === 'string' ? JSON.parse(question.options) : question.options) : [];
 var questionType = question ? question.question_type : 'multiple_choice';
 var optionCount = 0;

@@ -9,6 +9,10 @@ router.get('/course/:courseId', isAuthenticated, async (req, res, next) => {
     const db = getDb();
     const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.courseId));
     if (!course) return res.redirect('/courses');
+    if (req.session.role !== 'admin' && course.instructor_id !== req.session.userId) {
+      var liveEnroll = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, course.id);
+      if (!liveEnroll) return res.redirect('/courses');
+    }
     const sessions = await db.prepare(`
       SELECT ls.*, u.name as instructor_name
       FROM live_sessions ls
@@ -98,6 +102,10 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
       WHERE ls.id = ?
     `).get(parseInt(req.params.id));
     if (!session) return res.redirect('/courses');
+    if (req.session.role !== 'admin' && session.instructor_id !== req.session.userId) {
+      var viewLiveEnroll = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, session.course_id);
+      if (!viewLiveEnroll) return res.redirect('/courses');
+    }
     return res.render('live/view', { title: session.title, session });
   } catch(err) { next(err); }
 });

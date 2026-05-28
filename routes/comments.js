@@ -11,6 +11,11 @@ router.post('/lesson/:lessonId', isAuthenticated, async (req, res, next) => {
     const lesson = await db.prepare('SELECT l.*, c.instructor_id, c.title as course_title FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(parseInt(req.params.lessonId));
     if (!lesson) return res.status(404).json({ error: 'الدرس غير موجود' });
 
+    if (req.session.role !== 'admin' && lesson.instructor_id !== req.session.userId) {
+      var commentEnroll = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, lesson.course_id);
+      if (!commentEnroll) return res.status(403).json({ error: 'غير مصرح' });
+    }
+
     const { content } = req.body;
     var safeContent = String(content || '').trim();
     if (!safeContent) {

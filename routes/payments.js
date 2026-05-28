@@ -19,8 +19,14 @@ const uploadReceipt = multer({
       cb(null, crypto.randomBytes(16).toString('hex') + safeExt);
     }
   }),
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function(req, file, cb) {
-    if (file.mimetype.startsWith('image/')) { cb(null, true); } else { cb(new Error('فقط الصور مسموحة'), false); }
+    var ext = path.extname(file.originalname).toLowerCase();
+    var allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+    if (!file.mimetype.startsWith('image/') || allowed.indexOf(ext) === -1) {
+      return cb(new Error('فقط الصور مسموحة (jpg, png, gif, webp)'), false);
+    }
+    cb(null, true);
   }
 });
 

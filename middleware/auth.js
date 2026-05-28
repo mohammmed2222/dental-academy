@@ -40,7 +40,7 @@ async function setUser(req, res, next) {
           req.session.destroy();
           return res.redirect('/auth/login');
         }
-      } catch (e) {}
+      } catch (e) { console.error('Session revalidation error:', e.message); }
       req.session._lastRevalidated = now;
     }
     res.locals.user = {

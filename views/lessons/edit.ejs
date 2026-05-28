@@ -116,7 +116,7 @@ let questionCount = 0;
 
 <% if (typeof quizQuestions !== 'undefined' && quizQuestions && quizQuestions.length > 0) { %>
   <% quizQuestions.forEach(function(q) { %>
-    addQuestion(<%- JSON.stringify(q) %>);
+    addQuestion(<%- JSON.stringify(q).replace(/<\//g, '<\\/') %>);
   <% }) %>
 <% } %>
 
