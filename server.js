@@ -55,9 +55,10 @@ if (!process.env.SESSION_SECRET) {
   process.exit(1);
 }
 
-if (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 12) {
-  console.error('FATAL: ADMIN_PASSWORD environment variable must be at least 12 characters!');
-  process.exit(1);
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn('WARNING: ADMIN_PASSWORD not set. Admin login will not work until you set it (min 12 chars) and re-seed the database.');
+} else if (process.env.ADMIN_PASSWORD.length < 12) {
+  console.warn('WARNING: ADMIN_PASSWORD is less than 12 characters. For security, set it to at least 12 characters.');
 }
 
 app.use(session({
