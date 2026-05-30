@@ -60,13 +60,13 @@ function parseCsvLine(line) {
   return result;
 }
 
-router.get('/bulk-import', isAdmin, async (req, res, next) => {
+router.get('/', isAdmin, async (req, res, next) => {
   try {
     return res.render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: null });
   } catch(err) { next(err); }
 });
 
-router.post('/bulk-import', isAdmin, bulkImportLimiter, async (req, res, next) => {
+router.post('/', isAdmin, bulkImportLimiter, async (req, res, next) => {
   try {
     uploadCsv.single('csv_file')(req, res, async function (err) {
       try {

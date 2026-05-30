@@ -204,17 +204,29 @@ router.post('/profile', isAuthenticated, profileLimiter, async (req, res, next) 
         }
 
         if (password) {
+          var curPwd = req.body.currentPassword || '';
+          if (!curPwd) {
+            return res.render('dashboard/profile', {
+              title: 'الملف الشخصي',
+              user: { ...user, name, bio },
+              error: 'يجب إدخال كلمة المرور الحالية لتغييرها',
+              success: null
+            });
+          }
+          const bcryptCheck = require('bcryptjs');
+          const isMatch = bcryptCheck.compareSync(curPwd, user.password);
+          if (!isMatch) {
+            return res.render('dashboard/profile', {
+              title: 'الملف الشخصي',
+              user: { ...user, name, bio },
+              error: 'كلمة المرور الحالية غير صحيحة',
+              success: null
+            });
+          }
           if (password.length < 12) {
             return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'كلمة المرور يجب أن تكون 12 حرفاً على الأقل', success: null });
           }
-          if (!current_password) {
-            return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'يجب إدخال كلمة المرور الحالية لتغيير كلمة المرور', success: null });
-          }
-          const bcrypt = require('bcryptjs');
-          if (!(await bcrypt.compare(current_password, user.password))) {
-            return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'كلمة المرور الحالية غير صحيحة', success: null });
-          }
-          const hashedPassword = await bcrypt.hash(password, 10);
+          const hashedPassword = await bcryptCheck.hash(password, 10);
           await db.prepare(`UPDATE users SET name = ?, bio = ?, phone = ?, avatar = ?, password = ?, updated_at = ${sqlNow()} WHERE id = ?`)
             .run(name, bio || '', phone || '', avatarPath, hashedPassword, req.session.userId);
         } else {

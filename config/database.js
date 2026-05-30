@@ -302,6 +302,15 @@ async function seedDataSqlite() {
     db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run(adminName, adminEmail, bcrypt.hashSync(adminPassword, 10), 'admin');
   }
   db.prepare('DELETE FROM categories').run();
+  var catStmt = db.prepare('INSERT OR IGNORE INTO categories (name, slug, description) VALUES (?, ?, ?)');
+  catStmt.run('تشريح الفم', 'anatomy', 'علم تشريح الفم والأسنان والفكين');
+  catStmt.run('تقويم الأسنان', 'orthodontics', 'تقويم وتصحيح اصطفاف الأسنان');
+  catStmt.run('جراحة الفم', 'oral-surgery', 'العمليات الجراحية في الفم والفكين');
+  catStmt.run('تركيبات الأسنان', 'prosthodontics', 'التعويضات السنية والتركيبات الثابتة والمتحركة');
+  catStmt.run('طب أسنان الأطفال', 'pediatric', 'رعاية صحة أسنان الأطفال');
+  catStmt.run('أمراض اللثة', 'periodontics', 'تشخيص وعلاج أمراض اللثة');
+  catStmt.run('التشخيص الإشعاعي', 'radiology', 'الأشعة السينية والتصوير الطبي للأسنان');
+  catStmt.run('طب الأسنان التحفظي', 'conservative', 'علاج التسوس وحشو الأسنان');
   // حسابات تجريبية للتطوير فقط — لا تُنشأ في الإنتاج
   if (process.env.NODE_ENV !== 'production') {
     if (db.prepare('SELECT COUNT(*) as count FROM courses').get().count === 0) {
@@ -324,6 +333,15 @@ async function seedDataPg() {
     await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)').run(adminName, adminEmail, hash, 'admin');
   }
   await db.prepare('DELETE FROM categories').run();
+  var pgCatStmt = await db.prepare('INSERT INTO categories (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING');
+  await pgCatStmt.run('تشريح الفم', 'anatomy', 'علم تشريح الفم والأسنان والفكين');
+  await pgCatStmt.run('تقويم الأسنان', 'orthodontics', 'تقويم وتصحيح اصطفاف الأسنان');
+  await pgCatStmt.run('جراحة الفم', 'oral-surgery', 'العمليات الجراحية في الفم والفكين');
+  await pgCatStmt.run('تركيبات الأسنان', 'prosthodontics', 'التعويضات السنية والتركيبات الثابتة والمتحركة');
+  await pgCatStmt.run('طب أسنان الأطفال', 'pediatric', 'رعاية صحة أسنان الأطفال');
+  await pgCatStmt.run('أمراض اللثة', 'periodontics', 'تشخيص وعلاج أمراض اللثة');
+  await pgCatStmt.run('التشخيص الإشعاعي', 'radiology', 'الأشعة السينية والتصوير الطبي للأسنان');
+  await pgCatStmt.run('طب الأسنان التحفظي', 'conservative', 'علاج التسوس وحشو الأسنان');
   // حسابات تجريبية للتطوير فقط — لا تُنشأ في الإنتاج
   if (process.env.NODE_ENV !== 'production') {
     if (Number((await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count) === 0) {

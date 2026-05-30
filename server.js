@@ -86,7 +86,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
       connectSrc: ["'self'"],
-      frameSrc: ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com"],
+      frameSrc: ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com", "https://www.google.com"],
       objectSrc: ["'none'"]
     }
   },
@@ -168,7 +168,7 @@ app.use('/sections', sectionRoutes);
 app.use('/messages', messageRoutes);
 app.use('/question-bank', questionBankRoutes);
 app.use('/coupons', couponRoutes);
-app.use('/admin', bulkImportRoutes);
+app.use('/admin/bulk-import', bulkImportRoutes);
 app.use('/learning-paths', learningPathRoutes);
 app.use('/live', require('./routes/live'));
 app.use('/cohorts', require('./routes/cohorts'));

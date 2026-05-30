@@ -36,7 +36,13 @@ function shareCourse() {
 }
 function toggleDarkMode() {
   var icon = event.currentTarget.querySelector('.material-symbols-outlined');
-  fetch('/dashboard/toggle-dark-mode', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= csrfToken %>' } })
+  fetch('/dashboard/toggle-dark-mode', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-csrf-token': (document.querySelector('input[name="_csrf"]') || {}).value || ''
+    }
+  })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.darkMode) {

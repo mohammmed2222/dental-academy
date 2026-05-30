@@ -39,9 +39,10 @@ async function sendWhatsApp(phone, message) {
 
 function sendViaTwilio(settings, phone, message) {
   return new Promise(function(resolve) {
-    var parts = settings.api_url.split(':');
-    var accountSid = parts[0] || '';
-    var authToken = settings.api_key;
+    // تنسيق api_key المطلوب: ACCOUNT_SID:AUTH_TOKEN
+    var credentials = (settings.api_key || '').split(':');
+    var accountSid = credentials[0] || '';
+    var authToken = credentials[1] || '';
     var from = settings.sender_name || '+14155238886';
     var postData = 'From=whatsapp:' + encodeURIComponent(from) + '&Body=' + encodeURIComponent(message) + '&To=whatsapp:' + encodeURIComponent(phone);
     var req = https.request({

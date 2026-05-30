@@ -233,6 +233,13 @@ router.post('/:id/complete', isAuthenticated, async (req, res, next) => {
       return res.status(403).json({ error: 'غير مسجل في هذا الكورس' });
     }
 
+    const now = new Date();
+    const releaseDate = lesson.release_date ? new Date(lesson.release_date) : null;
+    const isOwner = lesson.instructor_id === req.session.userId;
+    if (releaseDate && releaseDate > now && !isOwner && req.session.role !== 'admin') {
+      return res.status(403).json({ error: 'هذا الدرس غير متاح بعد' });
+    }
+
     const existing = await db.prepare('SELECT id FROM lesson_progress WHERE user_id = ? AND lesson_id = ?')
       .get(req.session.userId, lesson.id);
 
@@ -384,6 +391,11 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
     `).get(toSafeInt(req.params.id));
 
     if (lesson && lesson.instructor_id === req.session.userId) {
+      if (lesson.video_url && lesson.video_url.startsWith('/uploads/videos/')) {
+        const fs = require('fs');
+        const filePath = require('path').join(__dirname, '..', 'public', lesson.video_url);
+        try { fs.unlinkSync(filePath); } catch (e) { console.error('تعذر حذف ملف الفيديو:', e.message); }
+      }
       await db.prepare('DELETE FROM lessons WHERE id = ?').run(lesson.id);
       await db.prepare(`UPDATE courses SET total_lessons = (SELECT COUNT(*) FROM lessons WHERE course_id = ?), updated_at = ${sqlNow()} WHERE id = ?`)
         .run(lesson.course_id, lesson.course_id);
