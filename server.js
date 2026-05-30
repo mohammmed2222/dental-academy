@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
@@ -9,7 +10,7 @@ const { initializeMail } = require('./config/mail');
 const { startScheduler } = require('./config/scheduler');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { csrfProtection, generateCsrfToken, escapeHtml } = require('./config/security');
+const { csrfProtection, generateCsrfToken, escapeHtml, toSafeInt } = require('./config/security');
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
 const lessonRoutes = require('./routes/lessons');
@@ -44,12 +45,18 @@ const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+app.use(compression());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 if (!process.env.SESSION_SECRET) {
   console.error('FATAL: SESSION_SECRET environment variable is not set!');
+  process.exit(1);
+}
+
+if (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 12) {
+  console.error('FATAL: ADMIN_PASSWORD environment variable must be at least 12 characters!');
   process.exit(1);
 }
 
@@ -170,7 +177,7 @@ app.get('/instructor/:id', async (req, res, next) => {
   try {
     const { getDb } = require('./config/database');
     const db = getDb();
-    const instructor = await db.prepare("SELECT * FROM users WHERE id = ? AND role = 'instructor'").get(parseInt(req.params.id));
+    const instructor = await db.prepare("SELECT * FROM users WHERE id = ? AND role = 'instructor'").get(toSafeInt(req.params.id));
     if (!instructor) {
       return res.status(404).render('error', { title: 'غير موجود', message: 'المدرس غير موجود', error: null });
     }
@@ -202,21 +209,46 @@ app.get('/contact', (req, res) => {
   res.render('pages/contact', { title: 'تواصل معنا', error: null, success: null, currentPath: '/contact' });
 });
 
-app.post('/contact', async (req, res, next) => {
+var contactLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, handler: function(req, res) { res.render('pages/contact', { title: 'تواصل معنا', error: 'طلبات كثيرة جداً، حاول بعد 15 دقيقة', success: null, currentPath: '/contact' }); } });
+
+app.post('/contact', contactLimiter, async (req, res, next) => {
   try {
     const { getDb } = require('./config/database');
     const db = getDb();
     const { name, email, phone, subject, message } = req.body;
-    if (!name || !email || !subject || !message) {
+    var contactEmail = String(email || '').trim();
+    if (!name || !contactEmail || !subject || !message) {
       return res.render('pages/contact', { title: 'تواصل معنا', error: 'يرجى ملء جميع الحقول المطلوبة', success: null, currentPath: '/contact' });
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      return res.render('pages/contact', { title: 'تواصل معنا', error: 'البريد الإلكتروني غير صالح', success: null, currentPath: '/contact' });
+    }
     try {
-      await db.prepare('INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)').run(name, email, phone || '', subject, message);
+      await db.prepare('INSERT INTO contact_messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)').run(name, contactEmail, phone || '', subject, message);
     } catch (e) {
       console.error('Failed to save contact message:', e);
     }
     return res.render('pages/contact', { title: 'تواصل معنا', success: 'تم إرسال رسالتك بنجاح، سنتواصل معك قريباً', error: null, currentPath: '/contact' });
   } catch(err) { next(err); }
+});
+
+app.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    const { getDb } = require('./config/database');
+    const db = getDb();
+    const courses = await db.prepare("SELECT slug, updated_at FROM courses WHERE status = 'published' ORDER BY updated_at DESC").all();
+    var urls = ['<url><loc>' + (process.env.APP_URL || 'https://dental-academy-production.up.railway.app') + '</loc><priority>1.0</priority></url>'];
+    urls.push('<url><loc>' + (process.env.APP_URL || 'https://dental-academy-production.up.railway.app') + '/courses</loc><priority>0.9</priority></url>');
+    urls.push('<url><loc>' + (process.env.APP_URL || 'https://dental-academy-production.up.railway.app') + '/learning-paths</loc><priority>0.8</priority></url>');
+    urls.push('<url><loc>' + (process.env.APP_URL || 'https://dental-academy-production.up.railway.app') + '/about</loc><priority>0.5</priority></url>');
+    urls.push('<url><loc>' + (process.env.APP_URL || 'https://dental-academy-production.up.railway.app') + '/faq</loc><priority>0.5</priority></url>');
+    urls.push('<url><loc>' + (process.env.APP_URL || 'https://dental-academy-production.up.railway.app') + '/contact</loc><priority>0.5</priority></url>');
+    courses.forEach(function(c) {
+      urls.push('<url><loc>' + (process.env.APP_URL || 'https://dental-academy-production.up.railway.app') + '/courses/' + c.slug + '</loc><lastmod>' + (c.updated_at || '').substring(0, 10) + '</lastmod><priority>0.7</priority></url>');
+    });
+    res.header('Content-Type', 'application/xml');
+    res.send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls.join('') + '</urlset>');
+  } catch(e) { next(e); }
 });
 
 app.get('/privacy', (req, res) => {

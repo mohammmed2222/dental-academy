@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb } = require('../config/database');
 const { isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
@@ -62,7 +63,7 @@ router.post('/create', isInstructor, async (req, res, next) => {
       question_type || 'multiple_choice',
       JSON.stringify(opts),
       correct_answer,
-      parseInt(points) || 1,
+      toSafeInt(points) || 1,
       category || ''
     );
 
@@ -75,7 +76,7 @@ router.get('/:id/edit', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
     const question = await db.prepare('SELECT * FROM question_bank WHERE id = ? AND instructor_id = ?')
-      .get(parseInt(req.params.id), req.session.userId);
+      .get(toSafeInt(req.params.id), req.session.userId);
 
     if (!question) {
       req.session.flash = { type: 'error', message: 'السؤال غير موجود' };
@@ -90,7 +91,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
     const question = await db.prepare('SELECT * FROM question_bank WHERE id = ? AND instructor_id = ?')
-      .get(parseInt(req.params.id), req.session.userId);
+      .get(toSafeInt(req.params.id), req.session.userId);
 
     if (!question) {
       req.session.flash = { type: 'error', message: 'السؤال غير موجود' };
@@ -116,7 +117,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
       question_type || 'multiple_choice',
       JSON.stringify(opts),
       correct_answer,
-      parseInt(points) || 1,
+      toSafeInt(points) || 1,
       category || '',
       question.id,
       req.session.userId
@@ -131,7 +132,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
     const result = await db.prepare('DELETE FROM question_bank WHERE id = ? AND instructor_id = ?')
-      .run(parseInt(req.params.id), req.session.userId);
+      .run(toSafeInt(req.params.id), req.session.userId);
 
     req.session.flash = { type: 'success', message: 'تم حذف السؤال' };
     return res.redirect('/question-bank');

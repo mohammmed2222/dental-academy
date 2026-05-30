@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const { getNotifications, getUnreadCount } = require('../config/notifications');
 
 const router = express.Router();
@@ -24,7 +25,7 @@ router.post('/read-all', isAuthenticated, async (req, res, next) => {
 router.post('/:id/read', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    await db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?').run(parseInt(req.params.id), req.session.userId);
+    await db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?').run(toSafeInt(req.params.id), req.session.userId);
     return res.json({ success: true });
   } catch(err) { next(err); }
 });

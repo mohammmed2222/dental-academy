@@ -38,7 +38,8 @@ router.post('/chat', isAuthenticated, async function(req, res, next) {
 router.post('/generate-quiz', isAuthenticated, async function(req, res, next) {
   try {
     var topic = (req.body.topic || '').trim();
-    var count = parseInt(req.body.count) || 5;
+    const { toSafeInt } = require('../config/security');
+var count = toSafeInt(req.body.count) || 5;
     if (!topic) return res.json({ error: 'الرجاء إدخال الموضوع' });
     var result = await generateQuiz(topic, count);
     return res.json(result);
@@ -60,7 +61,7 @@ router.post('/grade', isInstructorOrAdmin, async function(req, res, next) {
   try {
     var { question, answer, maxPoints } = req.body;
     if (!question || !answer) return res.json({ error: 'السؤال والإجابة مطلوبان' });
-    var result = await gradeAssignment(question, answer, parseInt(maxPoints) || 10);
+    var result = await gradeAssignment(question, answer, toSafeInt(maxPoints) || 10);
     return res.json(result);
   } catch (err) { next(err); }
 });
@@ -68,7 +69,7 @@ router.post('/grade', isInstructorOrAdmin, async function(req, res, next) {
 // توصيات
 router.get('/recommendations', isAuthenticated, async function(req, res, next) {
   try {
-    var result = await recommend(req.session.userId, parseInt(req.query.limit) || 6);
+    var result = await recommend(req.session.userId, toSafeInt(req.query.limit) || 6);
     return res.json(result);
   } catch (err) { next(err); }
 });

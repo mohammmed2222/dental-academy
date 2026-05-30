@@ -2,7 +2,7 @@
 <html dir="rtl" lang="ar" class="<%= typeof darkMode !== 'undefined' && darkMode ? 'dark' : '' %>">
 <head>
   <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
   <link rel="manifest" href="/manifest.json"/>
   <meta name="theme-color" content="#a30019"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -208,22 +208,29 @@
   </div>
 </div>
 <% } else { %>
-<header class="bg-background/95 backdrop-blur-md text-secondary shadow-sm shadow-secondary/5 border-b border-secondary/30 sticky top-0 z-50 h-20">
-  <div class="flex flex-row-reverse justify-between items-center w-full px-gutter max-w-container-max mx-auto h-full">
-    <a href="/" class="font-headline-xl text-headline-xl text-secondary drop-shadow-sm font-bold">أكاديمية طب الأسنان</a>
-    <nav class="hidden md:flex flex-row-reverse gap-8 items-center">
+<!-- Main Navbar -->
+<header class="bg-background/95 backdrop-blur-md text-secondary shadow-sm shadow-secondary/5 border-b border-secondary/30 sticky top-0 z-50 h-16 md:h-20">
+  <div class="flex flex-row-reverse justify-between items-center w-full px-margin-mobile md:px-gutter max-w-container-max mx-auto h-full">
+    
+    <!-- Logo -->
+    <a href="/" class="font-headline-md md:font-headline-xl text-headline-md md:text-headline-xl text-secondary drop-shadow-sm font-bold flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-2xl md:text-3xl" style="font-variation-settings: 'FILL' 1;">dentistry</span>
+      <span class="hidden xs:inline">أكاديمية طب الأسنان</span>
+    </a>
+
+    <!-- Desktop Nav -->
+    <nav class="hidden md:flex flex-row-reverse gap-6 lg:gap-8 items-center">
       <a href="/" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الرئيسية</a>
       <a href="/courses" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/courses') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الدورات</a>
-      <a href="/learning-paths" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/learning-paths') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">المسارات التعليمية</a>
+      <a href="/learning-paths" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/learning-paths') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">المسارات</a>
       <% if (typeof user === 'undefined' || !user) { %>
       <a href="/about" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/about' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">عن المنصة</a>
-      <a href="/faq" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/faq' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الأسئلة الشائعة</a>
+      <a href="/faq" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/faq' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الأسئلة</a>
       <a href="/contact" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath === '/contact' ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">تواصل معنا</a>
       <% } %>
       <% if (typeof user !== 'undefined' && user) { %>
         <a href="/dashboard" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/dashboard') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">لوحة التحكم</a>
         <a href="/messages" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/messages') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الرسائل</a>
-        <a href="/notifications" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/notifications') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">الإشعارات<% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
         <% if (user.role === 'admin' || user.role === 'instructor') { %>
         <a href="/question-bank" class="font-body-md text-body-md <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/question-bank') ? 'text-secondary font-bold border-b-2 border-secondary pb-1' : 'text-on-surface/80 hover:text-secondary transition-colors duration-300' %>">بنك الأسئلة</a>
         <% } %>
@@ -232,21 +239,154 @@
         <% } %>
       <% } %>
     </nav>
-    <div class="flex items-center gap-3">
-      <button onclick="toggleDarkMode()" class="text-secondary hover:text-primary transition-colors flex items-center justify-center" title="الوضع الليلي">
-        <span class="material-symbols-outlined text-[24px]"><%= typeof darkMode !== 'undefined' && darkMode ? 'light_mode' : 'dark_mode' %></span>
+
+    <!-- Right side: actions -->
+    <div class="flex items-center gap-2 md:gap-3">
+      <button onclick="toggleDarkMode()" class="text-secondary hover:text-primary transition-colors flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary/10" title="الوضع الليلي">
+        <span class="material-symbols-outlined text-[22px] md:text-[24px]"><%= typeof darkMode !== 'undefined' && darkMode ? 'light_mode' : 'dark_mode' %></span>
       </button>
+      
       <% if (typeof user !== 'undefined' && user) { %>
+      <a href="/notifications" class="text-secondary hover:text-primary transition-colors flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary/10 relative md:hidden">
+        <span class="material-symbols-outlined text-[22px]">notifications</span>
+        <% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %>
+        <span class="absolute -top-0.5 -right-0.5 bg-primary-container text-on-primary text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"><%= unreadNotifications > 9 ? '9+' : unreadNotifications %></span>
+        <% } %>
+      </a>
       <a href="/dashboard" class="hidden md:flex items-center gap-2 font-label-lg text-label-lg text-on-surface hover:text-secondary transition-colors">
         <span class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm"><%= user.name.charAt(0) %></span>
-        <span><%= user.name %></span>
+        <span class="hidden lg:inline"><%= user.name %></span>
       </a>
-      <a href="/dashboard/profile" class="hidden md:inline font-label-lg text-label-lg text-on-surface/70 hover:text-secondary transition-colors">الملف الشخصي</a>
-      <a href="/auth/logout" class="bg-primary-container text-on-primary px-5 py-2 rounded-lg font-label-lg text-label-lg scale-95 active:scale-90 hover:bg-primary-container/90 transition-all">تسجيل الخروج</a>
+      <a href="/auth/logout" class="hidden md:inline-block bg-primary-container text-on-primary px-4 lg:px-5 py-2 rounded-lg font-label-lg text-label-lg text-sm lg:text-base scale-95 active:scale-90 hover:bg-primary-container/90 transition-all">تسجيل الخروج</a>
       <% } else { %>
-      <a href="/auth/login" class="bg-primary-container text-on-primary px-6 py-2 rounded-lg font-label-lg text-label-lg transition-transform scale-95 active:scale-90 hover:bg-primary-container/90">تسجيل الدخول</a>
+      <a href="/auth/login" class="bg-primary-container text-on-primary px-5 md:px-6 py-2 rounded-lg font-label-lg text-label-lg text-sm md:text-base transition-transform scale-95 active:scale-90 hover:bg-primary-container/90">تسجيل الدخول</a>
       <% } %>
+
+      <!-- Mobile Menu Button -->
+      <button onclick="toggleMobileMenu()" class="block md:hidden text-secondary hover:text-primary transition-colors w-10 h-10 rounded-full hover:bg-secondary/10 flex items-center justify-center" aria-label="القائمة">
+        <span class="material-symbols-outlined text-[24px]" id="menuIcon">menu</span>
+      </button>
     </div>
   </div>
 </header>
+
+<!-- Mobile Slide-Out Menu -->
+<div id="mobileMenuOverlay" class="fixed inset-0 bg-black/40 z-[60] opacity-0 pointer-events-none transition-opacity duration-300 md:hidden" onclick="closeMobileMenu()"></div>
+<div id="mobileMenu" class="fixed top-0 bottom-0 left-0 w-[280px] max-w-[80vw] bg-surface-container-lowest z-[70] shadow-2xl translate-x-full transition-transform duration-300 ease-out md:hidden overflow-y-auto">
+  <div class="flex items-center justify-between p-4 border-b border-outline-variant">
+    <span class="font-headline-sm text-headline-sm text-on-surface">القائمة</span>
+    <button onclick="closeMobileMenu()" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary/10 text-on-surface" aria-label="إغلاق">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <% if (typeof user !== 'undefined' && user) { %>
+  <div class="p-4 border-b border-outline-variant bg-surface-container-low">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-lg"><%= user.name.charAt(0) %></div>
+      <div>
+        <p class="font-label-lg text-label-lg text-on-surface"><%= user.name %></p>
+        <p class="text-sm text-secondary"><%= user.role === 'admin' ? 'مشرف' : user.role === 'instructor' ? 'مدرس' : 'طالب' %></p>
+      </div>
+    </div>
+  </div>
+  <% } %>
+  <nav class="flex flex-col py-2">
+    <a href="/" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">home</span> الرئيسية
+    </a>
+    <a href="/courses" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">school</span> الدورات
+    </a>
+    <a href="/learning-paths" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">route</span> المسارات التعليمية
+    </a>
+    <hr class="mx-4 border-outline-variant my-1">
+    <% if (typeof user === 'undefined' || !user) { %>
+    <a href="/about" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">info</span> عن المنصة
+    </a>
+    <a href="/faq" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">help</span> الأسئلة الشائعة
+    </a>
+    <a href="/contact" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">mail</span> تواصل معنا
+    </a>
+    <% } %>
+    <% if (typeof user !== 'undefined' && user) { %>
+    <hr class="mx-4 border-outline-variant my-1">
+    <a href="/dashboard" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">dashboard</span> لوحة التحكم
+    </a>
+    <a href="/notifications" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">notifications</span> الإشعارات
+      <% if (typeof unreadNotifications !== 'undefined' && unreadNotifications > 0) { %>
+      <span class="mr-auto bg-primary-container text-on-primary text-xs font-bold px-2 py-0.5 rounded-full"><%= unreadNotifications %></span>
+      <% } %>
+    </a>
+    <a href="/messages" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">chat</span> الرسائل
+    </a>
+    <a href="/dashboard/profile" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">person</span> الملف الشخصي
+    </a>
+    <a href="/dashboard/grades" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">grade</span> درجاتي
+    </a>
+    <a href="/dashboard/analytics" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">analytics</span> تحليلات الأداء
+    </a>
+    <% if (user.role === 'admin' || user.role === 'instructor') { %>
+    <hr class="mx-4 border-outline-variant my-1">
+    <a href="/question-bank" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">quiz</span> بنك الأسئلة
+    </a>
+    <% } %>
+    <% if (user.role === 'admin') { %>
+    <a href="/admin" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">admin_panel_settings</span> لوحة الإدارة
+    </a>
+    <a href="/payments/admin" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">payments</span> المدفوعات
+    </a>
+    <a href="/coupons/admin" class="flex items-center gap-3 px-4 py-3.5 text-on-surface hover:bg-secondary/10 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-secondary text-[20px]">card_giftcard</span> كوبونات الخصم
+    </a>
+    <% } %>
+    <hr class="mx-4 border-outline-variant my-1">
+    <a href="/auth/logout" class="flex items-center gap-3 px-4 py-3.5 text-error hover:bg-error-container/20 transition-colors font-body-md" onclick="closeMobileMenu()">
+      <span class="material-symbols-outlined text-[20px]">logout</span> تسجيل الخروج
+    </a>
+    <% } %>
+  </nav>
+</div>
+
+<script>
+function toggleMobileMenu() {
+  var menu = document.getElementById('mobileMenu');
+  var overlay = document.getElementById('mobileMenuOverlay');
+  var icon = document.getElementById('menuIcon');
+  var isOpen = menu.classList.contains('translate-x-full');
+  if (isOpen) {
+    menu.classList.remove('translate-x-full');
+    overlay.classList.remove('opacity-0', 'pointer-events-none');
+    if (icon) icon.textContent = 'close';
+    document.body.style.overflow = 'hidden';
+  } else {
+    closeMobileMenu();
+  }
+}
+function closeMobileMenu() {
+  var menu = document.getElementById('mobileMenu');
+  var overlay = document.getElementById('mobileMenuOverlay');
+  var icon = document.getElementById('menuIcon');
+  menu.classList.add('translate-x-full');
+  overlay.classList.add('opacity-0', 'pointer-events-none');
+  if (icon) icon.textContent = 'menu';
+  document.body.style.overflow = '';
+}
+// Close menu on escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeMobileMenu();
+});
+</script>
 <% } %>

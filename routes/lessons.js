@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const multer = require('multer');
 const path = require('path');
 
@@ -48,7 +49,7 @@ router.get('/create/:courseId', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
     const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?')
-      .get(parseInt(req.params.courseId), req.session.userId);
+      .get(toSafeInt(req.params.courseId), req.session.userId);
 
     if (!course) return res.redirect('/courses/my-courses');
 
@@ -81,7 +82,7 @@ router.post('/create/:courseId', isInstructor, handleUpload, async (req, res, ne
   try {
     const db = getDb();
     const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?')
-      .get(parseInt(req.params.courseId), req.session.userId);
+      .get(toSafeInt(req.params.courseId), req.session.userId);
 
     if (!course) return res.redirect('/courses/my-courses');
 
@@ -112,11 +113,11 @@ router.post('/create/:courseId', isInstructor, handleUpload, async (req, res, ne
     const lessonResult = await db.prepare(`
       INSERT INTO lessons (course_id, title, content, video_url, duration, order_index, type, release_date)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(course.id, title, content || '', finalVideoUrl, parseInt(duration) || 0, lessonCount + 1, type || 'text', release_date || null);
+    `).run(course.id, title, content || '', finalVideoUrl, toSafeInt(duration) || 0, lessonCount + 1, type || 'text', release_date || null);
 
     if (questions && Array.isArray(questions) && questions.some(function(q) { return q.question_text && q.correct_answer; })) {
       const quizResult = await db.prepare('INSERT INTO quizzes (lesson_id, title, passing_score, time_limit) VALUES (?, ?, ?, ?)')
-        .run(lessonResult.lastInsertRowid, quiz_title || ('اختبار: ' + title), parseInt(quiz_passing_score) || 70, parseInt(quiz_time_limit) || 0);
+        .run(lessonResult.lastInsertRowid, quiz_title || ('اختبار: ' + title), toSafeInt(quiz_passing_score) || 70, toSafeInt(quiz_time_limit) || 0);
 
       for (let index = 0; index < questions.length; index++) {
         const q = questions[index];
@@ -132,7 +133,7 @@ router.post('/create/:courseId', isInstructor, handleUpload, async (req, res, ne
             q.question_type || 'multiple_choice',
             JSON.stringify(opts),
             q.correct_answer,
-            parseInt(q.points) || 1,
+            toSafeInt(q.points) || 1,
             index + 1
           );
         }
@@ -156,7 +157,7 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (!lesson) {
       return res.status(404).render('error', { title: 'غير موجود', message: 'الدرس غير موجود', error: null });
@@ -197,6 +198,9 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
     const now = new Date();
     const releaseDate = lesson.release_date ? new Date(lesson.release_date) : null;
     const isLocked = releaseDate && releaseDate > now && !isOwner && req.session.role !== 'admin';
+    if (isLocked) {
+      return res.redirect('/courses/' + courseSlug);
+    }
 
     return res.render('lessons/view', {
       title: lesson.title,
@@ -221,7 +225,7 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
 router.post('/:id/complete', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const lesson = await db.prepare('SELECT l.*, c.instructor_id FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(parseInt(req.params.id));
+    const lesson = await db.prepare('SELECT l.*, c.instructor_id FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(toSafeInt(req.params.id));
     if (!lesson) return res.status(404).json({ error: 'الدرس غير موجود' });
 
     var enrollment = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, lesson.course_id);
@@ -249,6 +253,21 @@ router.post('/:id/complete', isAuthenticated, async (req, res, next) => {
     if (allLessons > 0 && allLessons === completedLessons) {
       await db.prepare('UPDATE enrollments SET completed_at = ' + sqlNow() + ' WHERE user_id = ? AND course_id = ? AND completed_at IS NULL')
         .run(req.session.userId, lesson.course_id);
+      // Update learning path completion tracking
+      var learningPathRows = await db.prepare(`
+        SELECT lpe.id, lpe.completed_courses FROM learning_path_enrollments lpe
+        JOIN learning_path_courses lpc ON lpe.path_id = lpc.path_id
+        WHERE lpe.user_id = ? AND lpc.course_id = ?
+      `).all(req.session.userId, lesson.course_id);
+      for (var lpi = 0; lpi < learningPathRows.length; lpi++) {
+        var lpe = learningPathRows[lpi];
+        var cc = [];
+        try { cc = JSON.parse(lpe.completed_courses || '[]'); } catch (e) {}
+        if (cc.indexOf(lesson.course_id) === -1) {
+          cc.push(lesson.course_id);
+          await db.prepare('UPDATE learning_path_enrollments SET completed_courses = ? WHERE id = ?').run(JSON.stringify(cc), lpe.id);
+        }
+      }
       completed = true;
     }
 
@@ -266,7 +285,7 @@ router.get('/:id/edit', isInstructor, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (!lesson || lesson.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -289,7 +308,7 @@ router.post('/:id/edit', isInstructor, handleUpload, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (!lesson || lesson.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -315,7 +334,7 @@ router.post('/:id/edit', isInstructor, handleUpload, async (req, res, next) => {
     await db.prepare(`
       UPDATE lessons SET title = ?, content = ?, video_url = ?, duration = ?, type = ?, release_date = ?, updated_at = ` + sqlNow() + `
       WHERE id = ?
-    `).run(title, content || '', finalVideoUrl, parseInt(duration) || 0, type || 'text', release_date || null, lesson.id);
+    `).run(title, content || '', finalVideoUrl, toSafeInt(duration) || 0, type || 'text', release_date || null, lesson.id);
 
     const hasQuestions = questions && Array.isArray(questions) && questions.some(function(q) { return q.question_text && q.correct_answer; });
     const existingQuiz = await db.prepare('SELECT * FROM quizzes WHERE lesson_id = ?').get(lesson.id);
@@ -325,11 +344,11 @@ router.post('/:id/edit', isInstructor, handleUpload, async (req, res, next) => {
       if (existingQuiz) {
         quizId = existingQuiz.id;
         await db.prepare('UPDATE quizzes SET title = ?, passing_score = ?, time_limit = ? WHERE id = ?')
-          .run(quiz_title || ('اختبار: ' + title), parseInt(quiz_passing_score) || 70, parseInt(quiz_time_limit) || 0, quizId);
+          .run(quiz_title || ('اختبار: ' + title), toSafeInt(quiz_passing_score) || 70, toSafeInt(quiz_time_limit) || 0, quizId);
         await db.prepare('DELETE FROM quiz_questions WHERE quiz_id = ?').run(quizId);
       } else {
         const quizResult = await db.prepare('INSERT INTO quizzes (lesson_id, title, passing_score, time_limit) VALUES (?, ?, ?, ?)')
-          .run(lesson.id, quiz_title || ('اختبار: ' + title), parseInt(quiz_passing_score) || 70, parseInt(quiz_time_limit) || 0);
+          .run(lesson.id, quiz_title || ('اختبار: ' + title), toSafeInt(quiz_passing_score) || 70, toSafeInt(quiz_time_limit) || 0);
         quizId = quizResult.lastInsertRowid;
       }
 
@@ -341,7 +360,7 @@ router.post('/:id/edit', isInstructor, handleUpload, async (req, res, next) => {
           await db.prepare(`
             INSERT INTO quiz_questions (quiz_id, question_text, question_type, options, correct_answer, points, order_index)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-          `).run(quizId, q.question_text, q.question_type || 'multiple_choice', JSON.stringify(opts), q.correct_answer, parseInt(q.points) || 1, index + 1);
+          `).run(quizId, q.question_text, q.question_type || 'multiple_choice', JSON.stringify(opts), q.correct_answer, toSafeInt(q.points) || 1, index + 1);
         }
       }
     } else if (existingQuiz) {
@@ -362,7 +381,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (lesson && lesson.instructor_id === req.session.userId) {
       await db.prepare('DELETE FROM lessons WHERE id = ?').run(lesson.id);

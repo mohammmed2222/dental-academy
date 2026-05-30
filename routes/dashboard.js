@@ -1,9 +1,13 @@
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 const { getDb } = require('../config/database');
 const { sqlNow } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
+
+var profileLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, handler: async function(req, res) { try { var u = await getDb().prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId); return res.render('dashboard/profile', { title: 'الملف الشخصي', user: u, error: 'طلبات كثيرة جداً، حاول بعد 15 دقيقة', success: null }); } catch(e) { return res.redirect('/dashboard'); } } });
 
 const router = express.Router();
 
@@ -177,7 +181,7 @@ router.get('/profile', isAuthenticated, async (req, res, next) => {
   }
 });
 
-router.post('/profile', isAuthenticated, async (req, res, next) => {
+router.post('/profile', isAuthenticated, profileLimiter, async (req, res, next) => {
   try {
     uploadAvatar.single('avatar')(req, res, async function(err) {
       try {
@@ -188,7 +192,7 @@ router.post('/profile', isAuthenticated, async (req, res, next) => {
           return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: err.message, success: null });
         }
 
-        const { name, bio, phone, password } = req.body;
+        const { name, bio, phone, password, current_password } = req.body;
 
         if (!name) {
           return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'الاسم مطلوب', success: null });
@@ -199,9 +203,18 @@ router.post('/profile', isAuthenticated, async (req, res, next) => {
           avatarPath = '/uploads/avatars/' + req.file.filename;
         }
 
-        if (password && password.length >= 6) {
+        if (password) {
+          if (password.length < 12) {
+            return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'كلمة المرور يجب أن تكون 12 حرفاً على الأقل', success: null });
+          }
+          if (!current_password) {
+            return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'يجب إدخال كلمة المرور الحالية لتغيير كلمة المرور', success: null });
+          }
           const bcrypt = require('bcryptjs');
-          const hashedPassword = bcrypt.hashSync(password, 10);
+          if (!(await bcrypt.compare(current_password, user.password))) {
+            return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'كلمة المرور الحالية غير صحيحة', success: null });
+          }
+          const hashedPassword = await bcrypt.hash(password, 10);
           await db.prepare(`UPDATE users SET name = ?, bio = ?, phone = ?, avatar = ?, password = ?, updated_at = ${sqlNow()} WHERE id = ?`)
             .run(name, bio || '', phone || '', avatarPath, hashedPassword, req.session.userId);
         } else {
@@ -231,7 +244,7 @@ router.get('/certificate/:courseId', isAuthenticated, async (req, res, next) => 
       JOIN courses c ON e.course_id = c.id
       JOIN users u ON c.instructor_id = u.id
       WHERE e.user_id = ? AND e.course_id = ? AND e.completed_at IS NOT NULL
-    `).get(req.session.userId, parseInt(req.params.courseId));
+    `).get(req.session.userId, toSafeInt(req.params.courseId));
 
     if (!enrollment) return res.redirect('/dashboard');
 

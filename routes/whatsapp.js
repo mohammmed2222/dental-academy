@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb } = require('../config/database');
 const { isAdmin } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const { getSettings, saveSettings, sendWhatsApp, getWhatsAppLink } = require('../config/whatsapp');
 
 const router = express.Router();
@@ -56,7 +57,7 @@ router.post('/broadcast', isAdmin, async (req, res, next) => {
     var ids = Array.isArray(user_ids) ? user_ids : [user_ids];
     var sent = 0;
     for (var uid of ids) {
-      var user = await db.prepare('SELECT id, phone FROM users WHERE id = ? AND phone != ?').get(parseInt(uid), '');
+      var user = await db.prepare('SELECT id, phone FROM users WHERE id = ? AND phone != ?').get(toSafeInt(uid), '');
       if (user) {
         var ok = await sendWhatsApp(user.phone, message);
         if (ok) sent++;

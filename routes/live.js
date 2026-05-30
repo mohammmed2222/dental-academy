@@ -1,13 +1,14 @@
 const express = require('express');
 const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
 router.get('/course/:courseId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.courseId));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.courseId));
     if (!course) return res.redirect('/courses');
     if (req.session.role !== 'admin' && course.instructor_id !== req.session.userId) {
       var liveEnroll = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, course.id);
@@ -27,7 +28,7 @@ router.get('/course/:courseId', isAuthenticated, async (req, res, next) => {
 router.get('/create/:courseId', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(parseInt(req.params.courseId), req.session.userId);
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(toSafeInt(req.params.courseId), req.session.userId);
     if (!course) return res.redirect('/courses/my-courses');
     return res.render('live/create', { title: 'إضافة درس مباشر', course, session: null, error: null });
   } catch(err) { next(err); }
@@ -36,7 +37,7 @@ router.get('/create/:courseId', isInstructor, async (req, res, next) => {
 router.post('/create/:courseId', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(parseInt(req.params.courseId), req.session.userId);
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(toSafeInt(req.params.courseId), req.session.userId);
     if (!course) return res.redirect('/courses/my-courses');
     const { title, description, meeting_url, meeting_id, meeting_password, scheduled_at, duration } = req.body;
     if (!title || !meeting_url || !scheduled_at) {
@@ -45,7 +46,7 @@ router.post('/create/:courseId', isInstructor, async (req, res, next) => {
     await db.prepare(`
       INSERT INTO live_sessions (course_id, instructor_id, title, description, meeting_url, meeting_id, meeting_password, scheduled_at, duration)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(course.id, req.session.userId, title, description || '', meeting_url, meeting_id || '', meeting_password || '', scheduled_at, parseInt(duration) || 60);
+    `).run(course.id, req.session.userId, title, description || '', meeting_url, meeting_id || '', meeting_password || '', scheduled_at, toSafeInt(duration) || 60);
     req.session.flash = { type: 'success', message: 'تم إضافة الدرس المباشر' };
     return res.redirect('/live/course/' + course.id);
   } catch(err) { next(err); }
@@ -54,7 +55,7 @@ router.post('/create/:courseId', isInstructor, async (req, res, next) => {
 router.get('/:id/edit', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const session = await db.prepare('SELECT * FROM live_sessions WHERE id = ? AND instructor_id = ?').get(parseInt(req.params.id), req.session.userId);
+    const session = await db.prepare('SELECT * FROM live_sessions WHERE id = ? AND instructor_id = ?').get(toSafeInt(req.params.id), req.session.userId);
     if (!session) return res.redirect('/courses/my-courses');
     const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(session.course_id);
     return res.render('live/create', { title: 'تعديل الدرس المباشر', course, session, error: null });
@@ -64,7 +65,7 @@ router.get('/:id/edit', isInstructor, async (req, res, next) => {
 router.post('/:id/edit', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const session = await db.prepare('SELECT * FROM live_sessions WHERE id = ? AND instructor_id = ?').get(parseInt(req.params.id), req.session.userId);
+    const session = await db.prepare('SELECT * FROM live_sessions WHERE id = ? AND instructor_id = ?').get(toSafeInt(req.params.id), req.session.userId);
     if (!session) return res.redirect('/courses/my-courses');
     const { title, description, meeting_url, meeting_id, meeting_password, scheduled_at, duration, recording_url, status } = req.body;
     await db.prepare(`
@@ -73,7 +74,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
       WHERE id = ?
     `).run(title || session.title, description ?? session.description, meeting_url || session.meeting_url,
       meeting_id ?? session.meeting_id, meeting_password ?? session.meeting_password,
-      scheduled_at || session.scheduled_at, parseInt(duration) || session.duration,
+      scheduled_at || session.scheduled_at, toSafeInt(duration) || session.duration,
       recording_url ?? session.recording_url, status || session.status, session.id);
     req.session.flash = { type: 'success', message: 'تم تحديث الدرس المباشر' };
     return res.redirect('/live/course/' + session.course_id);
@@ -83,7 +84,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
 router.post('/:id/delete', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const session = await db.prepare('SELECT * FROM live_sessions WHERE id = ? AND instructor_id = ?').get(parseInt(req.params.id), req.session.userId);
+    const session = await db.prepare('SELECT * FROM live_sessions WHERE id = ? AND instructor_id = ?').get(toSafeInt(req.params.id), req.session.userId);
     if (!session) return res.redirect('/courses/my-courses');
     await db.prepare('DELETE FROM live_sessions WHERE id = ?').run(session.id);
     req.session.flash = { type: 'success', message: 'تم حذف الدرس المباشر' };
@@ -100,7 +101,7 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
       JOIN users u ON ls.instructor_id = u.id
       JOIN courses c ON ls.course_id = c.id
       WHERE ls.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!session) return res.redirect('/courses');
     if (req.session.role !== 'admin' && session.instructor_id !== req.session.userId) {
       var viewLiveEnroll = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, session.course_id);

@@ -1,13 +1,14 @@
 const express = require('express');
 const { getDb } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
 router.get('/course/:courseId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const courseId = parseInt(req.params.courseId);
+    const courseId = toSafeInt(req.params.courseId);
 
     const course = await db.prepare(`
       SELECT c.*, u.name as instructor_name
@@ -46,7 +47,7 @@ router.get('/course/:courseId', isAuthenticated, async (req, res, next) => {
 router.post('/create/:courseId', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const courseId = parseInt(req.params.courseId);
+    const courseId = toSafeInt(req.params.courseId);
 
     const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(courseId, req.session.userId);
     if (!course) {
@@ -72,7 +73,7 @@ router.post('/create/:courseId', isInstructor, async (req, res, next) => {
 router.post('/:id/delete', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const id = parseInt(req.params.id);
+    const id = toSafeInt(req.params.id);
 
     const announcement = await db.prepare(`
       SELECT ca.*, c.instructor_id as course_instructor_id

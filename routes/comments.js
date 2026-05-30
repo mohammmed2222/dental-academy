@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
 
 const router = express.Router();
@@ -8,7 +9,7 @@ const router = express.Router();
 router.post('/lesson/:lessonId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const lesson = await db.prepare('SELECT l.*, c.instructor_id, c.title as course_title FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(parseInt(req.params.lessonId));
+    const lesson = await db.prepare('SELECT l.*, c.instructor_id, c.title as course_title FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(toSafeInt(req.params.lessonId));
     if (!lesson) return res.status(404).json({ error: 'الدرس غير موجود' });
 
     if (req.session.role !== 'admin' && lesson.instructor_id !== req.session.userId) {
@@ -36,7 +37,7 @@ router.post('/lesson/:lessonId', isAuthenticated, async (req, res, next) => {
 router.post('/:id/delete', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const comment = await db.prepare('SELECT lc.*, l.course_id, c.instructor_id FROM lesson_comments lc JOIN lessons l ON lc.lesson_id = l.id JOIN courses c ON l.course_id = c.id WHERE lc.id = ?').get(parseInt(req.params.id));
+    const comment = await db.prepare('SELECT lc.*, l.course_id, c.instructor_id FROM lesson_comments lc JOIN lessons l ON lc.lesson_id = l.id JOIN courses c ON l.course_id = c.id WHERE lc.id = ?').get(toSafeInt(req.params.id));
     if (!comment) return res.status(404).json({ error: 'التعليق غير موجود' });
 
     if (comment.user_id !== req.session.userId && comment.instructor_id !== req.session.userId && req.session.role !== 'admin') {

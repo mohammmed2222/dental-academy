@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb, sqlNow, isUsingPg } = require('../config/database');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
@@ -45,13 +46,13 @@ router.post('/create', isAdmin, async (req, res, next) => {
     if (student_ids) {
       const ids = Array.isArray(student_ids) ? student_ids : [student_ids];
       for (const sid of ids) {
-        await db.prepare(insertStudent).run(cohortId, parseInt(sid));
+        await db.prepare(insertStudent).run(cohortId, toSafeInt(sid));
       }
     }
     if (course_ids) {
       const ids = Array.isArray(course_ids) ? course_ids : [course_ids];
       for (const cid of ids) {
-        await db.prepare(insertCourse).run(cohortId, parseInt(cid));
+        await db.prepare(insertCourse).run(cohortId, toSafeInt(cid));
       }
     }
     req.session.flash = { type: 'success', message: 'تم إنشاء المجموعة' };
@@ -62,7 +63,7 @@ router.post('/create', isAdmin, async (req, res, next) => {
 router.get('/:id/edit', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const cohort = await db.prepare('SELECT * FROM cohorts WHERE id = ?').get(parseInt(req.params.id));
+    const cohort = await db.prepare('SELECT * FROM cohorts WHERE id = ?').get(toSafeInt(req.params.id));
     if (!cohort) return res.redirect('/cohorts');
     const students = await db.prepare("SELECT id, name, email FROM users WHERE role = 'student' ORDER BY name").all();
     const courses = await db.prepare("SELECT id, title FROM courses ORDER BY title").all();
@@ -76,7 +77,7 @@ router.post('/:id/edit', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
     const { name, description, start_date, end_date, student_ids, course_ids } = req.body;
-    const cohort = await db.prepare('SELECT * FROM cohorts WHERE id = ?').get(parseInt(req.params.id));
+    const cohort = await db.prepare('SELECT * FROM cohorts WHERE id = ?').get(toSafeInt(req.params.id));
     if (!cohort) return res.redirect('/cohorts');
     if (!name) {
       const students = await db.prepare("SELECT id, name, email FROM users WHERE role = 'student' ORDER BY name").all();
@@ -91,13 +92,13 @@ router.post('/:id/edit', isAdmin, async (req, res, next) => {
     if (student_ids) {
       const ids = Array.isArray(student_ids) ? student_ids : [student_ids];
       for (const sid of ids) {
-        await db.prepare('INSERT INTO cohort_students (cohort_id, user_id) VALUES (?, ?)').run(cohort.id, parseInt(sid));
+        await db.prepare('INSERT INTO cohort_students (cohort_id, user_id) VALUES (?, ?)').run(cohort.id, toSafeInt(sid));
       }
     }
     if (course_ids) {
       const ids = Array.isArray(course_ids) ? course_ids : [course_ids];
       for (const cid of ids) {
-        await db.prepare('INSERT INTO cohort_courses (cohort_id, course_id) VALUES (?, ?)').run(cohort.id, parseInt(cid));
+        await db.prepare('INSERT INTO cohort_courses (cohort_id, course_id) VALUES (?, ?)').run(cohort.id, toSafeInt(cid));
       }
     }
     req.session.flash = { type: 'success', message: 'تم تحديث المجموعة' };
@@ -108,7 +109,7 @@ router.post('/:id/edit', isAdmin, async (req, res, next) => {
 router.post('/:id/delete', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    await db.prepare('DELETE FROM cohorts WHERE id = ?').run(parseInt(req.params.id));
+    await db.prepare('DELETE FROM cohorts WHERE id = ?').run(toSafeInt(req.params.id));
     req.session.flash = { type: 'success', message: 'تم حذف المجموعة' };
     return res.redirect('/cohorts');
   } catch(err) { next(err); }
@@ -123,8 +124,12 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
       FROM cohorts c
       JOIN users u ON c.created_by = u.id
       WHERE c.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!cohort) return res.redirect('/cohorts');
+    if (req.session.role !== 'admin') {
+      var isMember = await db.prepare('SELECT id FROM cohort_students WHERE cohort_id = ? AND user_id = ?').get(cohort.id, req.session.userId);
+      if (!isMember) return res.redirect('/cohorts');
+    }
     const students = await db.prepare(`
       SELECT u.id, u.name, u.email, u.avatar, cs.enrolled_at
       FROM cohort_students cs

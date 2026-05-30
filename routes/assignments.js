@@ -3,6 +3,7 @@ const path = require('path');
 const multer = require('multer');
 const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const { sendMail } = require('../config/mail');
 const { createNotification } = require('../config/notifications');
 
@@ -17,10 +18,11 @@ const uploadAssignment = multer({
   storage: assignmentStorage,
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
-    var allowed = ['.pdf', '.doc', '.docx', '.zip', '.rar', '.png', '.jpg', '.jpeg', '.txt', '.ppt', '.pptx', '.xls', '.xlsx'];
     var ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.indexOf(ext) === -1) {
-      return cb(new Error('صيغة الملف غير مدعومة: ' + ext + '. الصيغ المدعومة: ' + allowed.join(', ')), false);
+    var allowedExts = ['.pdf', '.doc', '.docx', '.zip', '.rar', '.jpg', '.jpeg', '.png', '.gif', '.txt', '.ppt', '.pptx', '.xls', '.xlsx'];
+    var allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip', 'application/x-rar-compressed', 'image/jpeg', 'image/png', 'image/gif', 'text/plain', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    if (allowedExts.indexOf(ext) === -1 || allowedMimes.indexOf(file.mimetype) === -1) {
+      return cb(new Error('نوع الملف غير مسموح به'), false);
     }
     cb(null, true);
   }
@@ -30,7 +32,7 @@ const uploadAssignment = multer({
 router.get('/lesson/:lessonId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const lessonId = parseInt(req.params.lessonId);
+    const lessonId = toSafeInt(req.params.lessonId);
     const lesson = await db.prepare('SELECT l.*, c.instructor_id, c.slug as course_slug, c.title as course_title FROM lessons l JOIN courses c ON l.course_id = c.id WHERE l.id = ?').get(lessonId);
     if (!lesson) {
       return res.status(404).render('error', { title: 'غير موجود', message: 'الدرس غير موجود', error: null });
@@ -58,7 +60,7 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
       JOIN lessons l ON a.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE a.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!assignment) {
       return res.status(404).render('error', { title: 'غير موجود', message: 'الواجب غير موجود', error: null });
     }
@@ -84,7 +86,7 @@ router.get('/create/:lessonId', isInstructor, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.lessonId));
+    `).get(toSafeInt(req.params.lessonId));
     if (!lesson || lesson.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
     }
@@ -103,7 +105,7 @@ router.post('/create/:lessonId', isInstructor, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.lessonId));
+    `).get(toSafeInt(req.params.lessonId));
     if (!lesson || lesson.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
     }
@@ -114,7 +116,7 @@ router.post('/create/:lessonId', isInstructor, async (req, res, next) => {
     await db.prepare(`
       INSERT INTO assignments (lesson_id, title, description, due_date, max_points, file_allowed)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(lesson.id, title, description || '', due_date || null, parseInt(max_points) || 100, file_allowed ? 1 : 0);
+    `).run(lesson.id, title, description || '', due_date || null, toSafeInt(max_points) || 100, file_allowed ? 1 : 0);
 
     return res.redirect('/lessons/' + lesson.id);
   } catch (err) {
@@ -132,7 +134,7 @@ router.get('/:id/edit', isInstructor, async (req, res, next) => {
       JOIN lessons l ON a.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE a.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!assignment || assignment.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
     }
@@ -152,7 +154,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
       JOIN lessons l ON a.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE a.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!assignment || assignment.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
     }
@@ -163,7 +165,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
     await db.prepare(`
       UPDATE assignments SET title = ?, description = ?, due_date = ?, max_points = ?, file_allowed = ?, updated_at = ${sqlNow()}
       WHERE id = ?
-    `).run(title, description || '', due_date || null, parseInt(max_points) || 100, file_allowed ? 1 : 0, assignment.id);
+    `).run(title, description || '', due_date || null, toSafeInt(max_points) || 100, file_allowed ? 1 : 0, assignment.id);
     return res.redirect('/assignments/' + assignment.id);
   } catch (err) {
     next(err);
@@ -180,7 +182,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
       JOIN lessons l ON a.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE a.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (assignment && assignment.instructor_id === req.session.userId) {
       await db.prepare('DELETE FROM assignments WHERE id = ?').run(assignment.id);
       await db.prepare('DELETE FROM assignment_submissions WHERE assignment_id = ?').run(assignment.id);
@@ -210,7 +212,7 @@ router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
           JOIN lessons l ON a.lesson_id = l.id
           JOIN courses c ON l.course_id = c.id
           WHERE a.id = ?
-        `).get(parseInt(req.params.id));
+        `).get(toSafeInt(req.params.id));
         if (!assignment) {
           return res.status(404).json({ error: 'الواجب غير موجود' });
         }
@@ -278,12 +280,12 @@ router.post('/submissions/:id/grade', isInstructor, async (req, res, next) => {
       JOIN lessons l ON a.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE s.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!submission || submission.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
     }
     const { score, feedback } = req.body;
-    const finalScore = parseInt(score) || 0;
+    const finalScore = toSafeInt(score) || 0;
     await db.prepare(`
       UPDATE assignment_submissions SET grade = ?, feedback = ?, graded_at = ${sqlNow()} WHERE id = ?
     `).run(finalScore, feedback || '', submission.id);

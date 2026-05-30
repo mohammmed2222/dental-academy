@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb, sqlNow, isUsingPg } = require('../config/database');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -41,7 +42,7 @@ function getStripe() {
 router.get('/checkout/:courseId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.courseId));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.courseId));
     if (!course || course.price <= 0) return res.redirect('/courses');
     const existing = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, course.id);
     if (existing) return res.redirect('/courses/' + course.slug);
@@ -52,7 +53,7 @@ router.get('/checkout/:courseId', isAuthenticated, async (req, res, next) => {
 router.post('/request/:courseId', isAuthenticated, uploadReceipt.single('receipt_image'), async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.courseId));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.courseId));
     if (!course || course.price <= 0) return res.redirect('/courses');
 
     const existing = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(req.session.userId, course.id);
@@ -139,7 +140,7 @@ router.post('/request/:courseId', isAuthenticated, uploadReceipt.single('receipt
 router.get('/success/:id', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const payment = await db.prepare('SELECT * FROM payments WHERE id = ? AND user_id = ?').get(parseInt(req.params.id), req.session.userId);
+    const payment = await db.prepare('SELECT * FROM payments WHERE id = ? AND user_id = ?').get(toSafeInt(req.params.id), req.session.userId);
     if (!payment) return res.redirect('/courses');
 
     if (payment.status === 'pending' && payment.method === 'stripe') {
@@ -148,7 +149,10 @@ router.get('/success/:id', isAuthenticated, async (req, res, next) => {
         const stripeSession = await stripe.checkout.sessions.retrieve(payment.stripe_session_id);
         if (stripeSession.payment_status === 'paid') {
           await db.prepare(`UPDATE payments SET status = 'paid', paid_at = ${sqlNow()} WHERE id = ?`).run(payment.id);
-      await db.prepare(enrollSql()).run(payment.user_id, payment.course_id);
+          if (payment.coupon_id) {
+            await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(payment.coupon_id);
+          }
+          await db.prepare(enrollSql()).run(payment.user_id, payment.course_id);
           const { createNotification } = require('../config/notifications');
           const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
           await createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعك الإلكتروني لمادة ' + (course ? course.title : '') + ' بنجاح');
@@ -163,7 +167,7 @@ router.get('/success/:id', isAuthenticated, async (req, res, next) => {
 router.get('/admin', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const page = Math.max(1, toSafeInt(req.query.page) || 1);
     const limit = 20;
     const offset = (page - 1) * limit;
     const total = Number((await db.prepare('SELECT COUNT(*) as count FROM payments').get()).count);
@@ -183,7 +187,7 @@ router.get('/admin', isAdmin, async (req, res, next) => {
 router.post('/admin/:id/confirm', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const payment = await db.prepare('SELECT * FROM payments WHERE id = ?').get(parseInt(req.params.id));
+    const payment = await db.prepare('SELECT * FROM payments WHERE id = ?').get(toSafeInt(req.params.id));
     if (payment && payment.status === 'pending') {
       await db.prepare(`UPDATE payments SET status = 'paid', paid_at = ${sqlNow()} WHERE id = ?`).run(payment.id);
       // احتساب الكوبون عند تأكيد الدفع فعلياً
@@ -204,9 +208,9 @@ router.post('/admin/:id/confirm', isAdmin, async (req, res, next) => {
 router.post('/admin/:id/reject', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    await db.prepare("UPDATE payments SET status = 'rejected' WHERE id = ?").run(parseInt(req.params.id));
+    await db.prepare("UPDATE payments SET status = 'rejected' WHERE id = ?").run(toSafeInt(req.params.id));
     if (req.body.reason) {
-      const payment = await db.prepare('SELECT * FROM payments WHERE id = ?').get(parseInt(req.params.id));
+      const payment = await db.prepare('SELECT * FROM payments WHERE id = ?').get(toSafeInt(req.params.id));
       if (payment) {
         const { createNotification } = require('../config/notifications');
         const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);

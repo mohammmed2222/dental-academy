@@ -1,4 +1,5 @@
-/* أكاديمية طب الأسنان - Custom styles */
+/* أكاديمية طب الأسنان - Responsive Styles */
+
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 
 body {
@@ -14,4 +15,209 @@ body {
 }
 .hard-shadow {
   box-shadow: 2px 2px 0px 0px rgba(26, 28, 30, 0.1);
+}
+
+/* ===== RESPONSIVE HELPERS ===== */
+
+/* Extra small breakpoint (xs: 480px+) */
+@media (min-width: 480px) {
+  .xs\:inline { display: inline; }
+}
+
+/* Prevent horizontal overflow on all devices */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+img, video, iframe, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive Tables: horizontal scroll on mobile */
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.responsive-table table {
+  min-width: 600px;
+}
+@media (max-width: 640px) {
+  .responsive-table {
+    margin: 0 -16px;
+    padding: 0 16px;
+    width: calc(100% + 32px);
+  }
+}
+
+/* Card grid: 1 col mobile, 2 cols tablet, 3 cols desktop */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+}
+@media (min-width: 1024px) {
+  .card-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+}
+
+/* Touch-friendly tap targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+.touch-target-sm {
+  min-height: 36px;
+  min-width: 36px;
+}
+
+/* Smooth container padding scaling */
+.content-container {
+  padding-left: 16px;
+  padding-right: 16px;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (min-width: 640px) {
+  .content-container { padding-left: 24px; padding-right: 24px; }
+}
+@media (min-width: 1024px) {
+  .content-container { padding-left: 40px; padding-right: 40px; }
+}
+
+/* Safe area padding for notch phones */
+@supports (padding: env(safe-area-inset-left)) {
+  .content-container {
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
+  }
+}
+
+/* Responsive heading sizes */
+.responsive-h1 {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+}
+@media (min-width: 640px) {
+  .responsive-h1 { font-size: 32px; line-height: 40px; }
+}
+@media (min-width: 1024px) {
+  .responsive-h1 { font-size: 40px; line-height: 48px; }
+}
+
+/* Mobile-optimized form inputs */
+@media (max-width: 640px) {
+  input, select, textarea, button {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+  .mobile-full-width {
+    width: 100% !important;
+  }
+}
+
+/* Smooth page transitions */
+.page-enter {
+  animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile-bottom-safe padding */
+.mobile-bottom-safe {
+  padding-bottom: 16px;
+}
+@supports (padding: env(safe-area-inset-bottom)) {
+  .mobile-bottom-safe {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Flex grid for responsive course cards */
+.course-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 500px) {
+  .course-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+}
+@media (min-width: 900px) {
+  .course-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+}
+
+/* Hidden scrollbar for horizontal scroll areas */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Responsive stat cards on admin dashboard */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+}
+@media (min-width: 1024px) {
+  .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+}
+
+/* Responsive two-column layout */
+.responsive-two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media (min-width: 768px) {
+  .responsive-two-col { grid-template-columns: 1fr 1fr; }
+}
+
+/* Quiz/exam options - touch-friendly */
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 52px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.option-btn:active {
+  transform: scale(0.98);
+}
+
+/* Video container responsive */
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.video-wrapper iframe,
+.video-wrapper video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }

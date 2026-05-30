@@ -27,6 +27,7 @@
     <% } %>
 
     <form action="/auth/register" method="POST" class="space-y-6">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div>
         <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="name">الاسم الكامل</label>
         <div class="relative">
@@ -53,7 +54,6 @@
         <div class="relative">
           <select class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-body-md appearance-none" id="role" name="role">
             <option value="student">طالب</option>
-            <option value="instructor">مدرس</option>
           </select>
           <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant pointer-events-none">expand_more</span>
         </div>
@@ -62,14 +62,14 @@
         <div>
           <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="password">كلمة المرور</label>
           <div class="relative">
-            <input class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-body-md text-left" dir="ltr" id="password" name="password" placeholder="6 أحرف على الأقل" required="" type="password"/>
+            <input class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-body-md text-left" dir="ltr" id="password" name="password" placeholder="12 حرفاً على الأقل" required="" type="password" minlength="12"/>
             <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant">lock</span>
           </div>
         </div>
         <div>
           <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="confirmPassword">تأكيد كلمة المرور</label>
           <div class="relative">
-            <input class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-body-md text-left" dir="ltr" id="confirmPassword" name="confirmPassword" placeholder="أعد إدخال كلمة المرور" required="" type="password"/>
+            <input class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-body-md text-left" dir="ltr" id="confirmPassword" name="confirmPassword" placeholder="أعد إدخال كلمة المرور" required="" type="password" minlength="12"/>
             <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant">lock</span>
           </div>
         </div>

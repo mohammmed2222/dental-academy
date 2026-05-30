@@ -4,7 +4,11 @@
 <div class="flex-grow max-w-container-max w-full mx-auto flex flex-col md:flex-row-reverse px-margin-mobile md:px-margin-desktop py-8 gap-gutter relative">
   <div class="absolute inset-0 sadu-pattern pointer-events-none -z-10"></div>
 
-  <aside class="w-full md:w-64 flex-shrink-0 bg-surface-container-lowest border border-outline-variant p-6 rounded-lg hard-shadow h-fit">
+  <button id="filterToggle" class="md:hidden w-full bg-surface-container-lowest border border-outline-variant p-4 rounded-lg hard-shadow flex items-center justify-between mb-4 touch-target" onclick="document.getElementById('filterSidebar').classList.toggle('hidden')">
+    <span class="font-label-lg text-label-lg text-primary">تصفية البحث</span>
+    <span class="material-symbols-outlined text-primary" id="filterIcon">expand_more</span>
+  </button>
+  <aside id="filterSidebar" class="w-full md:w-64 flex-shrink-0 bg-surface-container-lowest border border-outline-variant p-6 rounded-lg hard-shadow h-fit hidden md:block">
     <h2 class="font-headline-sm text-headline-sm text-primary mb-6 border-b border-outline-variant pb-2">التخصصات</h2>
     <form action="/courses" method="GET" id="filterForm">
       <ul class="space-y-4">
@@ -176,4 +180,12 @@
   </main>
 </div>
 
+<script>
+document.getElementById('filterToggle')?.addEventListener('click', function() {
+  const sidebar = document.getElementById('filterSidebar');
+  const icon = document.getElementById('filterIcon');
+  sidebar.classList.toggle('hidden');
+  icon.textContent = sidebar.classList.contains('hidden') ? 'expand_more' : 'expand_less';
+});
+</script>
 <%- include('../partials/footer') %>

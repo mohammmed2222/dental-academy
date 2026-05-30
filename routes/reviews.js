@@ -1,13 +1,14 @@
 const express = require('express');
 const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
 router.get('/course/:courseId', async (req, res, next) => {
   try {
     const db = getDb();
-    const courseId = parseInt(req.params.courseId);
+    const courseId = toSafeInt(req.params.courseId);
     const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(courseId);
     if (!course) {
       return res.status(404).render('error', { title: 'غير موجود', message: 'الكورس غير موجود', error: null });
@@ -34,7 +35,7 @@ router.get('/course/:courseId', async (req, res, next) => {
 router.get('/add/:courseId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.courseId));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.courseId));
     if (!course) {
       return res.status(404).render('error', { title: 'غير موجود', message: 'الكورس غير موجود', error: null });
     }
@@ -56,7 +57,7 @@ router.get('/add/:courseId', isAuthenticated, async (req, res, next) => {
 router.post('/add/:courseId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.courseId));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.courseId));
     if (!course) {
       return res.status(404).render('error', { title: 'غير موجود', message: 'الكورس غير موجود', error: null });
     }
@@ -78,7 +79,7 @@ router.post('/add/:courseId', isAuthenticated, async (req, res, next) => {
     await db.prepare(`
       INSERT INTO course_reviews (course_id, user_id, rating, review, created_at)
       VALUES (?, ?, ?, ?, ${sqlNow()})
-    `).run(course.id, req.session.userId, parseInt(rating), review_text || '');
+    `).run(course.id, req.session.userId, toSafeInt(rating), review_text || '');
     return res.redirect('/reviews/course/' + course.id);
   } catch(err) { next(err); }
 });
@@ -91,7 +92,7 @@ router.post('/:id/delete', isAuthenticated, async (req, res, next) => {
       FROM course_reviews cr
       JOIN courses c ON cr.course_id = c.id
       WHERE cr.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!review) {
       return res.redirect('/courses');
     }

@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ router.get('/create/:lessonId', isInstructor, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.lessonId));
+    `).get(toSafeInt(req.params.lessonId));
 
     if (!lesson || lesson.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -32,7 +33,7 @@ router.post('/create/:lessonId', isInstructor, async (req, res, next) => {
       FROM lessons l
       JOIN courses c ON l.course_id = c.id
       WHERE l.id = ?
-    `).get(parseInt(req.params.lessonId));
+    `).get(toSafeInt(req.params.lessonId));
 
     if (!lesson || lesson.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -45,7 +46,7 @@ router.post('/create/:lessonId', isInstructor, async (req, res, next) => {
     }
 
     const quizResult = await db.prepare('INSERT INTO quizzes (lesson_id, title, passing_score, time_limit, max_attempts) VALUES (?, ?, ?, ?, ?)')
-      .run(lesson.id, title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, parseInt(max_attempts) || 0);
+      .run(lesson.id, title, toSafeInt(passing_score) || 70, toSafeInt(time_limit) || 0, toSafeInt(max_attempts) || 0);
 
     if (questions && Array.isArray(questions)) {
       for (let index = 0; index < questions.length; index++) {
@@ -62,7 +63,7 @@ router.post('/create/:lessonId', isInstructor, async (req, res, next) => {
             q.question_type || 'multiple_choice',
             JSON.stringify(opts),
             q.correct_answer,
-            parseInt(q.points) || 1,
+            toSafeInt(q.points) || 1,
             index + 1
           );
         }
@@ -84,7 +85,7 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
       JOIN lessons l ON q.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE q.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (!quiz) return res.status(404).render('error', { title: 'غير موجود', message: 'الاختبار غير موجود', error: null });
 
@@ -129,7 +130,7 @@ router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
       JOIN lessons l ON q.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE q.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
     if (!quiz) return res.status(404).json({ error: 'الاختبار غير موجود' });
 
     if (req.session.role !== 'admin' && req.session.userId !== quiz.instructor_id) {
@@ -177,7 +178,7 @@ router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
       var userAnswerRaw = answers['q' + q.id];
       var isCorrect = false;
       var storedAnswer = '';
-      var qPoints = parseInt(q.points, 10) || 1;
+      var qPoints = toSafeInt(q.points) || 1;
 
       var correctAnswer = q.correct_answer;
 
@@ -188,7 +189,7 @@ router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
       }
 
       if (optMatch && optsList.length > 0) {
-        var optIdx = parseInt(optMatch[1], 10);
+        var optIdx = toSafeInt(optMatch[1]);
         if (optsList[optIdx] !== undefined) correctAnswer = String(optsList[optIdx]);
       }
 
@@ -205,9 +206,8 @@ router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
         storedAnswer = String(userAnswerRaw || '');
         var userBool = storedAnswer.trim().toLowerCase();
         var correctBool = String(correctAnswer).trim().toLowerCase();
-        if (correctBool === 'true') correctAnswer = 'صح';
-        if (correctBool === 'false') correctAnswer = 'خطأ';
-        isCorrect = userBool === String(correctAnswer).trim().toLowerCase();
+        var tfMapping = { 'true': 'صح', 'false': 'خطأ', 'صح': 'صح', 'خطأ': 'خطأ' };
+        isCorrect = (tfMapping[userBool] || userBool) === (tfMapping[correctBool] || correctBool);
       } else {
         storedAnswer = String(userAnswerRaw || '');
         isCorrect = storedAnswer.trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
@@ -219,7 +219,7 @@ router.post('/:id/submit', isAuthenticated, async (req, res, next) => {
         .run(attemptId, q.id, storedAnswer, isCorrect ? 1 : 0);
     }
 
-    var totalPoints = questions.reduce(function(sum, q) { return sum + (parseInt(q.points, 10) || 1); }, 0);
+    var totalPoints = questions.reduce(function(sum, q) { return sum + (toSafeInt(q.points) || 1); }, 0);
     var percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
     var passed = percentage >= quiz.passing_score ? 1 : 0;
 
@@ -241,7 +241,7 @@ router.get('/result/:attemptId', isAuthenticated, async (req, res, next) => {
       FROM quiz_attempts qa
       JOIN quizzes q ON qa.quiz_id = q.id
       WHERE qa.id = ? AND qa.user_id = ?
-    `).get(parseInt(req.params.attemptId), req.session.userId);
+    `).get(toSafeInt(req.params.attemptId), req.session.userId);
 
     if (!attempt) return res.redirect('/dashboard');
 
@@ -274,7 +274,7 @@ router.get('/:id/edit', isInstructor, async (req, res, next) => {
       JOIN lessons l ON q.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE q.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (!quiz || quiz.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -297,7 +297,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
       JOIN lessons l ON q.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE q.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (!quiz || quiz.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -306,7 +306,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
     const { title, passing_score, time_limit, max_attempts, questions } = req.body;
 
     await db.prepare('UPDATE quizzes SET title = ?, passing_score = ?, time_limit = ?, max_attempts = ? WHERE id = ?')
-      .run(title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, parseInt(max_attempts) || 0, quiz.id);
+      .run(title, toSafeInt(passing_score) || 70, toSafeInt(time_limit) || 0, toSafeInt(max_attempts) || 0, quiz.id);
 
     await db.prepare('DELETE FROM quiz_questions WHERE quiz_id = ?').run(quiz.id);
 
@@ -325,7 +325,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
             q.question_type || 'multiple_choice',
             JSON.stringify(opts),
             q.correct_answer,
-            parseInt(q.points) || 1,
+            toSafeInt(q.points) || 1,
             index + 1
           );
         }
@@ -347,7 +347,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
       JOIN lessons l ON q.lesson_id = l.id
       JOIN courses c ON l.course_id = c.id
       WHERE q.id = ?
-    `).get(parseInt(req.params.id));
+    `).get(toSafeInt(req.params.id));
 
     if (quiz && quiz.instructor_id === req.session.userId) {
       await db.prepare('DELETE FROM quizzes WHERE id = ?').run(quiz.id);

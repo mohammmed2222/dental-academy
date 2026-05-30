@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb, saveDatabase } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.post('/:slug/exams/create', isInstructor, async (req, res, next) => {
     }
 
     const examResult = await db.prepare('INSERT INTO course_exams (course_id, title, passing_score, time_limit, max_attempts) VALUES (?, ?, ?, ?, ?)')
-      .run(course.id, title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, parseInt(max_attempts) || 0);
+      .run(course.id, title, toSafeInt(passing_score) || 70, toSafeInt(time_limit) || 0, toSafeInt(max_attempts) || 0);
 
     if (questions && Array.isArray(questions)) {
       for (let index = 0; index < questions.length; index++) {
@@ -50,7 +51,7 @@ router.post('/:slug/exams/create', isInstructor, async (req, res, next) => {
             q.question_type || 'multiple_choice',
             JSON.stringify(opts),
             q.correct_answer,
-            parseInt(q.points) || 1,
+            toSafeInt(q.points) || 1,
             index + 1
           );
         }
@@ -71,7 +72,7 @@ router.get('/:slug/exams/:id/edit', isInstructor, async (req, res, next) => {
       FROM course_exams e
       JOIN courses c ON e.course_id = c.id
       WHERE e.id = ? AND c.slug = ?
-    `).get(parseInt(req.params.id), req.params.slug);
+    `).get(toSafeInt(req.params.id), req.params.slug);
 
     if (!exam || exam.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -93,7 +94,7 @@ router.post('/:slug/exams/:id/edit', isInstructor, async (req, res, next) => {
       FROM course_exams e
       JOIN courses c ON e.course_id = c.id
       WHERE e.id = ? AND c.slug = ?
-    `).get(parseInt(req.params.id), req.params.slug);
+    `).get(toSafeInt(req.params.id), req.params.slug);
 
     if (!exam || exam.instructor_id !== req.session.userId) {
       return res.redirect('/courses/my-courses');
@@ -102,7 +103,7 @@ router.post('/:slug/exams/:id/edit', isInstructor, async (req, res, next) => {
     const { title, passing_score, time_limit, max_attempts, questions } = req.body;
 
     await db.prepare('UPDATE course_exams SET title = ?, passing_score = ?, time_limit = ?, max_attempts = ? WHERE id = ?')
-      .run(title, parseInt(passing_score) || 70, parseInt(time_limit) || 0, parseInt(max_attempts) || 0, exam.id);
+      .run(title, toSafeInt(passing_score) || 70, toSafeInt(time_limit) || 0, toSafeInt(max_attempts) || 0, exam.id);
 
     await db.prepare('DELETE FROM exam_questions WHERE exam_id = ?').run(exam.id);
 
@@ -121,7 +122,7 @@ router.post('/:slug/exams/:id/edit', isInstructor, async (req, res, next) => {
             q.question_type || 'multiple_choice',
             JSON.stringify(opts),
             q.correct_answer,
-            parseInt(q.points) || 1,
+            toSafeInt(q.points) || 1,
             index + 1
           );
         }
@@ -142,7 +143,7 @@ router.post('/:slug/exams/:id/delete', isInstructor, async (req, res, next) => {
       FROM course_exams e
       JOIN courses c ON e.course_id = c.id
       WHERE e.id = ? AND c.slug = ?
-    `).get(parseInt(req.params.id), req.params.slug);
+    `).get(toSafeInt(req.params.id), req.params.slug);
 
     if (exam && exam.instructor_id === req.session.userId) {
       await db.prepare('DELETE FROM course_exams WHERE id = ?').run(exam.id);
@@ -162,7 +163,7 @@ router.get('/:slug/exams/:id', isAuthenticated, async (req, res, next) => {
       FROM course_exams e
       JOIN courses c ON e.course_id = c.id
       WHERE e.id = ? AND c.slug = ?
-    `).get(parseInt(req.params.id), req.params.slug);
+    `).get(toSafeInt(req.params.id), req.params.slug);
 
     if (!exam) return res.status(404).render('error', { title: 'غير موجود', message: 'الاختبار غير موجود', error: null });
 
@@ -199,7 +200,7 @@ router.get('/:slug/exams/:id', isAuthenticated, async (req, res, next) => {
 router.post('/:slug/exams/:id/submit', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const exam = await db.prepare('SELECT ce.*, c.instructor_id FROM course_exams ce JOIN courses c ON ce.course_id = c.id WHERE ce.id = ?').get(parseInt(req.params.id));
+    const exam = await db.prepare('SELECT ce.*, c.instructor_id FROM course_exams ce JOIN courses c ON ce.course_id = c.id WHERE ce.id = ?').get(toSafeInt(req.params.id));
     if (!exam) return res.status(404).json({ error: 'الاختبار غير موجود' });
 
     if (req.session.role !== 'admin' && req.session.userId !== exam.instructor_id) {
@@ -247,7 +248,7 @@ router.post('/:slug/exams/:id/submit', isAuthenticated, async (req, res, next) =
       var userAnswerRaw = answers['q' + q.id];
       var isCorrect = false;
       var storedAnswer = '';
-      var qPoints = parseInt(q.points, 10) || 1;
+      var qPoints = toSafeInt(q.points) || 1;
 
       var correctAnswer = q.correct_answer;
 
@@ -258,7 +259,7 @@ router.post('/:slug/exams/:id/submit', isAuthenticated, async (req, res, next) =
       }
 
       if (optMatch && optsList.length > 0) {
-        var optIdx = parseInt(optMatch[1], 10);
+        var optIdx = toSafeInt(optMatch[1]);
         if (optsList[optIdx] !== undefined) correctAnswer = String(optsList[optIdx]);
       }
 
@@ -275,9 +276,8 @@ router.post('/:slug/exams/:id/submit', isAuthenticated, async (req, res, next) =
         storedAnswer = String(userAnswerRaw || '');
         var userBool = storedAnswer.trim().toLowerCase();
         var correctBool = String(correctAnswer).trim().toLowerCase();
-        if (correctBool === 'true') correctAnswer = 'صح';
-        if (correctBool === 'false') correctAnswer = 'خطأ';
-        isCorrect = userBool === String(correctAnswer).trim().toLowerCase();
+        var tfMapping = { 'true': 'صح', 'false': 'خطأ', 'صح': 'صح', 'خطأ': 'خطأ' };
+        isCorrect = (tfMapping[userBool] || userBool) === (tfMapping[correctBool] || correctBool);
       } else {
         storedAnswer = String(userAnswerRaw || '');
         isCorrect = storedAnswer.trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
@@ -289,7 +289,7 @@ router.post('/:slug/exams/:id/submit', isAuthenticated, async (req, res, next) =
         .run(attemptId, q.id, storedAnswer, isCorrect ? 1 : 0);
     }
 
-    var totalPoints = questions.reduce(function(sum, q) { return sum + (parseInt(q.points, 10) || 1); }, 0);
+    var totalPoints = questions.reduce(function(sum, q) { return sum + (toSafeInt(q.points) || 1); }, 0);
     var percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
     var passed = percentage >= exam.passing_score ? 1 : 0;
 
@@ -311,7 +311,7 @@ router.get('/:slug/exams/result/:attemptId', isAuthenticated, async (req, res, n
       FROM exam_attempts ea
       JOIN course_exams e ON ea.exam_id = e.id
       WHERE ea.id = ? AND ea.user_id = ?
-    `).get(parseInt(req.params.attemptId), req.session.userId);
+    `).get(toSafeInt(req.params.attemptId), req.session.userId);
 
     if (!attempt) return res.redirect('/dashboard');
 

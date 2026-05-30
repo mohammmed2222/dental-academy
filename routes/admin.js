@@ -4,6 +4,7 @@ const slugify = require('slugify');
 const { getDb } = require('../config/database');
 const { sqlNow } = require('../config/database');
 const { isAdmin } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
@@ -36,7 +37,7 @@ router.get('/', isAdmin, async (req, res, next) => {
 router.get('/users', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const page = Math.max(1, toSafeInt(req.query.page) || 1);
     const limit = 20;
     const offset = (page - 1) * limit;
     const search = (req.query.search || '').trim();
@@ -68,7 +69,7 @@ router.post('/users/create', isAdmin, async (req, res, next) => {
     const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (existing) return res.redirect('/admin/users');
 
-    const hashedPassword = bcrypt.hashSync(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     await db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)')
       .run(name, email, hashedPassword, role || 'student');
 
@@ -81,7 +82,7 @@ router.post('/users/create', isAdmin, async (req, res, next) => {
 router.post('/users/:id/delete', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(toSafeInt(req.params.id));
     if (user && user.role !== 'admin' && user.id !== req.session.userId) {
       await db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
     }
@@ -94,7 +95,7 @@ router.post('/users/:id/delete', isAdmin, async (req, res, next) => {
 router.post('/users/:id/role', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(parseInt(req.params.id));
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(toSafeInt(req.params.id));
     if (user && user.role !== 'admin') {
       var allowedRoles = ['student', 'instructor'];
       var newRole = allowedRoles.indexOf(req.body.role) !== -1 ? req.body.role : user.role;
@@ -110,7 +111,7 @@ router.post('/users/:id/role', isAdmin, async (req, res, next) => {
 router.get('/courses', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const page = Math.max(1, toSafeInt(req.query.page) || 1);
     const limit = 20;
     const offset = (page - 1) * limit;
     const total = (await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count;
@@ -135,7 +136,7 @@ router.get('/courses', isAdmin, async (req, res, next) => {
 router.get('/courses/:id/edit', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT c.*, u.name as instructor_name FROM courses c JOIN users u ON c.instructor_id = u.id WHERE c.id = ?').get(parseInt(req.params.id));
+    const course = await db.prepare('SELECT c.*, u.name as instructor_name FROM courses c JOIN users u ON c.instructor_id = u.id WHERE c.id = ?').get(toSafeInt(req.params.id));
     if (!course) return res.redirect('/admin/courses');
     const categories = await db.prepare('SELECT * FROM categories ORDER BY name').all();
     return res.render('admin/course-edit', { title: 'تعديل الدورة', course, categories, error: null });
@@ -147,7 +148,7 @@ router.get('/courses/:id/edit', isAdmin, async (req, res, next) => {
 router.post('/courses/:id/edit', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.id));
     if (!course) return res.redirect('/admin/courses');
 
     const { title, description, short_description, category_id, level, price, status } = req.body;
@@ -168,7 +169,7 @@ router.post('/courses/:id/edit', isAdmin, async (req, res, next) => {
 router.post('/courses/:id/delete', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.id));
     if (course) {
       await db.prepare('DELETE FROM courses WHERE id = ?').run(course.id);
     }
@@ -181,7 +182,7 @@ router.post('/courses/:id/delete', isAdmin, async (req, res, next) => {
 router.post('/courses/:id/toggle-status', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(parseInt(req.params.id));
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ?').get(toSafeInt(req.params.id));
     if (course) {
       const newStatus = course.status === 'published' ? 'draft' : 'published';
       await db.prepare(`UPDATE courses SET status = ?, updated_at = ${sqlNow()} WHERE id = ?`).run(newStatus, course.id);
@@ -231,7 +232,7 @@ router.post('/categories/create', isAdmin, async (req, res, next) => {
 router.post('/categories/:id/delete', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    await db.prepare('DELETE FROM categories WHERE id = ?').run(parseInt(req.params.id));
+    await db.prepare('DELETE FROM categories WHERE id = ?').run(toSafeInt(req.params.id));
     return res.redirect('/admin/categories');
   } catch(err) {
     next(err);
@@ -241,7 +242,7 @@ router.post('/categories/:id/delete', isAdmin, async (req, res, next) => {
 router.get('/enrollments', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const page = Math.max(1, toSafeInt(req.query.page) || 1);
     const limit = 20;
     const offset = (page - 1) * limit;
     const total = Number((await db.prepare('SELECT COUNT(*) as count FROM enrollments').get()).count);
@@ -265,9 +266,9 @@ router.post('/enrollments/create', isAdmin, async (req, res, next) => {
     const db = getDb();
     const { user_id, course_id } = req.body;
     if (!user_id || !course_id) return res.redirect('/admin/enrollments');
-    const exists = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(parseInt(user_id), parseInt(course_id));
+    const exists = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(toSafeInt(user_id), toSafeInt(course_id));
     if (!exists) {
-      await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)').run(parseInt(user_id), parseInt(course_id));
+      await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)').run(toSafeInt(user_id), toSafeInt(course_id));
     }
     req.session.flash = { type: 'success', message: 'تم تسجيل الطالب' };
     return res.redirect('/admin/enrollments');
@@ -277,7 +278,7 @@ router.post('/enrollments/create', isAdmin, async (req, res, next) => {
 router.post('/enrollments/:id/delete', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
-    await db.prepare('DELETE FROM enrollments WHERE id = ?').run(parseInt(req.params.id));
+    await db.prepare('DELETE FROM enrollments WHERE id = ?').run(toSafeInt(req.params.id));
     req.session.flash = { type: 'error', message: 'تم إلغاء التسجيل' };
     return res.redirect('/admin/enrollments');
   } catch(err) { next(err); }

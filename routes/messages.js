@@ -1,7 +1,11 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { getDb } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
+
+var sendLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, handler: function(req, res) { req.session.flash = { type: 'error', message: 'لقد أرسلت رسائل كثيرة، حاول بعد 15 دقيقة' }; return res.redirect('/messages/compose'); } });
 
 const router = express.Router();
 
@@ -71,7 +75,7 @@ router.get('/conversation/:userId', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
     const currentUserId = req.session.userId;
-    const otherUserId = parseInt(req.params.userId);
+    const otherUserId = toSafeInt(req.params.userId);
 
     const otherUser = await db.prepare('SELECT id, name, email, role, avatar FROM users WHERE id = ?').get(otherUserId);
     if (!otherUser) {
@@ -102,24 +106,24 @@ router.get('/compose', isAuthenticated, async (req, res, next) => {
 
     const users = await db.prepare('SELECT id, name, email, role, avatar FROM users WHERE id != ? ORDER BY name ASC').all(currentUserId);
 
-    const preselectedUser = req.query.to ? parseInt(req.query.to) : null;
+    const preselectedUser = req.query.to ? toSafeInt(req.query.to) : null;
     let parentMessage = null;
 
     if (req.query.reply) {
-      parentMessage = await db.prepare('SELECT * FROM messages WHERE id = ?').get(parseInt(req.query.reply));
+      parentMessage = await db.prepare('SELECT * FROM messages WHERE id = ?').get(toSafeInt(req.query.reply));
     }
 
     return res.render('messages/compose', { title: 'رسالة جديدة', users, preselectedUser, parentMessage });
   } catch(err) { next(err); }
 });
 
-router.post('/send', isAuthenticated, async (req, res, next) => {
+router.post('/send', isAuthenticated, sendLimiter, async (req, res, next) => {
   try {
     const db = getDb();
-    const receiverId = parseInt(req.body.receiver_id);
+    const receiverId = toSafeInt(req.body.receiver_id);
     const subject = (req.body.subject || '').trim();
     const content = (req.body.content || '').trim();
-    const parentId = req.body.parent_id ? parseInt(req.body.parent_id) : null;
+    const parentId = req.body.parent_id ? toSafeInt(req.body.parent_id) : null;
 
     if (!receiverId || !subject || !content) {
       req.session.flash = { type: 'error', message: 'جميع الحقول مطلوبة' };
@@ -147,7 +151,7 @@ router.post('/send', isAuthenticated, async (req, res, next) => {
 router.post('/:id/read', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const messageId = parseInt(req.params.id);
+    const messageId = toSafeInt(req.params.id);
     const userId = req.session.userId;
 
     const message = await db.prepare('SELECT * FROM messages WHERE id = ? AND receiver_id = ?').get(messageId, userId);
@@ -163,7 +167,7 @@ router.post('/:id/read', isAuthenticated, async (req, res, next) => {
 router.post('/:id/delete', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const messageId = parseInt(req.params.id);
+    const messageId = toSafeInt(req.params.id);
     const userId = req.session.userId;
 
     const message = await db.prepare('SELECT * FROM messages WHERE id = ? AND sender_id = ?').get(messageId, userId);

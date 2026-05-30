@@ -6,5 +6,6 @@ public/uploads/videos/*
 public/uploads/avatars/*
 public/uploads/assignments/*
 public/uploads/payments/*
+*.txt
 .DS_Store
 Thumbs.db

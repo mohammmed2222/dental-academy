@@ -21,6 +21,7 @@
     <% } %>
 
     <form action="/auth/login" method="POST" class="flex flex-col gap-5">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="flex flex-col gap-1">
         <label class="font-label-lg text-label-lg text-on-surface" for="email">البريد الإلكتروني</label>
         <div class="relative">

@@ -3,8 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const { getDb } = require('../config/database');
 const { isAdmin } = require('../middleware/auth');
+
+var bulkImportLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, handler: function(req, res) { res.status(429).render('admin/bulk-import', { title: 'استيراد المستخدمين', result: null, error: 'طلبات كثيرة جداً، حاول بعد ساعة' }); } });
 
 const router = express.Router();
 
@@ -63,7 +66,7 @@ router.get('/bulk-import', isAdmin, async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-router.post('/bulk-import', isAdmin, async (req, res, next) => {
+router.post('/bulk-import', isAdmin, bulkImportLimiter, async (req, res, next) => {
   try {
     uploadCsv.single('csv_file')(req, res, async function (err) {
       try {
@@ -121,9 +124,9 @@ router.post('/bulk-import', isAdmin, async (req, res, next) => {
             continue;
           }
 
-          if (password.length < 6) {
+          if (password.length < 12) {
             results.failed++;
-            results.errors.push({ row: i + 1, error: 'كلمة المرور أقل من 6 أحرف', name: name });
+            results.errors.push({ row: i + 1, error: 'كلمة المرور أقل من 12 حرفاً', name: name });
             continue;
           }
 
@@ -139,7 +142,7 @@ router.post('/bulk-import', isAdmin, async (req, res, next) => {
           }
 
           try {
-            var hashedPassword = bcrypt.hashSync(password, 10);
+            var hashedPassword = await bcrypt.hash(password, 10);
             await db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)')
               .run(name, email, hashedPassword, role);
             results.succeeded++;

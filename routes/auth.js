@@ -38,6 +38,10 @@ router.post('/register', registerLimiter, async (req, res, next) => {
       return res.render('auth/register', { title: 'إنشاء حساب جديد', error: 'جميع الحقول مطلوبة', success: null });
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
+      return res.render('auth/register', { title: 'إنشاء حساب جديد', error: 'البريد الإلكتروني غير صالح', success: null });
+    }
+
     if (password.length < 12) {
       return res.render('auth/register', { title: 'إنشاء حساب جديد', error: 'كلمة المرور يجب أن تكون 12 حرفاً على الأقل', success: null });
     }
@@ -52,31 +56,28 @@ router.post('/register', registerLimiter, async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userRole = role === 'instructor' ? 'instructor' : 'student';
+    const userRole = 'student';
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
     const result = await db.prepare('INSERT INTO users (name, email, password, role, email_verified, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-      name, mail, hashedPassword, userRole, 1, phone || ''
+      name, mail, hashedPassword, userRole, 1, (phone || '').replace(/[^0-9+]/g, '')
     );
 
+    var newUserId = result.lastInsertRowid;
     req.session.regenerate(function(err) {
       if (err) return next(err);
-      req.session.userId = result.lastInsertRowid;
+      req.session.userId = newUserId;
       req.session.userName = name;
-      req.session.userEmail = email;
+      req.session.userEmail = mail;
       req.session.role = userRole;
       req.session.userAvatar = '/images/default-avatar.png';
       req.session.emailVerified = true;
       req.session.csrfToken = crypto.randomBytes(32).toString('hex');
 
-      createNotification(result.lastInsertRowid, 'info', 'مرحباً بك في أكاديمية طب الأسنان!', 'نتمنى لك رحلة تعليمية موفقة').catch(function() {});
+      createNotification(newUserId, 'info', 'مرحباً بك في أكاديمية طب الأسنان!', 'نتمنى لك رحلة تعليمية موفقة').catch(function() {});
 
       return res.redirect('/dashboard');
     });
-
-    await createNotification(result.lastInsertRowid, 'info', 'مرحباً بك في أكاديمية طب الأسنان!', 'نتمنى لك رحلة تعليمية موفقة');
-
-    return res.redirect('/dashboard');
   } catch(err) { next(err); }
 });
 
@@ -138,7 +139,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res, next) => {
 
       await db.prepare('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expiresAt);
 
-      var appUrl = process.env.APP_URL || 'https://' + req.get('host');
+      var appUrl = process.env.APP_URL || 'https://dental-academy-production.up.railway.app';
       if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1);
       const resetLink = appUrl + '/auth/reset-password/' + token;
 
@@ -215,7 +216,7 @@ router.get('/logout', async (req, res, next) => {
   try {
     req.session.destroy(function(err) {
       if (err) { return next(err); }
-      res.clearCookie('connect.sid');
+      res.clearCookie('dental_sid');
       res.redirect('/');
     });
   } catch(err) { next(err); }

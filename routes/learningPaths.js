@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
 
 const router = express.Router();
@@ -54,7 +55,7 @@ router.post('/create', isInstructor, async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const db = getDb();
-    const pathId = parseInt(req.params.id);
+    const pathId = toSafeInt(req.params.id);
 
     const path = await db.prepare(`
       SELECT lp.*, u.name as instructor_name
@@ -124,7 +125,7 @@ router.get('/:id', async (req, res, next) => {
 router.get('/:id/edit', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const pathId = parseInt(req.params.id);
+    const pathId = toSafeInt(req.params.id);
 
     const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ? AND instructor_id = ?')
       .get(pathId, req.session.userId);
@@ -142,7 +143,7 @@ router.get('/:id/edit', isInstructor, async (req, res, next) => {
 router.post('/:id/edit', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const pathId = parseInt(req.params.id);
+    const pathId = toSafeInt(req.params.id);
 
     const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ? AND instructor_id = ?')
       .get(pathId, req.session.userId);
@@ -170,7 +171,7 @@ router.post('/:id/edit', isInstructor, async (req, res, next) => {
 router.post('/:id/delete', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const pathId = parseInt(req.params.id);
+    const pathId = toSafeInt(req.params.id);
 
     const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ? AND instructor_id = ?')
       .get(pathId, req.session.userId);
@@ -188,7 +189,7 @@ router.post('/:id/delete', isInstructor, async (req, res, next) => {
 router.post('/:id/enroll', isAuthenticated, async (req, res, next) => {
   try {
     const db = getDb();
-    const pathId = parseInt(req.params.id);
+    const pathId = toSafeInt(req.params.id);
 
     const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ?').get(pathId);
     if (!path) {
@@ -218,7 +219,7 @@ router.post('/:id/enroll', isAuthenticated, async (req, res, next) => {
 router.post('/:id/add-course', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const pathId = parseInt(req.params.id);
+    const pathId = toSafeInt(req.params.id);
 
     const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ? AND instructor_id = ?')
       .get(pathId, req.session.userId);
@@ -234,7 +235,7 @@ router.post('/:id/add-course', isInstructor, async (req, res, next) => {
 
     const existing = await db.prepare(
       'SELECT id FROM learning_path_courses WHERE path_id = ? AND course_id = ?'
-    ).get(pathId, parseInt(course_id));
+    ).get(pathId, toSafeInt(course_id));
 
     if (!existing) {
       const maxOrder = await db.prepare(
@@ -245,7 +246,7 @@ router.post('/:id/add-course', isInstructor, async (req, res, next) => {
       await db.prepare(`
         INSERT INTO learning_path_courses (path_id, course_id, order_index)
         VALUES (?, ?, ?)
-      `).run(pathId, parseInt(course_id), orderIndex);
+      `).run(pathId, toSafeInt(course_id), orderIndex);
     }
 
     return res.redirect('/learning-paths/' + pathId);
@@ -257,8 +258,8 @@ router.post('/:id/add-course', isInstructor, async (req, res, next) => {
 router.post('/:id/remove-course/:courseId', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const pathId = parseInt(req.params.id);
-    const courseId = parseInt(req.params.courseId);
+    const pathId = toSafeInt(req.params.id);
+    const courseId = toSafeInt(req.params.courseId);
 
     const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ? AND instructor_id = ?')
       .get(pathId, req.session.userId);

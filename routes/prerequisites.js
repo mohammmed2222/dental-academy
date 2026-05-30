@@ -1,13 +1,14 @@
 const express = require('express');
 const { getDb } = require('../config/database');
 const { isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 
 const router = express.Router();
 
 router.post('/add/:courseId', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(parseInt(req.params.courseId), req.session.userId);
+    const course = await db.prepare('SELECT * FROM courses WHERE id = ? AND instructor_id = ?').get(toSafeInt(req.params.courseId), req.session.userId);
     if (!course) {
       return res.redirect('/courses/my-courses');
     }
@@ -15,7 +16,7 @@ router.post('/add/:courseId', isInstructor, async (req, res, next) => {
     if (!prerequisite_id) {
       return res.redirect('/courses/' + course.slug + '/edit');
     }
-    const prereqId = parseInt(prerequisite_id);
+    const prereqId = toSafeInt(prerequisite_id);
     if (prereqId === course.id) {
       return res.redirect('/courses/' + course.slug + '/edit');
     }
@@ -35,7 +36,7 @@ router.post('/add/:courseId', isInstructor, async (req, res, next) => {
 router.post('/remove/:prereqId', isInstructor, async (req, res, next) => {
   try {
     const db = getDb();
-    const prereqId = parseInt(req.params.prereqId);
+    const prereqId = toSafeInt(req.params.prereqId);
     const coursePrereq = await db.prepare(`
       SELECT cp.*, c.title as course_title, c.slug as course_slug, c.instructor_id
       FROM course_prerequisites cp

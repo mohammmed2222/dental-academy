@@ -2,6 +2,7 @@ const express = require('express');
 const slugify = require('slugify');
 const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
+const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
 
 const router = express.Router();
@@ -11,7 +12,7 @@ router.get('/', async (req, res, next) => {
     const db = getDb();
     const { category, level, search, price_min, price_max, min_rating, sort, instructor } = req.query;
     const currentSort = sort || 'newest';
-    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const page = Math.max(1, toSafeInt(req.query.page) || 1);
     const limit = 9;
     const offset = (page - 1) * limit;
 
@@ -174,12 +175,8 @@ router.get('/:slug', async (req, res, next) => {
       FROM courses c
       JOIN users u ON c.instructor_id = u.id
       LEFT JOIN categories cat ON c.category_id = cat.id
-      WHERE c.slug = ?
-    `).get(req.params.slug);
-
-    if (!course) {
-      return res.status(404).render('error', { title: 'غير موجود', message: 'الكورس غير موجود', error: null });
-    }
+      WHERE c.slug = ? AND (c.status = 'published' OR c.instructor_id = ? OR ? = 'admin')
+    `).get(req.params.slug, req.session.userId || 0, req.session.role || '');
 
     const lessons = await db.prepare(`
       SELECT l.*, 
