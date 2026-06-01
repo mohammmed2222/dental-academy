@@ -199,7 +199,7 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
     const releaseDate = lesson.release_date ? new Date(lesson.release_date) : null;
     const isLocked = releaseDate && releaseDate > now && !isOwner && req.session.role !== 'admin';
     if (isLocked) {
-      return res.redirect('/courses/' + courseSlug);
+      return res.redirect('/courses/' + lesson.course_slug);
     }
 
     return res.render('lessons/view', {

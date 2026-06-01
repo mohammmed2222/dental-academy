@@ -192,7 +192,7 @@ router.post('/profile', isAuthenticated, profileLimiter, async (req, res, next) 
           return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: err.message, success: null });
         }
 
-        const { name, bio, phone, password, current_password } = req.body;
+        const { name, bio, phone, password } = req.body;
 
         if (!name) {
           return res.render('dashboard/profile', { title: 'الملف الشخصي', user, error: 'الاسم مطلوب', success: null });
@@ -345,15 +345,17 @@ router.get('/analytics', isAuthenticated, async (req, res, next) => {
     `).get(userId)).count;
 
     const scoresOverTime = (await db.prepare(`
-      SELECT score, passed, attempted_at, 'quiz' as type, q.title as activity_name
-      FROM quiz_attempts qa
-      JOIN quizzes q ON qa.quiz_id = q.id
-      WHERE qa.user_id = ?
-      UNION ALL
-      SELECT score, passed, attempted_at, 'exam' as type, e.title as activity_name
-      FROM exam_attempts ea
-      JOIN course_exams e ON ea.exam_id = e.id
-      WHERE ea.user_id = ?
+      SELECT * FROM (
+        SELECT score, passed, attempted_at, 'quiz' as type, q.title as activity_name
+        FROM quiz_attempts qa
+        JOIN quizzes q ON qa.quiz_id = q.id
+        WHERE qa.user_id = ?
+        UNION ALL
+        SELECT score, passed, attempted_at, 'exam' as type, e.title as activity_name
+        FROM exam_attempts ea
+        JOIN course_exams e ON ea.exam_id = e.id
+        WHERE ea.user_id = ?
+      ) AS combined
       ORDER BY attempted_at DESC LIMIT 10
     `).all(userId, userId)).reverse();
 
