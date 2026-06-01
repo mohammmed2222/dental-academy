@@ -369,7 +369,7 @@ router.get('/analytics', isAuthenticated, async (req, res, next) => {
       JOIN quizzes q ON q.lesson_id = l.id
       JOIN quiz_attempts qa ON qa.quiz_id = q.id
       WHERE qa.user_id = ?
-      GROUP BY c.id
+      GROUP BY c.id, c.title
       UNION ALL
       SELECT c.title, c.id,
         COUNT(ea.id) as attempts,
@@ -378,7 +378,7 @@ router.get('/analytics', isAuthenticated, async (req, res, next) => {
       JOIN course_exams ce ON ce.course_id = c.id
       JOIN exam_attempts ea ON ea.exam_id = ce.id
       WHERE ea.user_id = ?
-      GROUP BY c.id
+      GROUP BY c.id, c.title
     `).all(userId, userId);
 
     const mergedPerf = {};
@@ -401,7 +401,7 @@ router.get('/analytics', isAuthenticated, async (req, res, next) => {
       JOIN quiz_questions qq ON qa.question_id = qq.id
       JOIN quizzes q ON qq.quiz_id = q.id
       WHERE qat.user_id = ? AND qa.is_correct = 0
-      GROUP BY qq.id
+      GROUP BY qq.id, qq.question_text, q.title
       ORDER BY wrong_count DESC LIMIT 10
     `).all(userId);
 
@@ -412,7 +412,7 @@ router.get('/analytics', isAuthenticated, async (req, res, next) => {
       JOIN exam_questions eq ON ea.question_id = eq.id
       JOIN course_exams ce ON eq.exam_id = ce.id
       WHERE eat.user_id = ? AND ea.is_correct = 0
-      GROUP BY eq.id
+      GROUP BY eq.id, eq.question_text, ce.title
       ORDER BY wrong_count DESC LIMIT 10
     `).all(userId);
 
@@ -606,7 +606,7 @@ router.post('/notification-settings', isAuthenticated, async (req, res, next) =>
     const prefsJson = JSON.stringify(newPrefs);
     const isPg = db._pool;
     if (isPg) {
-      await db.prepare('UPDATE users SET email_notifications = $1::jsonb WHERE id = $2').run(prefsJson, req.session.userId);
+      await db.prepare('UPDATE users SET email_notifications = CAST(? AS jsonb) WHERE id = ?').run(prefsJson, req.session.userId);
     } else {
       await db.prepare('UPDATE users SET email_notifications = ? WHERE id = ?').run(prefsJson, req.session.userId);
     }
