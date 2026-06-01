@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const { getDb, sqlNow } = require('../config/database');
 const { sendMail } = require('../config/mail');
 const { createNotification } = require('../config/notifications');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 const { isAuthenticated } = require('../middleware/auth');
 
 const router = express.Router();
@@ -75,6 +76,7 @@ router.post('/register', registerLimiter, async (req, res, next) => {
       req.session.csrfToken = crypto.randomBytes(32).toString('hex');
 
       createNotification(newUserId, 'info', 'مرحباً بك في أكاديمية طب الأسنان!', 'نتمنى لك رحلة تعليمية موفقة').catch(function() {});
+      sendNotificationEmail(newUserId, 'welcome', { userName: name }).catch(function() {});
 
       return res.redirect('/dashboard');
     });

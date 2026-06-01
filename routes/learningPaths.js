@@ -3,6 +3,7 @@ const { getDb } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 
 const router = express.Router();
 
@@ -208,6 +209,12 @@ router.post('/:id/enroll', isAuthenticated, async (req, res, next) => {
 
       await createNotification(req.session.userId, 'learning', 'تم التسجيل في مسار تعليمي',
         'لقد تم تسجيلك في مسار ' + path.title, pathId, 'learning_path');
+      sendNotificationEmail(req.session.userId, 'learning', {
+        studentName: req.session.userName,
+        pathTitle: path.title,
+        pathId: pathId,
+        description: path.description || ''
+      }).catch(function() {});
     }
 
     return res.redirect('/learning-paths/' + pathId);

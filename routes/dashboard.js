@@ -6,6 +6,7 @@ const { getDb } = require('../config/database');
 const { sqlNow } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
+const { NOTIFICATION_TYPES, safeParsePrefs } = require('../config/emailNotifications');
 
 var profileLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, handler: async function(req, res) { try { var u = await getDb().prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId); return res.render('dashboard/profile', { title: 'الملف الشخصي', user: u, error: 'طلبات كثيرة جداً، حاول بعد 15 دقيقة', success: null }); } catch(e) { return res.redirect('/dashboard'); } } });
 
@@ -578,6 +579,45 @@ router.post('/toggle-dark-mode', isAuthenticated, async (req, res, next) => {
   } catch(err) {
     next(err);
   }
+});
+
+router.get('/notification-settings', isAuthenticated, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const user = await db.prepare('SELECT email_notifications FROM users WHERE id = ?').get(req.session.userId);
+    const prefs = safeParsePrefs(user ? user.email_notifications : null);
+    return res.render('dashboard/notification-settings', {
+      title: 'تفضيلات الإشعارات',
+      prefs: prefs,
+      notificationTypes: NOTIFICATION_TYPES,
+      success: null,
+      error: null
+    });
+  } catch(err) { next(err); }
+});
+
+router.post('/notification-settings', isAuthenticated, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const newPrefs = {};
+    Object.keys(NOTIFICATION_TYPES).forEach(function(key) {
+      newPrefs[key] = req.body['pref_' + key] === '1' || req.body['pref_' + key] === 'on';
+    });
+    const prefsJson = JSON.stringify(newPrefs);
+    const isPg = db._pool;
+    if (isPg) {
+      await db.prepare('UPDATE users SET email_notifications = $1::jsonb WHERE id = $2').run(prefsJson, req.session.userId);
+    } else {
+      await db.prepare('UPDATE users SET email_notifications = ? WHERE id = ?').run(prefsJson, req.session.userId);
+    }
+    return res.render('dashboard/notification-settings', {
+      title: 'تفضيلات الإشعارات',
+      prefs: newPrefs,
+      notificationTypes: NOTIFICATION_TYPES,
+      success: 'تم حفظ تفضيلاتك بنجاح',
+      error: null
+    });
+  } catch(err) { next(err); }
 });
 
 module.exports = router;

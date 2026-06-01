@@ -6,6 +6,7 @@ const { isAuthenticated, isInstructor } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
 const { sendMail } = require('../config/mail');
 const { createNotification } = require('../config/notifications');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 
 const router = express.Router();
 
@@ -292,10 +293,15 @@ router.post('/submissions/:id/grade', isInstructor, async (req, res, next) => {
     try {
       const student = await db.prepare('SELECT name, email FROM users WHERE id = ?').get(submission.user_id);
       if (student && student.email) {
-        await sendMail({
-          to: student.email,
-          subject: 'تصحيح الواجب: ' + submission.assignment_title,
-          html: '<p>تم تصحيح واجبك ' + submission.assignment_title + '. الدرجة: ' + finalScore + '/' + submission.max_points + '</p>',
+        await sendNotificationEmail(submission.user_id, 'grade', {
+          studentName: student.name,
+          itemType: 'الواجب',
+          itemTitle: submission.assignment_title,
+          courseTitle: submission.course_title,
+          score: finalScore,
+          maxScore: submission.max_points,
+          feedback: submission.feedback || '',
+          lessonId: submission.lesson_id
         });
       }
       await createNotification(submission.user_id, 'grade', 'تصحيح الواجب: ' + submission.assignment_title, 'تم تصحيح واجبك ' + submission.assignment_title + '. الدرجة: ' + finalScore + '/' + submission.max_points, submission.assignment_id, 'assignment');

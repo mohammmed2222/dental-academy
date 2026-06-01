@@ -4,6 +4,7 @@ const { getDb } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 
 var sendLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, handler: function(req, res) { req.session.flash = { type: 'error', message: 'لقد أرسلت رسائل كثيرة، حاول بعد 15 دقيقة' }; return res.redirect('/messages/compose'); } });
 
@@ -141,6 +142,12 @@ router.post('/send', isAuthenticated, sendLimiter, async (req, res, next) => {
 
     if (receiverId !== req.session.userId) {
       await createNotification(receiverId, 'message', 'رسالة جديدة', req.session.userName + ' أرسل لك رسالة: ' + subject, null, null);
+      sendNotificationEmail(receiverId, 'message', {
+        senderId: req.session.userId,
+        senderName: req.session.userName,
+        subject: subject,
+        preview: content.length > 200 ? content.substring(0, 200) + '…' : content
+      }).catch(function() {});
     }
 
     req.session.flash = { type: 'success', message: 'تم إرسال الرسالة بنجاح' };

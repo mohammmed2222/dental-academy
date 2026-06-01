@@ -70,7 +70,7 @@ function pgWrap(pool) {
 }
 
 const createTablesSql = `
-CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', phone TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', phone TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, email_notifications TEXT DEFAULT '{"message":true,"comment":true,"grade":true,"payment":true,"enrollment":true,"course":true,"announcement":true,"learning":true,"welcome":true}', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS courses (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', short_description TEXT DEFAULT '', instructor_id INTEGER NOT NULL, category_id INTEGER, image TEXT DEFAULT '/images/default-course.png', level TEXT DEFAULT 'beginner', price REAL DEFAULT 0, total_lessons INTEGER DEFAULT 0, total_duration INTEGER DEFAULT 0, sections_order TEXT DEFAULT '[]', status TEXT DEFAULT 'draft', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL);
 CREATE TABLE IF NOT EXISTS course_sections (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id INTEGER NOT NULL, title TEXT NOT NULL, order_index INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE);
@@ -144,7 +144,7 @@ CREATE INDEX IF NOT EXISTS idx_exam_answers_attempt_id ON exam_answers(attempt_i
 `;
 
 const pgCreateTablesSql = `
-CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', phone TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', avatar TEXT DEFAULT '/images/default-avatar.png', bio TEXT DEFAULT '', phone TEXT DEFAULT '', email_verified INTEGER DEFAULT 0, verification_token TEXT, dark_mode INTEGER DEFAULT 0, email_notifications JSONB DEFAULT '{"message":true,"comment":true,"grade":true,"payment":true,"enrollment":true,"course":true,"announcement":true,"learning":true,"welcome":true}'::jsonb, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, name TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS courses (id SERIAL PRIMARY KEY, title TEXT NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT '', short_description TEXT DEFAULT '', instructor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL, image TEXT DEFAULT '/images/default-course.png', level TEXT DEFAULT 'beginner', price REAL DEFAULT 0, total_lessons INTEGER DEFAULT 0, total_duration INTEGER DEFAULT 0, sections_order TEXT DEFAULT '[]', status TEXT DEFAULT 'draft', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS course_sections (id SERIAL PRIMARY KEY, course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, title TEXT NOT NULL, order_index INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
@@ -236,6 +236,7 @@ async function initializeDatabase() {
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS dark_mode INTEGER DEFAULT 0",
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INTEGER DEFAULT 0",
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_notifications JSONB DEFAULT '{\"message\":true,\"comment\":true,\"grade\":true,\"payment\":true,\"enrollment\":true,\"course\":true,\"announcement\":true,\"learning\":true,\"welcome\":true}'::jsonb",
       "ALTER TABLE payments ADD COLUMN IF NOT EXISTS coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL",
       "ALTER TABLE payments ADD COLUMN IF NOT EXISTS discount_amount REAL DEFAULT 0",
       "ALTER TABLE payments ADD COLUMN IF NOT EXISTS stripe_session_id TEXT",
@@ -279,6 +280,7 @@ async function initializeDatabase() {
     "ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN verification_token TEXT",
     "ALTER TABLE users ADD COLUMN dark_mode INTEGER DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN email_notifications TEXT DEFAULT '{\"message\":true,\"comment\":true,\"grade\":true,\"payment\":true,\"enrollment\":true,\"course\":true,\"announcement\":true,\"learning\":true,\"welcome\":true}'",
     "ALTER TABLE payments ADD COLUMN coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL",
     "ALTER TABLE payments ADD COLUMN discount_amount REAL DEFAULT 0",
     "ALTER TABLE payments ADD COLUMN stripe_session_id TEXT",

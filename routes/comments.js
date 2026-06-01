@@ -3,6 +3,7 @@ const { getDb } = require('../config/database');
 const { isAuthenticated } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 
 const router = express.Router();
 
@@ -28,6 +29,13 @@ router.post('/lesson/:lessonId', isAuthenticated, async (req, res, next) => {
 
     if (lesson.instructor_id !== req.session.userId) {
       await createNotification(lesson.instructor_id, 'comment', 'تعليق جديد على درس', req.session.userName + ' علق على درس ' + lesson.title, lesson.id, 'lesson');
+      sendNotificationEmail(lesson.instructor_id, 'comment', {
+        commenterName: req.session.userName,
+        lessonTitle: lesson.title,
+        courseTitle: lesson.course_title,
+        lessonId: lesson.id,
+        commentPreview: safeContent.length > 200 ? safeContent.substring(0, 200) + '…' : safeContent
+      }).catch(function() {});
     }
 
     return res.redirect('/lessons/' + lesson.id);

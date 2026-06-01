@@ -2,6 +2,8 @@ const express = require('express');
 const { getDb } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
+const { createNotification } = require('../config/notifications');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 
 const router = express.Router();
 
@@ -64,6 +66,24 @@ router.post('/create/:courseId', isInstructor, async (req, res, next) => {
       INSERT INTO course_announcements (course_id, instructor_id, title, content)
       VALUES (?, ?, ?, ?)
     `).run(courseId, req.session.userId, title, content);
+
+    try {
+      const enrolledStudents = await db.prepare('SELECT user_id FROM enrollments WHERE course_id = ?').all(courseId);
+      const instructorInfo = await db.prepare('SELECT name FROM users WHERE id = ?').get(req.session.userId);
+      const instructorName = instructorInfo ? instructorInfo.name : 'المدرب';
+      for (const enr of enrolledStudents) {
+        await createNotification(enr.user_id, 'announcement', 'إعلان جديد: ' + title, instructorName + ' أعلن في ' + course.title + ': ' + title, courseId, 'announcement');
+        sendNotificationEmail(enr.user_id, 'announcement', {
+          announcementTitle: title,
+          announcementContent: content.length > 300 ? content.substring(0, 300) + '…' : content,
+          instructorName: instructorName,
+          courseTitle: course.title,
+          courseSlug: course.slug
+        }).catch(function() {});
+      }
+    } catch (e) {
+      console.error('Failed to send announcement notifications:', e.message);
+    }
 
     req.session.flash = { type: 'success', message: 'تم إنشاء الإعلان بنجاح' };
     return res.redirect('/announcements/course/' + courseId);

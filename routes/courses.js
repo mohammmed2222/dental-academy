@@ -4,6 +4,7 @@ const { getDb, sqlNow } = require('../config/database');
 const { isAuthenticated, isInstructor } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
 const { createNotification } = require('../config/notifications');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 
 const router = express.Router();
 
@@ -330,6 +331,12 @@ router.post('/:slug/enroll', isAuthenticated, async (req, res, next) => {
       await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)')
         .run(req.session.userId, course.id);
       await createNotification(req.session.userId, 'course', 'تم التسجيل في الدورة', 'لقد تم تسجيلك في دورة ' + course.title, course.id, 'course');
+      sendNotificationEmail(req.session.userId, 'enrollment', {
+        studentName: req.session.userName,
+        courseTitle: course.title,
+        courseSlug: course.slug,
+        instructorName: course.instructor_name || ''
+      }).catch(function() {});
     }
 
     return res.redirect('/courses/' + req.params.slug);

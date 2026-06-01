@@ -2,6 +2,7 @@ const express = require('express');
 const { getDb, sqlNow, isUsingPg } = require('../config/database');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 const { toSafeInt } = require('../config/security');
+const { sendNotificationEmail } = require('../config/emailNotifications');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -156,6 +157,15 @@ router.get('/success/:id', isAuthenticated, async (req, res, next) => {
           const { createNotification } = require('../config/notifications');
           const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
           await createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعك الإلكتروني لمادة ' + (course ? course.title : '') + ' بنجاح');
+          const studentInfo = await db.prepare('SELECT name FROM users WHERE id = ?').get(payment.user_id);
+          if (studentInfo) {
+            sendNotificationEmail(payment.user_id, 'payment', {
+              studentName: studentInfo.name,
+              courseTitle: course ? course.title : '',
+              amount: payment.amount + ' ' + (process.env.CURRENCY || 'ر.س'),
+              status: 'confirmed'
+            }).catch(function() {});
+          }
         }
       }
     }
@@ -199,6 +209,15 @@ router.post('/admin/:id/confirm', isAdmin, async (req, res, next) => {
       const { createNotification } = require('../config/notifications');
       const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
       await createNotification(payment.user_id, 'payment', 'تم تأكيد الدفع', 'تم تأكيد دفعة مادة ' + (course ? course.title : '') + ' بنجاح');
+      const studentInfo = await db.prepare('SELECT name FROM users WHERE id = ?').get(payment.user_id);
+      if (studentInfo) {
+        sendNotificationEmail(payment.user_id, 'payment', {
+          studentName: studentInfo.name,
+          courseTitle: course ? course.title : '',
+          amount: payment.amount + ' ' + (process.env.CURRENCY || 'ر.س'),
+          status: 'confirmed'
+        }).catch(function() {});
+      }
       req.session.flash = { type: 'success', message: 'تم تأكيد الدفع' };
     }
     return res.redirect('/payments/admin');
@@ -215,6 +234,16 @@ router.post('/admin/:id/reject', isAdmin, async (req, res, next) => {
         const { createNotification } = require('../config/notifications');
         const course = await db.prepare('SELECT title FROM courses WHERE id = ?').get(payment.course_id);
         await createNotification(payment.user_id, 'payment', 'تم رفض الدفع', 'تم رفض دفعة مادة ' + (course ? course.title : '') + ': ' + req.body.reason);
+        const studentInfo = await db.prepare('SELECT name FROM users WHERE id = ?').get(payment.user_id);
+        if (studentInfo) {
+          sendNotificationEmail(payment.user_id, 'payment', {
+            studentName: studentInfo.name,
+            courseTitle: course ? course.title : '',
+            amount: payment.amount + ' ' + (process.env.CURRENCY || 'ر.س'),
+            status: 'rejected',
+            reason: req.body.reason
+          }).catch(function() {});
+        }
       }
     }
     req.session.flash = { type: 'error', message: 'تم رفض الدفع' };
