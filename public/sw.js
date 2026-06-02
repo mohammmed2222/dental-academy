@@ -38,10 +38,12 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // صفحات HTML → دائماً من الشبكة (بدون كاش)
+  // صفحات HTML → شبكة أولاً، كاش احتياطي
   event.respondWith(
-    fetch(event.request).catch(function() {
-      return caches.match('/');
+    caches.match(event.request).then(function(cached) {
+      return fetch(event.request).catch(function() {
+        return cached || caches.match('/');
+      });
     })
   );
 });

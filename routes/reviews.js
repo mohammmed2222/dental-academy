@@ -16,19 +16,25 @@ router.get('/course/:courseId', async (req, res, next) => {
     if (course.status !== 'published' && req.session.role !== 'admin' && (req.session.userId !== course.instructor_id)) {
       return res.redirect('/courses');
     }
+    const page = Math.max(1, toSafeInt(req.query.page) || 1);
+    const limit = 20;
+    const offset = (page - 1) * limit;
+    const total = Number((await db.prepare('SELECT COUNT(*) as count FROM course_reviews WHERE course_id = ?').get(courseId)).count);
+    const totalPages = Math.ceil(total / limit);
     const reviews = await db.prepare(`
       SELECT cr.*, u.name as user_name, u.avatar as user_avatar
       FROM course_reviews cr
       JOIN users u ON cr.user_id = u.id
       WHERE cr.course_id = ?
       ORDER BY cr.created_at DESC
-    `).all(courseId);
+      LIMIT ? OFFSET ?
+    `).all(courseId, limit, offset);
     const avgRating = await db.prepare(`
       SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews
       FROM course_reviews
       WHERE course_id = ?
     `).get(courseId);
-    return res.render('reviews/list', { title: 'تقييمات الكورس', course, reviews, avgRating });
+    return res.render('reviews/list', { title: 'تقييمات الكورس', course, reviews, avgRating, page, totalPages });
   } catch(err) { next(err); }
 });
 

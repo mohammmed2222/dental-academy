@@ -9,6 +9,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="أكاديمية طب الأسنان"/>
   <title><%= typeof title !== 'undefined' ? title + ' | ' : '' %>أكاديمية طب الأسنان</title>
+  <meta property="og:title" content="<%= typeof title !== 'undefined' ? title + ' - ' : '' %>أكاديمية طب الأسنان"/>
+  <meta property="og:description" content="منصة تعليمية متطورة لتمكين أطباء الأسنان في الأردن والوطن العربي من خلال برامج تدريبية متقدمة"/>
+  <meta property="og:image" content="/favicon.png"/>
+  <meta property="og:url" content="<%= typeof currentUrl !== 'undefined' ? currentUrl : '' %>"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:locale" content="ar_AR"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="<%= typeof title !== 'undefined' ? title + ' - ' : '' %>أكاديمية طب الأسنان"/>
+  <meta name="twitter:description" content="منصة تعليمية متطورة لتمكين أطباء الأسنان في الأردن والوطن العربي"/>
+  <meta name="twitter:image" content="/favicon.png"/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>

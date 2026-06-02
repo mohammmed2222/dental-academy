@@ -71,8 +71,9 @@ router.post('/create/:courseId', isInstructor, async (req, res, next) => {
       const enrolledStudents = await db.prepare('SELECT user_id FROM enrollments WHERE course_id = ?').all(courseId);
       const instructorInfo = await db.prepare('SELECT name FROM users WHERE id = ?').get(req.session.userId);
       const instructorName = instructorInfo ? instructorInfo.name : 'المدرب';
+      var notifStmt = db.prepare('INSERT INTO notifications (user_id, type, title, message, related_id, related_type) VALUES (?, ?, ?, ?, ?, ?)');
       for (const enr of enrolledStudents) {
-        await createNotification(enr.user_id, 'announcement', 'إعلان جديد: ' + title, instructorName + ' أعلن في ' + course.title + ': ' + title, courseId, 'announcement');
+        try { notifStmt.run(enr.user_id, 'announcement', 'إعلان جديد: ' + title, instructorName + ' أعلن في ' + course.title + ': ' + title, courseId, 'announcement'); } catch (e) { /* ignore */ }
         sendNotificationEmail(enr.user_id, 'announcement', {
           announcementTitle: title,
           announcementContent: content.length > 300 ? content.substring(0, 300) + '…' : content,

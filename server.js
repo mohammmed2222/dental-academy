@@ -47,6 +47,40 @@ app.set('views', path.join(__dirname, 'views'));
 
 app.use(compression());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.post('/payments/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  if (!sig) return res.status(400).send('Missing stripe-signature header');
+  try {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET || '');
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const { getDb, sqlNow, isUsingPg } = require('./config/database');
+      const db = getDb();
+      const paymentId = session.metadata ? toSafeInt(session.metadata.paymentId) : 0;
+      if (paymentId) {
+        const payment = await db.prepare('SELECT * FROM payments WHERE id = ?').get(paymentId);
+        if (payment && payment.status === 'pending') {
+          await db.prepare('UPDATE payments SET status = ? WHERE id = ?').run('paid', payment.id);
+          if (payment.coupon_id) {
+            await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(payment.coupon_id);
+          }
+          if (isUsingPg()) {
+            await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING').run(payment.user_id, payment.course_id);
+          } else {
+            await db.prepare('INSERT OR IGNORE INTO enrollments (user_id, course_id) VALUES (?, ?)').run(payment.user_id, payment.course_id);
+          }
+        }
+      }
+    }
+    return res.json({ received: true });
+  } catch (err) {
+    console.error('Stripe webhook error:', err.message);
+    return res.status(400).send('Webhook Error: ' + err.message);
+  }
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 

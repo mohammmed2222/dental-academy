@@ -60,26 +60,27 @@ router.post('/register', registerLimiter, async (req, res, next) => {
     const userRole = 'student';
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    const result = await db.prepare('INSERT INTO users (name, email, password, role, email_verified, phone) VALUES (?, ?, ?, ?, ?, ?)').run(
-      name, mail, hashedPassword, userRole, 1, (phone || '').replace(/[^0-9+]/g, '')
+    const result = await db.prepare('INSERT INTO users (name, email, password, role, email_verified, verification_token, phone) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      name, mail, hashedPassword, userRole, 0, verificationToken, (phone || '').replace(/[^0-9+]/g, '')
     );
 
     var newUserId = result.lastInsertRowid;
-    req.session.regenerate(function(err) {
-      if (err) return next(err);
-      req.session.userId = newUserId;
-      req.session.userName = name;
-      req.session.userEmail = mail;
-      req.session.role = userRole;
-      req.session.userAvatar = '/images/default-avatar.png';
-      req.session.emailVerified = true;
-      req.session.csrfToken = crypto.randomBytes(32).toString('hex');
 
-      createNotification(newUserId, 'info', 'مرحباً بك في أكاديمية طب الأسنان!', 'نتمنى لك رحلة تعليمية موفقة').catch(function() {});
-      sendNotificationEmail(newUserId, 'welcome', { userName: name }).catch(function() {});
+    var appUrl = process.env.APP_URL || 'https://dental-academy-production.up.railway.app';
+    if (appUrl.endsWith('/')) appUrl = appUrl.slice(0, -1);
+    var verifyLink = appUrl + '/auth/verify-email?token=' + verificationToken;
 
-      return res.redirect('/dashboard');
-    });
+    try {
+      await sendMail({
+        to: mail,
+        subject: 'تأكيد البريد الإلكتروني - أكاديمية طب الأسنان',
+        html: '<div style="font-family:sans-serif;max-width:600px;margin:0 auto"><h1 style="color:#a30019">أكاديمية طب الأسنان</h1><p>مرحباً ' + (name || '').replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'}[m]; }) + '،</p><p>شكراً لتسجيلك في أكاديمية طب الأسنان. يرجى تأكيد بريدك الإلكتروني بالضغط على الرابط أدناه:</p><p><a href="' + verifyLink + '" style="display:inline-block;background:#ce1126;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">تأكيد البريد الإلكتروني</a></p><p>إذا لم تقم بالتسجيل، يمكنك تجاهل هذا البريد.</p><hr/><p style="color:#777;font-size:12px">أكاديمية طب الأسنان</p></div>',
+      });
+    } catch (e) {
+      console.error('Verification mail error:', e);
+    }
+
+    return res.render('auth/login', { title: 'تسجيل الدخول', error: null, success: 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني وتأكيد الحساب.' });
   } catch(err) { next(err); }
 });
 

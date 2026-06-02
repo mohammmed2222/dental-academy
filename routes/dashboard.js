@@ -266,6 +266,9 @@ router.get('/certificate/:courseId', isAuthenticated, async (req, res, next) => 
     const isPdf = req.query.format === 'pdf';
 
     if (isPdf) {
+      const { isUsingPg } = require('../config/database');
+      var certSql = isUsingPg() ? 'INSERT INTO certificates (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING' : 'INSERT OR IGNORE INTO certificates (user_id, course_id) VALUES (?, ?)';
+      await db.prepare(certSql).run(req.session.userId, enrollment.course_id);
       const PDFDocument = require('pdfkit');
       const doc = new PDFDocument({ layout: 'landscape', size: 'A4', margin: 50 });
 

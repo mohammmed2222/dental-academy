@@ -25,6 +25,7 @@ router.get('/admin', isAdmin, async (req, res, next) => {
 router.post('/create', isAdmin, async (req, res, next) => {
   try {
     const db = getDb();
+    const { discount_percent, max_uses, expires_at, course_id } = req.body;
     const rawCode = (req.body.code || '').trim();
     if (!rawCode || !discount_percent) {
       const coupons = await db.prepare(`

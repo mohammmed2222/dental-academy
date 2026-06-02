@@ -170,6 +170,10 @@ router.get('/:slug', async (req, res, next) => {
       WHERE c.slug = ? AND (c.status = 'published' OR c.instructor_id = ? OR ? = 'admin')
     `).get(req.params.slug, req.session.userId || 0, req.session.role || '');
 
+    if (!course) {
+      return res.status(404).render('courses/list', { title: 'الكورسات', courses: [], page: 1, totalPages: 0, limit: 9, search: '', price_min: '', price_max: '', min_rating: '', sort: 'newest', instructor: '' });
+    }
+
     const lessons = await db.prepare(`
       SELECT l.*, 
         CASE WHEN lp.completed = 1 THEN 1 ELSE 0 END as is_completed
@@ -281,14 +285,14 @@ router.post('/:slug/enroll', isAuthenticated, async (req, res, next) => {
     `).all(course.id);
 
     const unmetPrereqs = [];
-    for (var i = 0; i < prereqs.length; i++) {
-      var p = prereqs[i];
-      var completed = await db.prepare(
-        'SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND completed_at IS NOT NULL'
-      ).get(req.session.userId, p.prerequisite_course_id);
-      if (!completed) {
-        unmetPrereqs.push(p.prereq_title);
-      }
+    if (req.session.userId) {
+      const uncompleted = await db.prepare(`
+        SELECT c.title as prereq_title FROM course_prerequisites cp
+        JOIN courses c ON cp.prerequisite_course_id = c.id
+        LEFT JOIN enrollments e ON cp.prerequisite_course_id = e.course_id AND e.user_id = ? AND e.completed_at IS NOT NULL
+        WHERE cp.course_id = ? AND e.id IS NULL
+      `).all(req.session.userId, course.id);
+      uncompleted.forEach(function(u) { unmetPrereqs.push(u.prereq_title); });
     }
 
     if (unmetPrereqs.length > 0) {

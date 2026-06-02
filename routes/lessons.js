@@ -258,6 +258,13 @@ router.post('/:id/complete', isAuthenticated, async (req, res, next) => {
 
     let completed = false;
     if (allLessons > 0 && allLessons === completedLessons) {
+      var courseExam = await db.prepare('SELECT id FROM course_exams WHERE course_id = ?').get(lesson.course_id);
+      if (courseExam) {
+        var examPassed = await db.prepare("SELECT id FROM exam_attempts WHERE user_id = ? AND exam_id = ? AND passed = 1").get(req.session.userId, courseExam.id);
+        if (!examPassed) {
+          return res.json({ success: true, completed: false, progress: allLessons > 0 ? Math.round((completedLessons / allLessons) * 100) : 0 });
+        }
+      }
       await db.prepare('UPDATE enrollments SET completed_at = ' + sqlNow() + ' WHERE user_id = ? AND course_id = ? AND completed_at IS NULL')
         .run(req.session.userId, lesson.course_id);
       // Update learning path completion tracking

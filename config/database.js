@@ -141,6 +141,21 @@ CREATE INDEX IF NOT EXISTS idx_learning_paths_instructor_id ON learning_paths(in
 CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
 CREATE INDEX IF NOT EXISTS idx_quiz_answers_attempt_id ON quiz_answers(attempt_id);
 CREATE INDEX IF NOT EXISTS idx_exam_answers_attempt_id ON exam_answers(attempt_id);
+CREATE INDEX IF NOT EXISTS idx_course_sections_course_id ON course_sections(course_id);
+CREATE INDEX IF NOT EXISTS idx_course_exams_course_id ON course_exams(course_id);
+CREATE INDEX IF NOT EXISTS idx_exam_questions_exam_id ON exam_questions(exam_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz_id ON quiz_questions(quiz_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_lesson_id ON assignments(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_learning_path_courses_path_id ON learning_path_courses(path_id);
+CREATE INDEX IF NOT EXISTS idx_learning_path_courses_course_id ON learning_path_courses(course_id);
+CREATE INDEX IF NOT EXISTS idx_learning_path_enrollments_user_id ON learning_path_enrollments(user_id);
+CREATE INDEX IF NOT EXISTS idx_learning_path_enrollments_path_id ON learning_path_enrollments(path_id);
+CREATE INDEX IF NOT EXISTS idx_cohort_students_cohort_id ON cohort_students(cohort_id);
+CREATE INDEX IF NOT EXISTS idx_cohort_courses_cohort_id ON cohort_courses(cohort_id);
+CREATE INDEX IF NOT EXISTS idx_course_prerequisites_course_id ON course_prerequisites(course_id);
+CREATE INDEX IF NOT EXISTS idx_course_prerequisites_prereq_id ON course_prerequisites(prerequisite_course_id);
+CREATE INDEX IF NOT EXISTS idx_messages_parent_id ON messages(parent_id);
+CREATE TABLE IF NOT EXISTS certificates (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, course_id INTEGER NOT NULL, issued_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, course_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE);
 `;
 
 const pgCreateTablesSql = `
@@ -182,6 +197,7 @@ CREATE TABLE IF NOT EXISTS cohort_courses (id SERIAL PRIMARY KEY, cohort_id INTE
 CREATE TABLE IF NOT EXISTS whatsapp_settings (id SERIAL PRIMARY KEY, provider TEXT DEFAULT 'direct', api_key TEXT DEFAULT '', api_url TEXT DEFAULT '', sender_name TEXT DEFAULT '', is_active INTEGER DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS ai_settings (id SERIAL PRIMARY KEY, provider TEXT DEFAULT 'gemini', ai_model TEXT DEFAULT 'gemini-2.0-flash', gemini_api_key TEXT DEFAULT '', openai_api_key TEXT DEFAULT '', openai_base_url TEXT DEFAULT '', system_prompt TEXT DEFAULT '', is_active INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS ai_chat_history (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, role TEXT NOT NULL, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE, issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, course_id));
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_courses_instructor_id ON courses(instructor_id);

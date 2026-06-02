@@ -1,4 +1,16 @@
 <%- include('../partials/header') %>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "<%= (course.title || '').replace(/"/g, '\\"') %>",
+  "description": "<%= ((course.short_description || course.description || '') + '').replace(/"/g, '\\"').substring(0, 300) %>",
+  "provider": { "@type": "Organization", "name": "أكاديمية طب الأسنان" },
+  "educationalLevel": "<%= course.level === 'beginner' ? 'Beginner' : course.level === 'intermediate' ? 'Intermediate' : 'Advanced' %>",
+  "offers": { "@type": "Offer", "price": "<%= course.price %>", "priceCurrency": "JOD", "availability": "https://schema.org/InStock" },
+  "instructor": { "@type": "Person", "name": "<%= (course.instructor_name || '').replace(/"/g, '\\"') %>" }
+}
+</script>
 <%- include('../partials/back-button') %>
 
 <style>
