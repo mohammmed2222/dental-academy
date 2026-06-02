@@ -76,7 +76,12 @@
               <span class="material-symbols-outlined text-4xl">dentistry</span>
             </div>
             <h3 class="font-headline-md text-headline-md text-on-surface mb-3"><%= course.title %></h3>
-            <p class="font-body-md text-body-md text-on-surface-variant mb-6 leading-relaxed"><%= course.short_description || course.description %></p>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-4 leading-relaxed"><%= course.short_description || course.description %></p>
+            <div class="flex items-center justify-between mb-4">
+              <span class="font-label-lg text-label-lg <%= course.price > 0 ? 'text-primary' : 'text-green-600' %> font-bold">
+                <%= course.price > 0 ? course.price + ' د.أ' : 'مجاناً' %>
+              </span>
+            </div>
             <span class="text-primary font-label-lg text-label-lg flex items-center gap-2 group-hover:gap-3 transition-all">
               استكشف المسار <span class="material-symbols-outlined">arrow_back</span>
             </span>

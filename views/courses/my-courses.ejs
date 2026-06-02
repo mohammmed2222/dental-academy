@@ -29,6 +29,11 @@
       </div>
       <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2"><%= course.title %></h3>
       <p class="font-body-md text-body-md text-secondary mb-4 flex-grow"><%= course.lesson_count || 0 %> دروس • <%= course.student_count || 0 %> طالب</p>
+      <div class="mb-3">
+        <span class="font-label-lg text-label-lg <%= course.price > 0 ? 'text-primary' : 'text-green-600' %>">
+          <%= course.price > 0 ? course.price + ' د.أ' : 'مجاناً' %>
+        </span>
+      </div>
       <div class="border-t border-outline-variant pt-4 flex gap-2">
         <a href="/courses/<%= course.slug %>" class="flex-1 text-center border border-outline-variant text-secondary font-label-lg text-label-lg py-2 rounded hover:bg-surface-container-low transition-colors">عرض</a>
         <a href="/courses/<%= course.slug %>/edit" class="flex-1 text-center bg-primary-container text-on-primary font-label-lg text-label-lg py-2 rounded hover:opacity-90 transition-opacity">تعديل</a>

@@ -80,7 +80,7 @@
             <div class="flex flex-col justify-between flex-1">
               <div>
                 <h3 class="font-headline-sm text-headline-sm text-on-surface"><%= course.title %></h3>
-                <p class="font-body-md text-body-md text-secondary"><%= course.lesson_count || 0 %> دروس • <%= course.student_count || 0 %> طالب</p>
+                <p class="font-body-md text-body-md text-secondary"><%= course.lesson_count || 0 %> دروس • <%= course.student_count || 0 %> طالب • <span class="<%= course.price > 0 ? 'text-primary' : 'text-green-600' %>"><%= course.price > 0 ? course.price + ' د.أ' : 'مجاناً' %></span></p>
               </div>
               <div class="flex items-center gap-3 mt-2">
                 <span class="bg-<%= course.status === 'published' ? 'primary-fixed-dim text-primary' : 'surface-container text-secondary' %> font-label-lg text-label-lg px-3 py-0.5 rounded">

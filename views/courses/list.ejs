@@ -125,6 +125,11 @@
           <span class="font-label-lg text-label-lg text-secondary">(<%= course.total_reviews || 0 %>)</span>
         </div>
         <div class="border-t border-outline-variant pt-4 mt-auto">
+          <div class="flex items-center justify-between mb-3">
+            <span class="font-label-lg text-label-lg <%= course.price > 0 ? 'text-primary' : 'text-green-600' %>">
+              <%= course.price > 0 ? course.price + ' د.أ' : 'مجاناً' %>
+            </span>
+          </div>
           <div class="flex items-center gap-3 mb-4">
             <a href="/instructor/<%= course.instructor_id %>" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-primary-container">
