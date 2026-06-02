@@ -11,35 +11,7 @@
   <aside id="filterSidebar" class="w-full md:w-64 flex-shrink-0 bg-surface-container-lowest border border-outline-variant p-6 rounded-lg hard-shadow h-fit hidden md:block">
       <form action="/courses" method="GET" id="filterForm">
 
-        <h2 class="font-headline-sm text-headline-sm text-primary mb-6 border-b border-outline-variant pb-2">مستوى الدورة</h2>
-      <ul class="space-y-4">
-        <li>
-          <label class="flex items-center gap-2 cursor-pointer group">
-            <input type="radio" name="level" value="" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel === 'undefined' || !currentLevel) ? 'checked' : '' %>/>
-            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">الجميع</span>
-          </label>
-        </li>
-        <li>
-          <label class="flex items-center gap-2 cursor-pointer group">
-            <input type="radio" name="level" value="beginner" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel !== 'undefined' && currentLevel === 'beginner') ? 'checked' : '' %>/>
-            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">مبتدئ</span>
-          </label>
-        </li>
-        <li>
-          <label class="flex items-center gap-2 cursor-pointer group">
-            <input type="radio" name="level" value="intermediate" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel !== 'undefined' && currentLevel === 'intermediate') ? 'checked' : '' %>/>
-            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">متوسط</span>
-          </label>
-        </li>
-        <li>
-          <label class="flex items-center gap-2 cursor-pointer group">
-            <input type="radio" name="level" value="advanced" class="form-radio text-primary-container border-outline-variant focus:ring-primary-container h-5 w-5" <%= (typeof currentLevel !== 'undefined' && currentLevel === 'advanced') ? 'checked' : '' %>/>
-            <span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">متقدم</span>
-          </label>
-        </li>
-      </ul>
-
-      <h2 class="font-headline-sm text-headline-sm text-primary mt-8 mb-6 border-b border-outline-variant pb-2">السعر</h2>
+        <h2 class="font-headline-sm text-headline-sm text-primary mb-6 border-b border-outline-variant pb-2">السعر</h2>
       <div class="flex gap-2 mb-1">
         <div class="flex-1">
           <label class="font-body-md text-body-md text-secondary mb-1 block">الحد الأدنى</label>
@@ -63,7 +35,7 @@
       <input type="text" name="instructor" placeholder="ابحث عن مدرب..." class="w-full bg-surface-container-lowest border border-outline-variant rounded py-2 px-3 font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none" value="<%= typeof instructor !== 'undefined' ? instructor : '' %>"/>
 
       <button type="submit" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity mt-6">تصفية</button>
-      <% if (search || currentLevel || price_min || price_max || min_rating || instructor || sort !== 'newest') { %>
+      <% if (search || price_min || price_max || min_rating || instructor || sort !== 'newest') { %>
       <a href="/courses" class="block w-full text-center font-label-lg text-label-lg text-primary border border-primary py-3 px-6 rounded hover:bg-primary-fixed transition-colors mt-2">إلغاء الفلتر</a>
       <% } %>
     </form>

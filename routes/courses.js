@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
   try {
     const db = getDb();
-    const { category, level, search, price_min, price_max, min_rating, sort, instructor } = req.query;
+    const { category, search, price_min, price_max, min_rating, sort, instructor } = req.query;
     const currentSort = sort || 'newest';
     const page = Math.max(1, toSafeInt(req.query.page) || 1);
     const limit = 9;
@@ -25,11 +25,6 @@ router.get('/', async (req, res, next) => {
       where += ' AND cat.slug = ?';
       countParams.push(category);
       params.push(category);
-    }
-    if (level) {
-      where += ' AND c.level = ?';
-      countParams.push(level);
-      params.push(level);
     }
     if (search) {
       var searchStr = String(search).replace(/[%_]/g, '\\$&');
@@ -99,7 +94,6 @@ router.get('/', async (req, res, next) => {
       title: 'الكورسات', 
       courses,
       page, totalPages, limit,
-      currentLevel: level || '',
       search: search || '',
       price_min: price_min || '',
       price_max: price_max || '',
