@@ -140,7 +140,7 @@
             <% if (typeof user !== 'undefined' && user) { %>
               <% if (course.price > 0) { %>
               <div class="bg-surface-container border border-outline-variant rounded-xl p-4 mb-4 text-center">
-                <p class="font-headline-md text-headline-md text-primary mb-2"><%= course.price %> ر.س</p>
+                <p class="font-headline-md text-headline-md text-primary mb-2"><%= course.price %> د.أ</p>
                 <p class="font-body-md text-body-md text-on-surface-variant mb-4">هذا المساق مدفوع</p>
                 <a href="/payments/checkout/<%= course.id %>" class="w-full bg-primary-container text-on-primary font-label-lg text-label-lg py-3 px-6 rounded hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
                   <span class="material-symbols-outlined text-sm">lock</span>

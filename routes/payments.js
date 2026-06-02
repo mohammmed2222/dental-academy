@@ -112,7 +112,7 @@ router.post('/request/:courseId', isAuthenticated, uploadReceipt.single('receipt
         .run(req.session.userId, course.id, finalAmount, 'stripe', 'pending', couponId, discountAmount);
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: [{ price_data: { currency: process.env.STRIPE_CURRENCY || 'sar', product_data: { name: course.title }, unit_amount: Math.round(finalAmount * 100) }, quantity: 1 }],
+        line_items: [{ price_data: { currency: process.env.STRIPE_CURRENCY || 'jod', product_data: { name: course.title }, unit_amount: Math.round(finalAmount * 100) }, quantity: 1 }],
         mode: 'payment',
         success_url: req.protocol + '://' + req.get('host') + '/payments/success/' + payment.lastInsertRowid,
         cancel_url: req.protocol + '://' + req.get('host') + '/payments/checkout/' + course.id,
@@ -162,7 +162,7 @@ router.get('/success/:id', isAuthenticated, async (req, res, next) => {
             sendNotificationEmail(payment.user_id, 'payment', {
               studentName: studentInfo.name,
               courseTitle: course ? course.title : '',
-              amount: payment.amount + ' ' + (process.env.CURRENCY || 'ر.س'),
+              amount: payment.amount + ' ' + (process.env.CURRENCY || 'د.أ'),
               status: 'confirmed'
             }).catch(function() {});
           }
@@ -214,7 +214,7 @@ router.post('/admin/:id/confirm', isAdmin, async (req, res, next) => {
         sendNotificationEmail(payment.user_id, 'payment', {
           studentName: studentInfo.name,
           courseTitle: course ? course.title : '',
-          amount: payment.amount + ' ' + (process.env.CURRENCY || 'ر.س'),
+          amount: payment.amount + ' ' + (process.env.CURRENCY || 'د.أ'),
           status: 'confirmed'
         }).catch(function() {});
       }
@@ -239,7 +239,7 @@ router.post('/admin/:id/reject', isAdmin, async (req, res, next) => {
           sendNotificationEmail(payment.user_id, 'payment', {
             studentName: studentInfo.name,
             courseTitle: course ? course.title : '',
-            amount: payment.amount + ' ' + (process.env.CURRENCY || 'ر.س'),
+            amount: payment.amount + ' ' + (process.env.CURRENCY || 'د.أ'),
             status: 'rejected',
             reason: req.body.reason
           }).catch(function() {});
