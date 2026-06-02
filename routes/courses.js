@@ -95,13 +95,10 @@ router.get('/', async (req, res, next) => {
       LIMIT ? OFFSET ?
     `).all(...params, limit, offset);
 
-    const categories = await db.prepare('SELECT * FROM categories ORDER BY name').all();
-
     return res.render('courses/list', { 
       title: 'الكورسات', 
-      courses, categories,
+      courses,
       page, totalPages, limit,
-      currentCategory: category || '',
       currentLevel: level || '',
       search: search || '',
       price_min: price_min || '',
