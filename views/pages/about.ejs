@@ -69,11 +69,7 @@
 <div class="font-display-lg text-display-lg font-bold mb-2" id="statInstructors">0</div>
 <p class="font-label-lg text-on-primary/80">محاضر معتمد</p>
 </div>
-<div class="stat-card">
-<span class="material-symbols-outlined text-on-primary text-4xl mb-4 opacity-80" style="font-variation-settings: 'FILL' 1;">verified</span>
-<div class="font-display-lg text-display-lg font-bold mb-2" id="statCertificates">0</div>
-<p class="font-label-lg text-on-primary/80">شهادة معتمدة</p>
-</div>
+
 </div>
 </div>
 </section>
@@ -213,7 +209,6 @@ function checkCounters() {
         animateCounter('statStudents', <%= typeof stats !== 'undefined' && stats.students ? stats.students : 15000 %>);
         animateCounter('statLectures', <%= typeof stats !== 'undefined' && stats.lectures ? stats.lectures : 500 %>);
         animateCounter('statInstructors', <%= typeof stats !== 'undefined' && stats.instructors ? stats.instructors : 50 %>);
-        animateCounter('statCertificates', <%= typeof stats !== 'undefined' && stats.certificates ? stats.certificates : 3000 %>);
     }
 }
 
