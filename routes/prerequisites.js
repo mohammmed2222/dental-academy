@@ -24,6 +24,23 @@ router.post('/add/:courseId', isInstructor, async (req, res, next) => {
     if (!prereqCourse) {
       return res.redirect('/courses/' + course.slug + '/edit');
     }
+
+    var visited = new Set();
+    var stack = [prereqId];
+    while (stack.length > 0) {
+      var current = stack.pop();
+      if (current === course.id) {
+        return res.redirect('/courses/' + course.slug + '/edit');
+      }
+      if (visited.has(current)) continue;
+      visited.add(current);
+      var children = await db.prepare('SELECT prerequisite_course_id FROM course_prerequisites WHERE course_id = ?').all(current);
+      for (var ci = 0; ci < children.length; ci++) {
+        if (!visited.has(children[ci].prerequisite_course_id)) {
+          stack.push(children[ci].prerequisite_course_id);
+        }
+      }
+    }
     try {
       await db.prepare('INSERT INTO course_prerequisites (course_id, prerequisite_course_id) VALUES (?, ?)').run(course.id, prereqId);
     } catch (e) {

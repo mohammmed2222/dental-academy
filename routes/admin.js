@@ -63,16 +63,36 @@ router.post('/users/create', isAdmin, async (req, res, next) => {
     const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
+      req.session.flash = { type: 'error', message: 'الاسم والبريد وكلمة المرور مطلوبة' };
       return res.redirect('/admin/users');
     }
 
+    var allowedRoles = ['student', 'instructor'];
+    var assignedRole = allowedRoles.indexOf(role) !== -1 ? role : 'student';
+
     const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existing) return res.redirect('/admin/users');
+    if (existing) {
+      req.session.flash = { type: 'error', message: 'البريد الإلكتروني مستخدم بالفعل' };
+      return res.redirect('/admin/users');
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)')
-      .run(name, email, hashedPassword, role || 'student');
+    await db.prepare('INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, ?)')
+      .run(name, email, hashedPassword, assignedRole, 1);
 
+    try {
+      const { sendMail } = require('../config/mail');
+      var loginUrl = (process.env.APP_URL || 'https://dental-academy-production.up.railway.app').replace(/\/$/, '') + '/auth/login';
+      await sendMail({
+        to: email,
+        subject: 'مرحباً بك في أكاديمية طب الأسنان',
+        html: '<div style="font-family:sans-serif;max-width:600px;margin:0 auto"><h1 style="color:#a30019">أكاديمية طب الأسنان</h1><p>مرحباً ' + (name || '').replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }) + '،</p><p>تم إنشاء حسابك في المنصة. يمكنك تسجيل الدخول باستخدام البيانات التالية:</p><p><strong>البريد:</strong> ' + email + '<br/><strong>كلمة المرور:</strong> ' + password + '</p><p><a href="' + loginUrl + '" style="display:inline-block;background:#ce1126;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none">تسجيل الدخول</a></p><p>ننصحك بتغيير كلمة المرور بعد تسجيل الدخول الأول.</p><hr/><p style="color:#777;font-size:12px">أكاديمية طب الأسنان</p></div>',
+      });
+    } catch (e) {
+      console.error('Welcome email error:', e.message);
+    }
+
+    req.session.flash = { type: 'success', message: 'تم إنشاء المستخدم وإرسال بريد ترحيبي' };
     return res.redirect('/admin/users');
   } catch(err) {
     next(err);

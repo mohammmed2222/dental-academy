@@ -55,7 +55,7 @@ function toggleDarkMode() {
     });
 }
 </script>
-<script src="/js/main.js"></script>
+<script src="/js/main.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>
 <script>
 // Auto-add CSRF token to all forms
 (function() {

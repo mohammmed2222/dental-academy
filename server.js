@@ -139,6 +139,7 @@ app.use(setUser);
 
 app.use(async (req, res, next) => {
   res.locals.currentPath = req.path;
+  res.locals.assetVersion = process.env.ASSET_VERSION || String(Date.now()).slice(-6);
   try { res.locals.unreadNotifications = req.session.userId ? await getUnreadCount(req.session.userId) : 0; } catch (e) { res.locals.unreadNotifications = 0; }
   res.locals.csrfToken = generateCsrfToken(req.session);
   res.locals.escapeHtml = escapeHtml;
@@ -226,7 +227,7 @@ app.get('/instructor/:id', async (req, res, next) => {
       ORDER BY c.created_at DESC
     `).all(instructor.id);
     const totalStudents = (await db.prepare(`
-      SELECT COUNT(*) as count FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE c.instructor_id = ?
+      SELECT COUNT(DISTINCT e.user_id) as count FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE c.instructor_id = ?
     `).get(instructor.id)).count;
     return res.render('instructor/profile', { title: instructor.name, instructor, courses, totalStudents });
   } catch(err) { next(err); }
@@ -312,6 +313,11 @@ app.use((err, req, res, next) => {
   });
 });
 
+// امسح رسائل الخطأ الحساسة في الإنتاج
+if (process.env.NODE_ENV === 'production') {
+  process.on('uncaughtException', function(err) { console.error('UNCAUGHT:', err.message); });
+}
+
 // Ensure upload directories exist
 ['uploads', 'uploads/videos', 'uploads/avatars', 'uploads/assignments', 'uploads/payments'].forEach(function(dir) {
   var fullPath = path.join(__dirname, 'public', dir);
@@ -322,9 +328,20 @@ Promise.all([initializeDatabase(), initializeMail()]).then(async () => {
   console.log('✓ قاعدة البيانات جاهزة');
   console.log('✓ البريد الإلكتروني جاهز');
   startScheduler();
-  app.listen(PORT, () => {
+  var server = app.listen(PORT, () => {
     console.log('🚀 المنصة التعليمية تعمل على: http://localhost:' + PORT);
   });
+
+  function shutdown(signal) {
+    console.log('إيقاف السيرفر (' + signal + ')...');
+    server.close(function() {
+      try { require('./config/database').saveDatabase(); } catch (e) {}
+      process.exit(0);
+    });
+    setTimeout(function() { process.exit(1); }, 10000).unref();
+  }
+  process.on('SIGTERM', function() { shutdown('SIGTERM'); });
+  process.on('SIGINT', function() { shutdown('SIGINT'); });
 }).catch(err => {
   console.error('خطأ في تشغيل المنصة:', err);
   process.exit(1);

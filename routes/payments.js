@@ -110,16 +110,22 @@ router.post('/request/:courseId', isAuthenticated, uploadReceipt.single('receipt
       }
       const payment = await db.prepare('INSERT INTO payments (user_id, course_id, amount, method, status, coupon_id, discount_amount) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .run(req.session.userId, course.id, finalAmount, 'stripe', 'pending', couponId, discountAmount);
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{ price_data: { currency: process.env.STRIPE_CURRENCY || 'jod', product_data: { name: course.title }, unit_amount: Math.round(finalAmount * 100) }, quantity: 1 }],
-        mode: 'payment',
-        success_url: req.protocol + '://' + req.get('host') + '/payments/success/' + payment.lastInsertRowid,
-        cancel_url: req.protocol + '://' + req.get('host') + '/payments/checkout/' + course.id,
-        metadata: { paymentId: String(payment.lastInsertRowid), userId: String(req.session.userId), courseId: String(course.id) }
-      });
-      await db.prepare('UPDATE payments SET stripe_session_id = ? WHERE id = ?').run(session.id, payment.lastInsertRowid);
-      return res.redirect(session.url);
+      try {
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [{ price_data: { currency: process.env.STRIPE_CURRENCY || 'jod', product_data: { name: course.title }, unit_amount: Math.round(finalAmount * 100) }, quantity: 1 }],
+          mode: 'payment',
+          success_url: req.protocol + '://' + req.get('host') + '/payments/success/' + payment.lastInsertRowid,
+          cancel_url: req.protocol + '://' + req.get('host') + '/payments/checkout/' + course.id,
+          metadata: { paymentId: String(payment.lastInsertRowid), userId: String(req.session.userId), courseId: String(course.id) }
+        });
+        await db.prepare('UPDATE payments SET stripe_session_id = ? WHERE id = ?').run(session.id, payment.lastInsertRowid);
+        return res.redirect(session.url);
+      } catch (stripeErr) {
+        await db.prepare('DELETE FROM payments WHERE id = ?').run(payment.lastInsertRowid);
+        req.session.flash = { type: 'error', message: 'فشل إنشاء جلسة الدفع: ' + (stripeErr.message || 'خطأ غير معروف') };
+        return res.redirect('/payments/checkout/' + course.id);
+      }
     }
 
     if (method === 'bank') {
@@ -151,7 +157,11 @@ router.get('/success/:id', isAuthenticated, async (req, res, next) => {
         if (stripeSession.payment_status === 'paid') {
           await db.prepare(`UPDATE payments SET status = 'paid', paid_at = ${sqlNow()} WHERE id = ?`).run(payment.id);
           if (payment.coupon_id) {
-            await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(payment.coupon_id);
+            var couponUpdate = await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ? AND (max_uses = 0 OR used_count < max_uses)').run(payment.coupon_id);
+            if (couponUpdate.changes === 0) {
+              await db.prepare(`UPDATE payments SET status = 'rejected', notes = 'تجاوز كوبون الخصم حد الاستخدام' WHERE id = ?`).run(payment.id);
+              return res.render('payments/success', { title: 'تم الدفع', payment: Object.assign({}, payment, { status: 'rejected' }) });
+            }
           }
           await db.prepare(enrollSql()).run(payment.user_id, payment.course_id);
           const { createNotification } = require('../config/notifications');
@@ -200,9 +210,13 @@ router.post('/admin/:id/confirm', isAdmin, async (req, res, next) => {
     const payment = await db.prepare('SELECT * FROM payments WHERE id = ?').get(toSafeInt(req.params.id));
     if (payment && payment.status === 'pending') {
       await db.prepare(`UPDATE payments SET status = 'paid', paid_at = ${sqlNow()} WHERE id = ?`).run(payment.id);
-      // احتساب الكوبون عند تأكيد الدفع فعلياً
       if (payment.coupon_id) {
-        await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(payment.coupon_id);
+        var couponUpdate = await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ? AND (max_uses = 0 OR used_count < max_uses)').run(payment.coupon_id);
+        if (couponUpdate.changes === 0) {
+          await db.prepare(`UPDATE payments SET status = 'rejected', notes = 'تجاوز كوبون الخصم حد الاستخدام' WHERE id = ?`).run(payment.id);
+          req.session.flash = { type: 'error', message: 'تم رفض الدفع: تجاوز الكوبون حد الاستخدام' };
+          return res.redirect('/payments/admin');
+        }
       }
       const existing = await db.prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?').get(payment.user_id, payment.course_id);
       if (!existing) await db.prepare(enrollSql()).run(payment.user_id, payment.course_id);

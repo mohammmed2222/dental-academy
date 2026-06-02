@@ -323,8 +323,9 @@ router.post('/:slug/enroll', isAuthenticated, async (req, res, next) => {
       .get(req.session.userId, course.id);
     
     if (!existing) {
-      await db.prepare('INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)')
-        .run(req.session.userId, course.id);
+      const { isUsingPg } = require('../config/database');
+      var enrollSql = isUsingPg() ? 'INSERT INTO enrollments (user_id, course_id) VALUES (?, ?) ON CONFLICT DO NOTHING' : 'INSERT OR IGNORE INTO enrollments (user_id, course_id) VALUES (?, ?)';
+      await db.prepare(enrollSql).run(req.session.userId, course.id);
       await createNotification(req.session.userId, 'course', 'تم التسجيل في الدورة', 'لقد تم تسجيلك في دورة ' + course.title, course.id, 'course');
       sendNotificationEmail(req.session.userId, 'enrollment', {
         studentName: req.session.userName,

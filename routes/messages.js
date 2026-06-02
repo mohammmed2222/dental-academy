@@ -131,6 +131,11 @@ router.post('/send', isAuthenticated, sendLimiter, async (req, res, next) => {
       return res.redirect('/messages/compose');
     }
 
+    if (receiverId === req.session.userId) {
+      req.session.flash = { type: 'error', message: 'لا يمكنك إرسال رسالة لنفسك' };
+      return res.redirect('/messages/compose');
+    }
+
     const receiver = await db.prepare('SELECT id FROM users WHERE id = ?').get(receiverId);
     if (!receiver) {
       req.session.flash = { type: 'error', message: 'المستخدم غير موجود' };
