@@ -31,15 +31,7 @@
           <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="short_description">وصف قصير (اختياري)</label>
           <input type="text" id="short_description" name="short_description" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" value="<%= course.short_description || '' %>"/>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="category_id">التصنيف</label>
-            <select id="category_id" name="category_id" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary">
-              <% categories.forEach(function(cat) { %>
-              <option value="<%= cat.id %>" <%= course.category_id == cat.id ? 'selected' : '' %>><%= cat.name %></option>
-              <% }) %>
-            </select>
-          </div>
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-5">
           <div>
             <label class="block font-label-lg text-label-lg text-on-surface mb-2" for="level">المستوى</label>
             <select id="level" name="level" class="w-full bg-surface border border-outline-variant rounded py-3 px-4 text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary">
